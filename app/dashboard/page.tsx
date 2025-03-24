@@ -23,8 +23,8 @@ export default function DashboardPage() {
         <p className="text-muted-foreground mb-6">
           You need to be logged in to view this page
         </p>
-        <Button href="/" variant="default">
-          Go to Login
+        <Button asChild variant="default">
+          <a href="/">Go to Login</a>
         </Button>
       </div>
     );
