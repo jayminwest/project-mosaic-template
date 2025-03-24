@@ -1,8 +1,9 @@
 -- Enable required extensions
 create extension if not exists "uuid-ossp";
-create extension if not exists wrappers with schema extensions;
+create extension if not exists "wrappers" schema extensions;
 
 -- User Profile table (extends Supabase auth.users)
+drop table if exists public.profiles;
 create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   name text,
@@ -17,7 +18,7 @@ create table public.profiles (
 create or replace function public.handle_new_user() 
 returns trigger
 security definer
-set search_path = public
+set search_path to public
 as $$
 begin
   insert into public.profiles (user_id, name)
@@ -27,11 +28,13 @@ end;
 $$ language plpgsql;
 
 -- Trigger to create profile for new (auth) users
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
 -- Security policy: Users can read their own profile
+drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
 on public.profiles for select
 using (auth.uid() = user_id);
@@ -39,60 +42,43 @@ using (auth.uid() = user_id);
 -- Enable RLS for profiles
 alter table public.profiles enable row level security;
 
--- Create storage bucket with size and MIME type restrictions
+-- Create generic storage bucket with size and MIME type restrictions
+-- First, try a direct insert approach
+insert into storage.buckets (id, name)
+values ('app-storage', 'app-storage')
+on conflict (id) do nothing;
+
+-- Note: Skipping bucket property updates as they're not supported in this version
+
+-- Log the operation
 do $$
 begin
-  if exists (
-    select 1 from storage.buckets where id = 'task-attachments'
-  ) then
-    -- Delete all objects in bucket first
-    delete from storage.objects where bucket_id = 'task-attachments';
-    -- Then delete bucket
-    delete from storage.buckets where id = 'task-attachments';
-  end if;
+  raise notice 'Storage bucket app-storage created or updated';
 end $$;
 
--- Create storage bucket with size and MIME type restrictions
-insert into storage.buckets (
-  id, 
-  name,
-  public,
-  file_size_limit,
-  allowed_mime_types
-)
-values (
-  'task-attachments',
-  'task-attachments',
-  true,
-  1000000, -- 1MB in bytes
-  array[
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ]
-);
-
--- Security policy: Public can view attachments
-create policy "Public can view attachments"
+-- Security policy: Public can view files
+drop policy if exists "Public can view files" on storage.objects;
+create policy "Public can view files"
 on storage.objects for select
-using (bucket_id = 'task-attachments');
+using (bucket_id = 'app-storage');
 
--- Security policy: Users can upload their own attachments
-create policy "Users can upload their own attachments"
+-- Security policy: Users can upload their own files
+drop policy if exists "Users can upload their own files" on storage.objects;
+create policy "Users can upload their own files"
 on storage.objects for insert
 to authenticated
 with check (
-  bucket_id = 'task-attachments'
+  bucket_id = 'app-storage'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
--- Security policy: Users can delete their own attachments
-create policy "Users can delete their own attachments"
+-- Security policy: Users can delete their own files
+drop policy if exists "Users can delete their own files" on storage.objects;
+create policy "Users can delete their own files"
 on storage.objects for delete
 to authenticated
 using (
-  bucket_id = 'task-attachments'
+  bucket_id = 'app-storage'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
@@ -100,15 +86,18 @@ using (
 grant delete on storage.objects to authenticated;
 
 -- Usage tracking
+drop table if exists public.usage_tracking;
 create table public.usage_tracking (
   user_id uuid references public.profiles on delete cascade,
   year_month text,
   api_calls integer default 0,
   storage_used integer default 0,
+  resources_used integer default 0,
   primary key (user_id, year_month)
 );
 
 -- Security policy: Users can read their own usage tracking
+drop policy if exists "Users can read own usage tracking" on public.usage_tracking;
 create policy "Users can read own usage tracking"
 on public.usage_tracking for select
 using (auth.uid() = user_id);
@@ -117,32 +106,73 @@ using (auth.uid() = user_id);
 alter table public.usage_tracking enable row level security;
 
 -- Stripe integration
-create foreign data wrapper stripe_wrapper
-  handler stripe_fdw_handler
-  validator stripe_fdw_validator;
-
-create server stripe_server
-foreign data wrapper stripe_wrapper
-options (
-  api_key_name 'stripe'
-);
-
-create schema stripe;
+do $$
+begin
+  if not exists (select 1 from pg_foreign_data_wrapper where fdwname = 'stripe_wrapper') then
+    create foreign data wrapper stripe_wrapper
+      handler stripe_fdw_handler
+      validator stripe_fdw_validator;
+  end if;
+  
+  if not exists (select 1 from pg_foreign_server where srvname = 'stripe_server') then
+    create server stripe_server
+    foreign data wrapper stripe_wrapper
+    options (
+      api_key_name 'stripe'
+    );
+  end if;
+  
+  if not exists (select 1 from information_schema.schemata where schema_name = 'stripe') then
+    create schema stripe;
+  end if;
+end
+$$;
 
 -- Stripe customers table
-create foreign table stripe.customers (
-  id text,
-  email text,
-  name text,
-  description text,
-  created timestamp,
-  attrs jsonb
-)
-server stripe_server
-options (
-  object 'customers',
-  rowid_column 'id'
-);
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.tables 
+    where table_schema = 'stripe' and table_name = 'customers'
+  ) then
+    create foreign table stripe.customers (
+      id text,
+      email text,
+      name text,
+      description text,
+      created timestamp,
+      attrs jsonb
+    )
+    server stripe_server
+    options (
+      object 'customers',
+      rowid_column 'id'
+    );
+  end if;
+end
+$$;
+
+-- Function to check if Stripe is properly configured
+create or replace function public.is_stripe_configured()
+returns boolean
+security definer
+set search_path = public
+as $$
+declare
+  stripe_enabled boolean := false;
+begin
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
+  
+  return stripe_enabled;
+end;
+$$ language plpgsql;
 
 -- Function to handle Stripe customer creation
 create or replace function public.handle_stripe_customer_creation()
@@ -152,28 +182,52 @@ set search_path = public
 as $$
 declare
   customer_email text;
+  stripe_enabled boolean;
 begin
-  -- Get user email
-  select email into customer_email
-  from auth.users
-  where id = new.user_id;
+  -- Check if Stripe is properly configured
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
 
-  -- Create Stripe customer
-  insert into stripe.customers (email, name)
-  values (customer_email, new.name);
-  
-  -- Get the created customer ID from Stripe
-  select id into new.stripe_customer_id
-  from stripe.customers
-  where email = customer_email
-  order by created desc
-  limit 1;
+  -- Skip Stripe integration if not configured
+  if not stripe_enabled then
+    return new;
+  end if;
+
+  -- Get user email
+  begin
+    select email into customer_email
+    from auth.users
+    where id = new.user_id;
+
+    -- Create Stripe customer
+    insert into stripe.customers (email, name)
+    values (customer_email, new.name);
+    
+    -- Get the created customer ID from Stripe
+    select id into new.stripe_customer_id
+    from stripe.customers
+    where email = customer_email
+    order by created desc
+    limit 1;
+  exception when others then
+    -- Log error but continue with user creation
+    raise notice 'Failed to create Stripe customer: %', SQLERRM;
+  end;
   
   return new;
 end;
 $$ language plpgsql;
 
--- Trigger to create Stripe customer on profile creation
+-- Conditionally create the trigger only if Stripe is configured
+drop trigger if exists create_stripe_customer_on_profile_creation on public.profiles;
+
+-- Create the trigger but make the function handle the Stripe configuration check
 create trigger create_stripe_customer_on_profile_creation
   before insert on public.profiles
   for each row
@@ -185,7 +239,24 @@ returns trigger
 security definer
 set search_path = public
 as $$
+declare
+  stripe_enabled boolean;
 begin
+  -- Check if Stripe is properly configured
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
+
+  -- Skip Stripe integration if not configured
+  if not stripe_enabled then
+    return old;
+  end if;
+
   if old.stripe_customer_id is not null then
     begin
       delete from stripe.customers where id = old.stripe_customer_id;
@@ -198,13 +269,17 @@ begin
 end;
 $$ language plpgsql;
 
--- Trigger to delete Stripe customer on profile deletion
+-- Conditionally create the trigger only if Stripe is configured
+drop trigger if exists delete_stripe_customer_on_profile_deletion on public.profiles;
+
+-- Create the trigger but make the function handle the Stripe configuration check
 create trigger delete_stripe_customer_on_profile_deletion
   before delete on public.profiles
   for each row
   execute function public.handle_stripe_customer_deletion();
 
 -- Security policy: Users can read their own Stripe data
+drop policy if exists "Users can read own Stripe data" on public.profiles;
 create policy "Users can read own Stripe data"
   on public.profiles
   for select

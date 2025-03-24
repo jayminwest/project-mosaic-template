@@ -1,9 +1,9 @@
 import { ProductConfig } from './types';
 
 export const productConfig: ProductConfig = {
-  name: "Your Product Name",
-  description: "A brief description of your product",
-  slug: "your-product", // Used in URLs and as prefix for storage
+  name: "Project Mosaic",
+  description: "A flexible micro-SaaS template for rapid development",
+  slug: "project-mosaic", // Used in URLs and as prefix for storage
   limits: {
     free: {
       resourceLimit: 10,
@@ -18,5 +18,14 @@ export const productConfig: ProductConfig = {
     enableAI: true,
     enableStorage: true,
     enableSharing: false,
+    enableAnalytics: false,
+    enableMarketing: true
+  },
+  routes: {
+    public: ["/", "/login", "/pricing", "/about", "/contact"],
+    authenticated: "/dashboard"
+  },
+  storage: {
+    bucketName: "app-storage"
   }
 };

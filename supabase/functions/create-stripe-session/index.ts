@@ -31,6 +31,22 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Parse request body
+    let requestData = {};
+    if (req.method === "POST") {
+      try {
+        requestData = await req.json();
+      } catch (e) {
+        console.error("Error parsing request body:", e);
+      }
+    }
+
+    const { priceId, successUrl, cancelUrl } = requestData as {
+      priceId?: string;
+      successUrl?: string;
+      cancelUrl?: string;
+    };
+
     console.log("🔄 Authenticating user...");
     const {
       data: { user },
@@ -71,12 +87,14 @@ Deno.serve(async (req) => {
     }
 
     const originUrl = req.headers.get("origin") ?? "http://localhost:3000";
+    const defaultSuccessUrl = `${originUrl}/profile?success=true`;
+    const defaultCancelUrl = `${originUrl}/profile?canceled=true`;
 
     // Create Portal session if already subscribed
     if (profile.subscription_plan === "premium") {
       const session = await stripe.billingPortal.sessions.create({
         customer: profile.stripe_customer_id,
-        return_url: `${originUrl}/profile`,
+        return_url: successUrl || `${originUrl}/profile`,
       });
       return new Response(JSON.stringify({ url: session.url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,13 +106,13 @@ Deno.serve(async (req) => {
       customer: profile.stripe_customer_id,
       line_items: [
         {
-          price: STRIPE_PRICE_ID,
+          price: priceId || STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${originUrl}/profile?success=true`,
-      cancel_url: `${originUrl}/profile?canceled=true`,
+      success_url: successUrl || defaultSuccessUrl,
+      cancel_url: cancelUrl || defaultCancelUrl,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

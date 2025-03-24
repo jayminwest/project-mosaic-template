@@ -49,7 +49,7 @@ This document outlines the step-by-step implementation plan for transforming the
     └── useConfig.ts       # React hook for accessing configuration
     ```
   - [ ] Update environment variable structure with better documentation
-  - [ ] Create placeholder dashboard page
+  - [x] Create placeholder dashboard page
 
 ## Phase 2: Essential Service Layers
 
@@ -109,27 +109,59 @@ This document outlines the step-by-step implementation plan for transforming the
     - [x] Update `/ai_docs/email-service-guide.md` to clarify the dual approach
   - [x] Create example for sending custom transactional emails
 
-- [ ] **Auth & Payment Services**
-  - [ ] Update auth services to be template-ready
-  - [ ] Enhance payment services for tiered pricing
-  - [ ] Create abstraction layers for external services
-  - [ ] Improve subscription management hooks
+- [x] **Auth & Payment Services**
+  - [x] Create auth service abstraction in `/lib/auth/auth-service.ts`
+  - [x] Create payment service abstraction in `/lib/payment/payment-service.ts`
+  - [x] Create service configuration helpers in `/lib/config/service-config.ts`
+  - [x] Create unified service provider in `/lib/services/index.ts`
+  
+  - [ ] Update hooks to use new abstraction layers
+    ```typescript
+    // hooks/useAuth.ts
+    export function useAuth(config: AuthConfig = {}): UseAuthReturn {
+      const authService = createAuthService(config);
+      // Use authService for all auth operations
+    }
+    
+    // hooks/useSubscription.ts
+    export function useSubscription(config: PaymentServiceConfig = {}): UseSubscriptionReturn {
+      const paymentService = createPaymentService(config);
+      // Use paymentService for all subscription operations
+    }
+    ```
 
-## Phase 3: Marketing & Analytics Essentials
+## Phase 3: Auth & Payment Services
 
-- [ ] **Marketing Components**
-  - [ ] Create `/components/marketing/HeroSection.tsx`
-  - [ ] Create `/components/marketing/FeatureSection.tsx`
-  - [ ] Create `/components/marketing/PricingSection.tsx`
-  - [ ] Implement basic welcome email template
+- [x] **Auth Service Abstraction**
+  - [x] Create provider-agnostic interface in `/lib/auth/auth-service.ts`
+  - [x] Implement Supabase auth provider
+  - [x] Update auth hooks to use the new abstraction
+  - [x] Add configuration options for auth providers
+  - [x] Integrate with email service
 
-- [ ] **Analytics Components**
-  - [ ] Create dashboard layout component
-  - [ ] Implement conversion tracking
-  - [ ] Add revenue metrics components
-  - [ ] Create basic user engagement tracking
+- [ ] **Payment Service Abstraction**
+  - [x] Create provider-agnostic interface in `/lib/payment/payment-service.ts`
+  - [x] Implement Stripe payment provider using Supabase Edge Functions
+  - [ ] Update subscription hooks to use the new abstraction
+  - [ ] Add support for tiered pricing
+  - [ ] Improve subscription management
 
-## Phase 4: Customization Framework
+- [ ] **Service Configuration System**
+  - [x] Create service configuration helpers in `/lib/config/service-config.ts`
+  - [x] Add default configurations for auth and payment services
+  - [ ] Implement resource limit helpers based on subscription plans
+
+- [ ] **Unified Service Provider**
+  - [x] Create a service provider in `/lib/services/index.ts`
+  - [x] Implement singleton pattern for efficient service management
+  - [ ] Add helper functions for accessing payment services
+
+- [ ] **Update Edge Functions**
+  - [ ] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
+  - [ ] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
+  - [ ] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
+
+## Phase 4: Marketing & Analytics Essentials
 
 - [ ] **Theme & Branding**
   - [ ] Implement theme configuration system
