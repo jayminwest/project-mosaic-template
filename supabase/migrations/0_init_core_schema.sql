@@ -59,7 +59,7 @@ end $$;
 insert into storage.buckets (
   id, 
   name,
-  public_access,
+  public,
   file_size_limit,
   allowed_mime_types
 )
