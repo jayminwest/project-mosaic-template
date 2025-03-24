@@ -51,7 +51,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create `/lib/ai/hooks/useAI.ts` hook for React components
   - [x] Create new generic AI edge function template in `/supabase/functions/ai-service/index.ts`
   - [x] Create example usage in `/examples/ai-service-usage.ts`
-  - [ ] Fix dependency conflicts between React versions and AI SDKs
+  - [x] Fix dependency conflicts between React versions and AI SDKs
 
 - [x] **Email Service Layer**
   - [x] Install required packages (resend, react-email, @react-email/components)
