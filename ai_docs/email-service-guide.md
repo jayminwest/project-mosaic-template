@@ -6,7 +6,33 @@ This guide provides detailed information on how to use the email service in Proj
 
 The email service in Project Mosaic provides a clean, provider-agnostic interface for sending transactional emails. It's built on top of Resend and React Email, offering a modern approach to email templates and delivery.
 
-## Architecture
+## Dual Email Architecture
+
+Project Mosaic uses a dual approach for email:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Email Architecture                      │
+├─────────────────────────────┬───────────────────────────────┤
+│    Authentication Emails    │    Transactional Emails       │
+│    (Supabase + Resend SMTP) │    (Custom Email Service)     │
+├─────────────────────────────┼───────────────────────────────┤
+│ - Signup verification       │ - Welcome emails              │
+│ - Password reset            │ - Order confirmations         │
+│ - Magic link login          │ - Notifications               │
+│ - User invitations          │ - Marketing emails            │
+└─────────────────────────────┴───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        Resend Service                       │
+├─────────────────────────────┬───────────────────────────────┤
+│      SMTP Protocol          │         API                   │
+│  (Used by Supabase Auth)    │  (Used by Email Service)      │
+└─────────────────────────────┴───────────────────────────────┘
+```
+
+### Custom Email Service Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -55,8 +81,46 @@ This interactive script will:
 2. Verify the API key is valid
 3. Help you set up a custom domain (optional)
 4. Update your environment variables
+5. Guide you through Supabase SMTP configuration (optional)
+
+### Supabase SMTP Configuration
+
+For authentication emails, you'll need to configure Supabase to use Resend as its SMTP provider:
+
+1. Get your Resend SMTP credentials from the Resend dashboard:
+   - Go to the Resend dashboard > SMTP section
+   - Generate or view your SMTP credentials
+
+2. In your Supabase dashboard:
+   - Go to Project Settings > Auth > SMTP
+   - Enable Custom SMTP
+   - Enter the following details:
+     - Host: smtp.resend.com
+     - Port: 465
+     - Username: Your Resend SMTP username (usually "resend")
+     - Password: Your Resend SMTP password
+     - Sender Name: Your product name
+     - Sender Email: The email you configured in the setup script
+
+3. Customize email templates in Supabase:
+   - Go to Authentication > Email Templates
+   - Customize the templates for confirmation, invitation, magic link, and reset password emails
 
 ## Using the Email Service
+
+### When to Use Each Approach
+
+- **Use Supabase Auth Emails for**:
+  - Email verification during signup
+  - Password reset requests
+  - Magic link authentication
+  - User invitations through Supabase
+
+- **Use Custom Email Service for**:
+  - Welcome emails after successful signup
+  - Transactional emails (receipts, notifications)
+  - Marketing emails
+  - Custom workflows not handled by Supabase
 
 ### Basic Usage
 
@@ -103,7 +167,7 @@ interface EmailOptions {
 
 The following email templates are available:
 
-1. **welcome** - Sent when a user signs up
+1. **welcome** - Sent when a user signs up (after verification)
    ```typescript
    props: {
      username: string;
@@ -112,7 +176,7 @@ The following email templates are available:
    }
    ```
 
-2. **passwordReset** - Sent when a user requests a password reset
+2. **passwordReset** - Alternative to Supabase's reset email
    ```typescript
    props: {
      resetLink: string;
@@ -120,7 +184,7 @@ The following email templates are available:
    }
    ```
 
-3. **verification** - Sent to verify a user's email address
+3. **verification** - Alternative to Supabase's confirmation email
    ```typescript
    props: {
      verificationLink: string;
@@ -128,7 +192,7 @@ The following email templates are available:
    }
    ```
 
-4. **invitation** - Sent when inviting a user to the platform
+4. **invitation** - Alternative to Supabase's invitation email
    ```typescript
    props: {
      inviterName: string;
@@ -138,6 +202,8 @@ The following email templates are available:
    ```
 
 ## Creating Custom Templates
+
+### Custom React Email Templates
 
 To create a new email template:
 
@@ -205,109 +271,53 @@ export const emailTemplates = {
 export type EmailTemplateType = keyof typeof emailTemplates;
 ```
 
-3. Use the new template:
+### Customizing Supabase Email Templates
 
-```typescript
-await emailService.sendEmail({
-  to: 'user@example.com',
-  subject: 'Custom Email Subject',
-  template: 'custom',
-  props: {
-    username: 'John',
-    customData: 'Your special information',
-    actionUrl: 'https://example.com/action'
-  }
-});
-```
+To customize Supabase's built-in email templates:
 
-## Testing Email Templates
+1. Go to your Supabase dashboard
+2. Navigate to Authentication > Email Templates
+3. Select the template you want to customize
+4. Edit the HTML content and subject line
+5. Use the variables provided by Supabase (e.g., {{ .ConfirmationURL }})
+6. Save your changes
 
-To test your email templates:
+## Testing Email Functionality
 
-1. Run the test email script:
+### Testing Custom Email Service
+
+To test your custom email service:
 
 ```bash
 npm run test-email
 ```
 
-2. For more comprehensive testing, you can create a test script that uses your custom templates:
+This will send a test email to an address you specify.
 
-```typescript
-// scripts/test-custom-email.ts
-import { emailService } from '../lib/email/email-service';
-import inquirer from 'inquirer';
-import chalk from 'chalk';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+### Testing Supabase Auth Emails
 
-// Load environment variables
-if (fs.existsSync(path.join(process.cwd(), '.env.local'))) {
-  dotenv.config({ path: path.join(process.cwd(), '.env.local') });
-}
+To test Supabase auth emails:
 
-async function testCustomEmail() {
-  console.log(chalk.blue('Custom Email Test'));
-  
-  // Get test email address
-  const { email } = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'email',
-      message: 'Send test email to:',
-      validate: (input) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input) || 'Please enter a valid email'
-    }
-  ]);
-  
-  try {
-    const result = await emailService.sendEmail({
-      to: email,
-      subject: 'Custom Email Test',
-      template: 'custom',
-      props: {
-        username: 'Test User',
-        customData: 'This is a test of the custom email template',
-        actionUrl: 'https://example.com/test'
-      }
-    });
-    
-    if (result.success) {
-      console.log(chalk.green('✓ Custom email sent successfully!'));
-      console.log(chalk.gray(`Message ID: ${result.messageId}`));
-    } else {
-      console.log(chalk.red('Failed to send custom email'));
-      console.log(chalk.gray(result.error));
-    }
-  } catch (error: any) {
-    console.log(chalk.red('Error sending custom email:'));
-    console.log(chalk.gray(error?.message || 'Unknown error occurred'));
-  }
-}
-
-testCustomEmail().catch(console.error);
-```
+1. In the Supabase dashboard, go to Authentication > Email Templates
+2. Click the "Send test email" button for the template you want to test
+3. Enter a test email address
+4. Check your inbox to verify the email was received
 
 ## Troubleshooting
 
-### Common Issues
+### Supabase Auth Emails
 
-1. **API Key Invalid**
-   - Verify your Resend API key is correct
-   - Check that it's properly set in your .env.local file
+If Supabase auth emails aren't being delivered:
 
-2. **Email Not Delivered**
-   - Check spam/junk folders
-   - Verify recipient email address is valid
-   - Check Resend dashboard for delivery status
+1. Verify your SMTP settings in the Supabase dashboard
+2. Check that your Resend SMTP credentials are correct
+3. Ensure your sender email domain has proper DNS records
+4. Test the SMTP connection in the Supabase dashboard
+5. Check Resend's dashboard for delivery status and logs
 
-3. **Template Rendering Issues**
-   - Ensure all required props are provided
-   - Check for syntax errors in the template
-   - Test with simplified HTML to isolate the issue
+### Custom Email Service
 
-### Debugging
-
-To debug email issues:
+If your custom emails aren't being delivered:
 
 1. Use the `verifyConfiguration` method to check if your API key is valid:
 
@@ -328,11 +338,18 @@ const result = await emailService.sendEmail({
 console.log(result);
 ```
 
+3. Check other common issues:
+   - Verify your Resend API key is correct
+   - Check that your `EMAIL_FROM` address is properly configured
+   - If using a custom domain, ensure DNS records are properly set up
+   - Check spam/junk folders
+   - Check Resend dashboard for delivery status
+
 ## Best Practices
 
-1. **Use Templates Consistently**
-   - Maintain consistent branding across all email templates
-   - Use the same color scheme, logo, and typography
+1. **Maintain Consistent Branding**
+   - Use similar styling between Supabase emails and your custom emails
+   - Keep branding elements consistent across all communication
 
 2. **Personalize Content**
    - Always include the recipient's name when available
@@ -356,3 +373,7 @@ console.log(result);
    - Include unsubscribe options in marketing emails
    - Only send emails to users who have opted in
    - Comply with email regulations (GDPR, CAN-SPAM, etc.)
+
+7. **Avoid Duplication**
+   - Don't send duplicate emails from both Supabase and your custom service
+   - Clearly define which system handles which types of emails

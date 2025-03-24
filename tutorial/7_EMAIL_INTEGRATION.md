@@ -40,7 +40,10 @@ This script will:
 
 For the best user experience, configure Supabase to use Resend as its SMTP provider:
 
-1. Get your Resend SMTP credentials from the Resend dashboard
+1. Get your Resend SMTP credentials from the Resend dashboard:
+   - Go to the Resend dashboard > SMTP section
+   - Generate or view your SMTP credentials (username is usually "resend")
+
 2. In your Supabase dashboard, go to Project Settings > Auth > SMTP
 3. Enable Custom SMTP and enter the credentials:
    - Host: smtp.resend.com
@@ -49,6 +52,8 @@ For the best user experience, configure Supabase to use Resend as its SMTP provi
    - Password: Your Resend SMTP password
    - Sender Name: Your product name
    - Sender Email: The email you configured in the setup script
+
+4. Save your changes and test the SMTP connection using the "Test" button
 
 ### 4. Customize Supabase Email Templates
 
@@ -59,6 +64,13 @@ In your Supabase dashboard:
    - Invitation emails
    - Magic link emails
    - Reset password emails
+3. For each template, you can customize:
+   - Subject line
+   - HTML content
+   - Text content (for email clients that don't support HTML)
+4. Use the variables provided by Supabase (e.g., {{ .ConfirmationURL }})
+5. Preview your changes using the preview button
+6. Save your changes
 
 ### 5. Test Your Configuration
 
@@ -68,7 +80,13 @@ After setup, you can test your email configuration:
 npm run test-email
 ```
 
-This will send a test email to an address you specify.
+This will send a test email to an address you specify using your custom email service.
+
+To test Supabase auth emails:
+1. In the Supabase dashboard, go to Authentication > Email Templates
+2. Click the "Send test email" button for the template you want to test
+3. Enter a test email address
+4. Check your inbox to verify the email was received with proper formatting
 
 ## Email Templates
 
