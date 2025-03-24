@@ -51,7 +51,6 @@ This document outlines the step-by-step implementation plan for transforming the
 - [ ] **AI Providers**
   - [ ] Implement `/lib/ai/providers/openai.ts` provider
   - [ ] Implement `/lib/ai/providers/anthropic.ts` provider
-  - [ ] Implement `/lib/ai/providers/local.ts` for local models
 
 - [ ] **Prompt Management System**
   - [ ] Create `/lib/ai/prompts/index.ts` with prompt registry
