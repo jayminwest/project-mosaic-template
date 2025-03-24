@@ -43,42 +43,27 @@ using (auth.uid() = user_id);
 alter table public.profiles enable row level security;
 
 -- Create storage bucket with size and MIME type restrictions
+-- First, try a direct insert approach
+insert into storage.buckets (id, name, public)
+values ('task-attachments', 'task-attachments', true)
+on conflict (id) do nothing;
+
+-- Then update the bucket properties if it exists
+update storage.buckets
+set 
+  file_size_limit = 1000000,
+  allowed_mime_types = array[
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+  ]
+where id = 'task-attachments';
+
+-- Log the operation
 do $$
-declare
-  bucket_id text := 'task-attachments';
-  bucket_exists boolean;
 begin
-  -- Check if bucket exists
-  select exists(
-    select 1 from storage.buckets where id = bucket_id
-  ) into bucket_exists;
-  
-  if not bucket_exists then
-    -- Create bucket with proper parameters
-    insert into storage.buckets (
-      id, 
-      name,
-      public,
-      file_size_limit,
-      allowed_mime_types
-    )
-    values (
-      bucket_id,
-      bucket_id,
-      true,
-      1000000, -- 1MB in bytes
-      array[
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp'
-      ]
-    );
-    
-    raise notice 'Created storage bucket: %', bucket_id;
-  else
-    raise notice 'Storage bucket already exists: %', bucket_id;
-  end if;
+  raise notice 'Storage bucket task-attachments created or updated';
 end $$;
 
 -- Security policy: Public can view attachments
