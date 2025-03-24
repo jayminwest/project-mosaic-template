@@ -77,6 +77,18 @@ export const themeConfig: ThemeConfig = {
       light: "#0ea5e9", // Sky
       dark: "#38bdf8",
     },
+    background: {
+      light: "#ffffff",
+      dark: "#1e293b",
+    },
+    text: {
+      light: "#334155",
+      dark: "#e2e8f0",
+    },
+    accent: {
+      light: "#f97316", // Orange
+      dark: "#fb923c",
+    },
   },
   fonts: {
     heading: "Inter, sans-serif",
@@ -131,7 +143,9 @@ export const subscriptionPlans: SubscriptionPlan[] = [
 The `features.ts` file controls which features are enabled:
 
 ```typescript
-export const featureFlags = {
+import { FeatureFlags } from './types';
+
+export const featureFlags: FeatureFlags = {
   enableAI: true,
   enableStorage: true,
   enableSharing: false,
