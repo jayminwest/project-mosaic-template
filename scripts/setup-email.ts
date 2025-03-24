@@ -3,6 +3,12 @@ import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env.local if it exists
+if (fs.existsSync(path.join(process.cwd(), '.env.local'))) {
+  dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+}
 
 async function setupEmail() {
   console.log(chalk.blue('Project Mosaic - Email Setup'));
@@ -10,18 +16,27 @@ async function setupEmail() {
   
   // Check if RESEND_API_KEY is already in .env.local
   const envLocalPath = path.join(process.cwd(), '.env.local');
-  let apiKey = '';
+  let apiKey = process.env.RESEND_API_KEY || '';
   
-  if (fs.existsSync(envLocalPath)) {
-    const envContent = fs.readFileSync(envLocalPath, 'utf8');
-    const match = envContent.match(/RESEND_API_KEY=(.+)/);
-    if (match && match[1]) {
-      apiKey = match[1];
-      console.log(chalk.blue('Found existing Resend API key in .env.local'));
+  if (apiKey) {
+    console.log(chalk.blue('Found existing Resend API key in .env.local'));
+    
+    // Ask if user wants to use the existing key or enter a new one
+    const { useExisting } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'useExisting',
+        message: 'Use existing API key?',
+        default: true
+      }
+    ]);
+    
+    if (!useExisting) {
+      apiKey = '';
     }
   }
   
-  // If no API key found, prompt for it
+  // If no API key found or user wants to enter a new one, prompt for it
   if (!apiKey) {
     const response = await inquirer.prompt([
       {
@@ -36,12 +51,20 @@ async function setupEmail() {
   
   // Test the API key
   try {
+    console.log(chalk.gray('Validating API key...'));
     const resend = new Resend(apiKey);
-    const { data, error } = await resend.domains.list();
     
-    if (error) {
+    // Simple test email to verify the API key works
+    const testResult = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'delivered@resend.dev',
+      subject: 'API Key Test',
+      text: 'This is a test to verify the API key works.',
+    });
+    
+    if (testResult.error) {
       console.log(chalk.red('Error: Invalid API key or API request failed'));
-      console.log(chalk.gray(error.message));
+      console.log(chalk.gray(testResult.error.message));
       return;
     }
     

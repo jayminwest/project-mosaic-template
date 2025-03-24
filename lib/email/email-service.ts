@@ -151,7 +151,7 @@ export class EmailService {
       const html = await renderAsync(EmailTemplate(props));
 
       // Send the email
-      const { data, error } = await this.resend.emails.send({
+      const result = await this.resend.emails.send({
         from: from || this.defaultFrom,
         to,
         subject,
@@ -161,12 +161,12 @@ export class EmailService {
         reply_to: replyTo
       });
 
-      if (error) {
-        console.error('Failed to send email:', error);
-        return { success: false, error: error.message };
+      if (result.error) {
+        console.error('Failed to send email:', result.error);
+        return { success: false, error: result.error.message };
       }
 
-      return { success: true, messageId: data?.id };
+      return { success: true, messageId: result.data?.id };
     } catch (error: any) {
       console.error('Error sending email:', error);
       return { success: false, error: error?.message || 'Unknown error' };
@@ -179,9 +179,15 @@ export class EmailService {
     }
 
     try {
-      // Check if we can connect to the API
-      const { data, error } = await this.resend.domains.list();
-      return !error && !!data;
+      // Simple test to verify the API key works
+      const result = await this.resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: 'delivered@resend.dev',
+        subject: 'API Key Verification',
+        text: 'This is a test to verify the API key works.',
+      });
+      
+      return !result.error;
     } catch (error) {
       console.error('Failed to verify email configuration:', error);
       return false;

@@ -1,17 +1,26 @@
 import { emailService } from '../lib/email/email-service';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+
+// Load environment variables from .env.local if it exists
+if (fs.existsSync(path.join(process.cwd(), '.env.local'))) {
+  dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+}
 
 async function testEmail() {
   console.log(chalk.blue('Project Mosaic - Email Test'));
   
-  // Verify configuration
-  const isConfigured = await emailService.verifyConfiguration();
-  if (!isConfigured) {
+  // Check if API key is configured
+  if (!process.env.RESEND_API_KEY) {
     console.log(chalk.red('Email service is not configured correctly'));
     console.log(chalk.gray('Please run the setup script: npm run setup-email'));
     return;
   }
+  
+  console.log(chalk.gray('Verifying email configuration...'));
   
   // Get test email address
   const { email, template } = await inquirer.prompt([
