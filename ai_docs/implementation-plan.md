@@ -5,10 +5,29 @@ This document outlines the step-by-step implementation plan for transforming the
 ## Phase 0: Template Cleanup & Preparation
 
 - [ ] **Remove Unnecessary Files**
-  - [ ] Clean up Supabase migration files that won't be reused
-  - [ ] Remove task-specific database schemas
-  - [ ] Remove task-specific edge functions
-  - [ ] Clean up test files specific to the task app
+  - [ ] Clean up Supabase migration files that won't be reused:
+    - `/supabase/migrations/1_init_tasks.sql` - Task-specific schema
+    - `/supabase/migrations/5_init_task_limit_triggers.sql` - Task-specific limits
+    - `/supabase/migrations/6_init_account_tier_triggers.sql` - Task-specific tier logic
+  - [ ] Remove task-specific edge functions:
+    - `/supabase/functions/create-task-with-ai/index.ts` - Task-specific AI function
+  - [ ] Remove task-specific components:
+    - `/components/CreateTaskForm.tsx`
+    - `/components/TaskList.tsx`
+    - `/components/TaskRow.tsx`
+  - [ ] Remove task-specific pages:
+    - `/app/task/page.tsx` - Task detail page
+    - `/app/dashboard/page.tsx` - Task dashboard
+  - [ ] Remove task-specific hooks:
+    - `/hooks/useTaskManager.ts` - Task management logic
+  - [ ] Remove task-specific types:
+    - `/types/taskManager.ts`
+  - [ ] Remove task-specific tests:
+    - `/tests/integration/1_task_crud.test.ts`
+    - `/tests/integration/5_task_limits.test.ts`
+  - [ ] Remove task-specific utilities:
+    - `/lib/labels.ts` - Task labeling utilities
+  - [ ] Clean up tutorial files specific to the task app
 
 - [ ] **Restructure Project**
   - [ ] Create core directories for the new architecture
@@ -36,8 +55,8 @@ This document outlines the step-by-step implementation plan for transforming the
 
 - [ ] **Prompt Management System**
   - [ ] Create `/lib/ai/prompts/index.ts` with prompt registry
-  - [ ] Create `/lib/ai/prompts/task-labeling.ts` for task labeling prompts
   - [ ] Create `/lib/ai/prompts/content-generation.ts` for marketing content
+  - [ ] Create `/lib/ai/prompts/seo-optimization.ts` for SEO content
 
 - [ ] **Context Management**
   - [ ] Implement `/lib/ai/context/conversation.ts` for maintaining history
@@ -48,7 +67,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Implement automatic retry and provider switching
 
 - [ ] **Edge Function Updates**
-  - [ ] Refactor `/supabase/functions/create-task-with-ai/index.ts` to use new AI service
+  - [ ] Create new generic AI edge function template
   - [ ] Add environment variables for AI configuration
 
 ## Phase 2: Marketing Components
@@ -165,7 +184,11 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Move marketing components to `/ui/marketing`
 
 - [ ] **Templates**
-  - [ ] Move task app to `/templates/task-app`
+  - [ ] Move task app components to `/templates/task-app`:
+    - Task-specific components (CreateTaskForm, TaskList, TaskRow)
+    - Task-specific pages (dashboard, task detail)
+    - Task-specific hooks (useTaskManager)
+    - Task-specific types and utilities
   - [ ] Create skeleton for `/templates/blog`
   - [ ] Create skeleton for `/templates/crm`
 
@@ -175,6 +198,11 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create `/config/validation.ts` for configuration validation
 
 ## Testing & Validation
+
+- [ ] **Create New Test Framework**
+  - [ ] Replace task-specific tests with template-agnostic tests
+  - [ ] Create generic test utilities to replace task-specific ones
+  - [ ] Implement tests for core services (AI, Auth, Storage, Payments)
 
 - [ ] **Test with Different Product Types**
   - [ ] Test with content tool (e.g., content calendar)
