@@ -43,11 +43,15 @@ using (auth.uid() = user_id);
 alter table public.profiles enable row level security;
 
 -- Create storage bucket with size and MIME type restrictions
--- Using simple insert statement based on Supabase docs
 insert into storage.buckets
-  (id, name, public)
+  (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('task-attachments', 'task-attachments', true);
+  ('task-attachments', 'task-attachments', true, 1000000, array[
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+  ]);
 
 -- Security policy: Public can view attachments
 drop policy if exists "Public can view attachments" on storage.objects;
