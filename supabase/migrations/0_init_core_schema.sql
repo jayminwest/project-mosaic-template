@@ -7,7 +7,7 @@ create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   name text,
   subscription_plan text check (subscription_plan in ('free', 'premium')) default 'free',
-  tasks_limit integer default 100,
+  usage_limit integer default 100,
   stripe_customer_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   updated_at timestamp with time zone default timezone('utc'::text, now())
@@ -103,7 +103,8 @@ grant delete on storage.objects to authenticated;
 create table public.usage_tracking (
   user_id uuid references public.profiles on delete cascade,
   year_month text,
-  tasks_created integer default 0,
+  api_calls integer default 0,
+  storage_used integer default 0,
   primary key (user_id, year_month)
 );
 
