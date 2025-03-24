@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfig } from "@/lib/config/useConfig";
+import { Badge } from "@/components/ui/badge";
 
 const LoginForm = () => {
   const {
@@ -18,6 +20,8 @@ const LoginForm = () => {
     setIsSignUpMode,
     clearError,
   } = useAuth();
+  
+  const { productConfig } = useConfig();
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);
@@ -27,9 +31,14 @@ const LoginForm = () => {
   return (
     <section aria-label={isSignUpMode ? "Sign Up Form" : "Login Form"}>
       <div className="max-w-md mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">
+        <div className="flex justify-center mb-4">
+          <Badge variant="secondary" className="px-3 py-1">
+            {productConfig?.slug || "project-mosaic"}
+          </Badge>
+        </div>
+        <h2 className="text-2xl font-bold mb-6 text-center">
           {isSignUpMode ? "Create Account" : "Welcome Back"}
-        </h1>
+        </h2>
         <div className="space-y-4">
           <Button className="w-full" onClick={handleGoogleLogin}>
             <LogIn className="mr-2 h-4 w-4" />
@@ -83,7 +92,7 @@ const LoginForm = () => {
               <Lock className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
             </div>
             {error && (
-              <div className="text-gray-700 text-sm text-center">{error}</div>
+              <div className="text-destructive text-sm text-center">{error}</div>
             )}
             <Button type="submit" className="w-full">
               <LogIn className="mr-2 h-4 w-4" />
