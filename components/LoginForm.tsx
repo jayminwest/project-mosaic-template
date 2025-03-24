@@ -19,6 +19,7 @@ const LoginForm = () => {
     isSignUpMode,
     setIsSignUpMode,
     clearError,
+    isLoading,
   } = useAuth();
   
   const { productConfig } = useConfig();
