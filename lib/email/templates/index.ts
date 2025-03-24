@@ -1,7 +1,7 @@
-import WelcomeEmail from './components/WelcomeEmail.tsx';
-import PasswordResetEmail from './components/PasswordResetEmail.tsx';
-import VerificationEmail from './components/VerificationEmail.tsx';
-import InvitationEmail from './components/InvitationEmail.tsx';
+import WelcomeEmail from './components/WelcomeEmail';
+import PasswordResetEmail from './components/PasswordResetEmail';
+import VerificationEmail from './components/VerificationEmail';
+import InvitationEmail from './components/InvitationEmail';
 
 export const emailTemplates = {
   welcome: WelcomeEmail,
