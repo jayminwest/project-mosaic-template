@@ -111,7 +111,7 @@ export function useAuth(): UseAuthReturn {
   const handleSignup = async () => {
     clearError();
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: `${window.location.origin}/` },
@@ -120,7 +120,12 @@ export function useAuth(): UseAuthReturn {
       if (error) {
         setError(error.message);
       } else {
+        // Note: At this point, Supabase will send a confirmation email via SMTP
+        // We don't need to send our own verification email
         setError("Please check your email to confirm your account");
+        
+        // Log for debugging
+        console.log("✅ Signup initiated for:", email);
       }
     } catch (error: any) {
       setError(error.message);

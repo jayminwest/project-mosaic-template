@@ -122,7 +122,6 @@ async function setupEmail() {
     
     // Update .env.local file
     console.log(chalk.gray('\nUpdating environment variables in .env.local...'));
-    const envLocalPath = path.join(process.cwd(), '.env.local');
     
     let envContent = '';
     if (fs.existsSync(envLocalPath)) {
@@ -147,11 +146,93 @@ async function setupEmail() {
     fs.writeFileSync(envLocalPath, envContent);
     console.log(chalk.green(`Environment variables updated in .env.local`));
     
+    // Supabase SMTP configuration guidance
+    console.log(chalk.blue('\nConfiguring Supabase to use Resend for authentication emails:'));
+    
+    const { configureSupabaseEmails } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'configureSupabaseEmails',
+        message: 'Would you like to configure Supabase to use Resend for auth emails?',
+        default: true
+      }
+    ]);
+    
+    if (configureSupabaseEmails) {
+      // Get Resend SMTP credentials
+      console.log(chalk.gray('\nTo complete the setup, you need Resend SMTP credentials.'));
+      
+      console.log(chalk.yellow('\nTo get your Resend SMTP credentials:'));
+      console.log(chalk.gray('1. Go to the Resend dashboard: https://resend.com/dashboard'));
+      console.log(chalk.gray('2. Navigate to the SMTP section'));
+      console.log(chalk.gray('3. Generate or view your SMTP credentials'));
+      
+      const { smtpUsername, smtpPassword } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'smtpUsername',
+          message: 'Resend SMTP Username:',
+          validate: (input) => input.length > 0 || 'SMTP Username is required'
+        },
+        {
+          type: 'password',
+          name: 'smtpPassword',
+          message: 'Resend SMTP Password:',
+          validate: (input) => input.length > 0 || 'SMTP Password is required'
+        }
+      ]);
+      
+      console.log(chalk.blue('\nTo configure Supabase with these credentials:'));
+      console.log(chalk.gray('1. Go to your Supabase dashboard: https://app.supabase.io'));
+      console.log(chalk.gray('2. Navigate to Project Settings > Auth > SMTP'));
+      console.log(chalk.gray('3. Enable Custom SMTP'));
+      console.log(chalk.gray('4. Enter the following details:'));
+      console.log(chalk.gray('   - Host: smtp.resend.com'));
+      console.log(chalk.gray('   - Port: 465'));
+      console.log(chalk.gray(`   - Username: ${smtpUsername}`));
+      console.log(chalk.gray('   - Password: [Your SMTP Password]'));
+      console.log(chalk.gray('   - Sender Name: Your product name'));
+      console.log(chalk.gray(`   - Sender Email: ${fromEmail}`));
+      console.log(chalk.gray('5. Save your changes'));
+      
+      console.log(chalk.blue('\nTo customize Supabase email templates:'));
+      console.log(chalk.gray('1. In the Supabase dashboard, go to Authentication > Email Templates'));
+      console.log(chalk.gray('2. Customize the templates for:'));
+      console.log(chalk.gray('   - Confirmation emails'));
+      console.log(chalk.gray('   - Invitation emails'));
+      console.log(chalk.gray('   - Magic link emails'));
+      console.log(chalk.gray('   - Reset password emails'));
+      
+      // Save SMTP credentials to .env.local for reference
+      const smtpEnvVars = {
+        RESEND_SMTP_HOST: 'smtp.resend.com',
+        RESEND_SMTP_PORT: '465',
+        RESEND_SMTP_USERNAME: smtpUsername,
+        // We don't save the password to the env file for security reasons
+      };
+      
+      Object.entries(smtpEnvVars).forEach(([key, value]) => {
+        const regex = new RegExp(`^${key}=.*`, 'm');
+        if (envContent.match(regex)) {
+          envContent = envContent.replace(regex, `${key}=${value}`);
+        } else {
+          envContent += `\n${key}=${value}`;
+        }
+      });
+      
+      fs.writeFileSync(envLocalPath, envContent);
+      console.log(chalk.green(`SMTP configuration saved to .env.local`));
+    }
+    
     console.log(chalk.green('\nEmail setup complete!'));
     console.log(chalk.blue('Next steps:'));
     console.log(chalk.gray('1. Restart your development server'));
     console.log(chalk.gray('2. Test email functionality with the test command:'));
     console.log(chalk.gray('   npm run test-email'));
+    console.log(chalk.gray('3. If you configured Supabase SMTP, complete the setup in your Supabase dashboard'));
+    console.log(chalk.gray('4. For custom transactional emails (not auth-related), use the email service:'));
+    console.log(chalk.gray('   import { emailService } from \'../lib/email/email-service\';'));
+    console.log(chalk.gray('   await emailService.sendEmail({...});'));
     
   } catch (error: any) {
     console.log(chalk.red('Error setting up email:'));
