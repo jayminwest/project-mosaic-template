@@ -27,7 +27,35 @@ Project Mosaic is built on a modular architecture that enables quick adaptation 
 
 ## Key Components
 
-### 1. AI Service Abstraction Layer
+### 1. Configuration System
+
+The Configuration System provides a centralized way to manage product settings, theme customization, and feature flags:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Configuration System                       │
+├─────────────┬─────────────┬────────────────┬───────────────┤
+│  Product    │  Theme      │  Subscription  │  Feature      │
+│  Settings   │  Config     │  Plans         │  Flags        │
+├─────────────┴─────────────┴────────────────┴───────────────┤
+│                    Environment Validation                   │
+├─────────────┬─────────────┬────────────────┬───────────────┤
+│  Required   │  Optional   │  Validation    │  Default      │
+│  Variables  │  Variables  │  Logic         │  Values       │
+└─────────────┴─────────────┴────────────────┴───────────────┘
+```
+
+The Configuration System has been implemented with:
+- Type definitions in `lib/config/types.ts`
+- Product configuration in `lib/config/default-config.ts`
+- Theme settings in `lib/config/theme.ts`
+- Subscription plans in `lib/config/subscription.ts`
+- Feature flags in `lib/config/features.ts`
+- Environment validation in `lib/config/environment.ts`
+- React hook for accessing configuration in `lib/config/useConfig.ts`
+- Setup scripts in `scripts/init-config.ts` and `scripts/quick-setup.ts`
+
+### 2. AI Service Abstraction Layer
 
 The AI Service layer provides a provider-agnostic interface for integrating with multiple AI providers:
 

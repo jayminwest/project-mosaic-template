@@ -6,11 +6,11 @@ This document provides comprehensive guidance on customizing the Project Mosaic 
 
 ### 1. Product Configuration
 
-The central configuration file at `lib/config/index.ts` controls product-specific settings:
+The configuration system in `lib/config/` provides a comprehensive way to customize your product:
 
 ```typescript
-// Example configuration
-export const productConfig = {
+// Example from lib/config/default-config.ts
+export const productConfig: ProductConfig = {
   name: "Your Product Name",
   description: "A brief description of your product",
   slug: "your-product", // Used in URLs and as prefix for storage
@@ -30,6 +30,18 @@ export const productConfig = {
     enableSharing: false,
   }
 };
+```
+
+You can use the interactive setup script to configure your product:
+
+```bash
+npm run init-config
+```
+
+Or use the quick setup by modifying `lib/config/quick-setup.ts` and running:
+
+```bash
+npm run quick-setup
 ```
 
 ### 2. Database Schema
@@ -62,10 +74,10 @@ CREATE POLICY "Users can read their own content"
 
 ### 3. Theme Customization
 
-Modify the theme in `lib/config/theme.ts` to match your product's branding:
+The theme configuration in `lib/config/theme.ts` allows you to customize your product's branding:
 
 ```typescript
-export const themeConfig = {
+export const themeConfig: ThemeConfig = {
   colors: {
     primary: {
       light: "#4f46e5", // Indigo
@@ -84,6 +96,22 @@ export const themeConfig = {
   borderRadius: "0.5rem",
   // Other theme variables
 };
+```
+
+You can access theme settings in your components using the `useConfig` hook:
+
+```typescript
+import { useConfig } from '@/lib/config/useConfig';
+
+function MyComponent() {
+  const { theme } = useConfig();
+  
+  return (
+    <div style={{ color: theme.colors.primary.light }}>
+      Themed content
+    </div>
+  );
+}
 ```
 
 ### 4. AI Prompts
@@ -166,9 +194,9 @@ Follow this step-by-step process to customize the template:
    - List AI integration points
 
 2. **Configure Product Settings**
-   - Update `lib/config/index.ts` with product details
-   - Set appropriate resource limits
-   - Enable/disable features
+   - Run `npm run init-config` for interactive setup
+   - Or modify `lib/config/quick-setup.ts` and run `npm run quick-setup`
+   - Configure product details, resource limits, and feature flags
 
 3. **Create Database Schema**
    - Design tables for product-specific data
@@ -221,10 +249,10 @@ Follow this step-by-step process to customize the template:
 
 ### Customizing Subscription Tiers
 
-1. Update `productConfig.limits` with tier-specific limits
-2. Create Stripe products and prices
+1. Update subscription plans in `lib/config/subscription.ts`
+2. Create Stripe products and prices (automatically handled by setup scripts)
 3. Update the subscription management UI
-4. Implement tier-specific feature flags
+4. Implement tier-specific feature flags in `lib/config/features.ts`
 
 ## Best Practices
 

@@ -4,6 +4,9 @@ This document defines key terms and concepts used throughout the Project Mosaic 
 
 ## Core Concepts
 
+### Configuration System
+A centralized system for managing product settings, theme customization, subscription plans, and feature flags, allowing for easy customization of the template for different product types.
+
 ### Micro-SaaS
 A software-as-a-service business that targets a niche market, is run by a small team (often just one person), and generates modest but sustainable revenue.
 
