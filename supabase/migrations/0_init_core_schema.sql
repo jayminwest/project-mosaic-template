@@ -172,6 +172,28 @@ begin
 end
 $$;
 
+-- Function to check if Stripe is properly configured
+create or replace function public.is_stripe_configured()
+returns boolean
+security definer
+set search_path = public
+as $$
+declare
+  stripe_enabled boolean := false;
+begin
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
+  
+  return stripe_enabled;
+end;
+$$ language plpgsql;
+
 -- Function to handle Stripe customer creation
 create or replace function public.handle_stripe_customer_creation()
 returns trigger
@@ -180,52 +202,49 @@ set search_path = public
 as $$
 declare
   customer_email text;
-  stripe_enabled boolean := false;
 begin
-  -- Check if Stripe is properly configured
-  begin
-    -- Test if we can access the stripe schema
-    perform 1 from stripe.customers limit 1;
-    stripe_enabled := true;
-  exception when others then
-    -- If there's an error, Stripe is not properly configured
-    stripe_enabled := false;
-  end;
+  -- Skip Stripe integration if not configured
+  if not public.is_stripe_configured() then
+    return new;
+  end if;
 
-  -- Only proceed with Stripe customer creation if Stripe is enabled
-  if stripe_enabled then
-    -- Get user email
+  -- Get user email
+  begin
     select email into customer_email
     from auth.users
     where id = new.user_id;
 
     -- Create Stripe customer
-    begin
-      insert into stripe.customers (email, name)
-      values (customer_email, new.name);
-      
-      -- Get the created customer ID from Stripe
-      select id into new.stripe_customer_id
-      from stripe.customers
-      where email = customer_email
-      order by created desc
-      limit 1;
-    exception when others then
-      -- Log error but continue with user creation
-      raise notice 'Failed to create Stripe customer: %', SQLERRM;
-    end;
-  end if;
+    insert into stripe.customers (email, name)
+    values (customer_email, new.name);
+    
+    -- Get the created customer ID from Stripe
+    select id into new.stripe_customer_id
+    from stripe.customers
+    where email = customer_email
+    order by created desc
+    limit 1;
+  exception when others then
+    -- Log error but continue with user creation
+    raise notice 'Failed to create Stripe customer: %', SQLERRM;
+  end;
   
   return new;
 end;
 $$ language plpgsql;
 
--- Trigger to create Stripe customer on profile creation
+-- Conditionally create the trigger only if Stripe is configured
 drop trigger if exists create_stripe_customer_on_profile_creation on public.profiles;
-create trigger create_stripe_customer_on_profile_creation
-  before insert on public.profiles
-  for each row
-  execute function public.handle_stripe_customer_creation();
+
+do $$
+begin
+  if public.is_stripe_configured() then
+    execute 'create trigger create_stripe_customer_on_profile_creation
+      before insert on public.profiles
+      for each row
+      execute function public.handle_stripe_customer_creation()';
+  end if;
+end $$;
 
 -- Function to handle Stripe customer deletion
 create or replace function public.handle_stripe_customer_deletion()
@@ -234,6 +253,11 @@ security definer
 set search_path = public
 as $$
 begin
+  -- Skip Stripe integration if not configured
+  if not public.is_stripe_configured() then
+    return old;
+  end if;
+
   if old.stripe_customer_id is not null then
     begin
       delete from stripe.customers where id = old.stripe_customer_id;
@@ -246,12 +270,18 @@ begin
 end;
 $$ language plpgsql;
 
--- Trigger to delete Stripe customer on profile deletion
+-- Conditionally create the trigger only if Stripe is configured
 drop trigger if exists delete_stripe_customer_on_profile_deletion on public.profiles;
-create trigger delete_stripe_customer_on_profile_deletion
-  before delete on public.profiles
-  for each row
-  execute function public.handle_stripe_customer_deletion();
+
+do $$
+begin
+  if public.is_stripe_configured() then
+    execute 'create trigger delete_stripe_customer_on_profile_deletion
+      before delete on public.profiles
+      for each row
+      execute function public.handle_stripe_customer_deletion()';
+  end if;
+end $$;
 
 -- Security policy: Users can read their own Stripe data
 drop policy if exists "Users can read own Stripe data" on public.profiles;

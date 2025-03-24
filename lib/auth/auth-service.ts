@@ -70,9 +70,23 @@ class SupabaseAuthProvider implements AuthProvider {
       });
 
       if (error) return { success: false, error: error.message };
+      
+      // Even if signup appears successful, check if the user was actually created
+      if (!data?.user?.id) {
+        console.error("User signup failed: No user ID returned");
+        return { 
+          success: false, 
+          error: "Failed to create user account. Please try again later." 
+        };
+      }
+      
       return { success: true, data };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      console.error("Signup error:", error);
+      return { 
+        success: false, 
+        error: "An unexpected error occurred. Please try again later." 
+      };
     }
   }
 
