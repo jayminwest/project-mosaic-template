@@ -51,6 +51,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create `/lib/ai/hooks/useAI.ts` hook for React components
   - [x] Create new generic AI edge function template in `/supabase/functions/ai-service/index.ts`
   - [x] Create example usage in `/examples/ai-service-usage.ts`
+  - [ ] Fix dependency conflicts between React versions and AI SDKs
 
 - [x] **Email Service Layer**
   - [x] Install required packages (resend, react-email, @react-email/components)
@@ -130,6 +131,12 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Add deployment automation script
   - [x] Create customization guide with examples ✅
   - [x] Add email testing and configuration scripts ✅
+  - [ ] Create dependency resolution script for AI SDK installation
+
+## Known Issues & Solutions
+
+- **React Version Conflict**: The project uses React 18.3.1, but @react-email/components requires React 18.2.0 specifically. When installing AI SDKs (OpenAI, Anthropic), this causes dependency conflicts.
+  - **Solution**: Use `--legacy-peer-deps` flag when installing AI SDKs or downgrade React to 18.2.0 if email components are critical.
 
 ## Testing & Validation
 
