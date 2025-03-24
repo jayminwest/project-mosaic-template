@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 export default function DashboardPage() {
-  const { productConfig, theme } = useConfig();
+  const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("overview");
 
@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">{productConfig.name} Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">{productConfig?.name || "Project Mosaic"} Dashboard</h1>
       
       {/* Dashboard Tabs */}
       <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
@@ -84,8 +84,8 @@ export default function DashboardPage() {
                   <span className="font-medium">
                     {user?.usage_metrics?.resources_used || 0} / 
                     {user?.subscription_plan === "premium" 
-                      ? productConfig.limits.premium.resourceLimit 
-                      : productConfig.limits.free.resourceLimit}
+                      ? productConfig?.limits?.premium?.resourceLimit || 100
+                      : productConfig?.limits?.free?.resourceLimit || 10}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -93,8 +93,8 @@ export default function DashboardPage() {
                   <span className="font-medium">
                     {(user?.usage_metrics?.storage_used || 0).toFixed(2)} MB / 
                     {user?.subscription_plan === "premium" 
-                      ? productConfig.limits.premium.storageLimit 
-                      : productConfig.limits.free.storageLimit} MB
+                      ? productConfig?.limits?.premium?.storageLimit || 50
+                      : productConfig?.limits?.free?.storageLimit || 5} MB
                   </span>
                 </div>
               </div>
