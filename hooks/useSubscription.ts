@@ -52,16 +52,18 @@ export function useSubscription(): UseSubscriptionReturn {
       const response = await paymentService.createCheckoutSession(accessToken, priceId);
       
       if (!response.success) {
-        throw new Error(response.error);
+        throw new Error(response.error || 'Failed to create checkout session');
       }
       
       if (response.url) {
         window.location.href = response.url;
+      } else {
+        throw new Error('No redirect URL returned from payment service');
       }
     } catch (error: any) {
       console.error("Error managing subscription:", error);
-      setError(error.message);
-      throw error;
+      setError(error.message || 'An unknown error occurred');
+      // Don't rethrow the error to prevent unhandled runtime errors
     }
   };
 
