@@ -6,7 +6,7 @@ export interface SubscriptionPlan {
   price: number;
   currency: string;
   interval: string;
-  planType: 'free' | 'premium';
+  planType: 'free' | 'premium' | 'enterprise';
   features: string[];
   limits?: {
     [key: string]: number;

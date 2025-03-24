@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { User } from "@/types/models";
 import { UseAuthReturn } from "@/types/auth";
-import { createBrowserClient } from "@supabase/ssr";
+import { getServiceProvider } from "@/lib/services";
+import { sendWelcomeEmail } from "@/lib/auth/auth-emails";
 
 export function useAuth(): UseAuthReturn {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const services = getServiceProvider();
+  const authService = services.getAuthService();
 
   // State
   const [session, setSession] = useState<any>(null);
@@ -22,50 +21,33 @@ export function useAuth(): UseAuthReturn {
   // Helper functions
   const clearError = () => setError(null);
 
-  const fetchUserProfile = async (userId: string, userEmail: string) => {
-    try {
-      const [profileResponse, usageResponse] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", userId).single(),
-        supabase
-          .from("usage_tracking")
-          .select("tasks_created")
-          .eq("user_id", userId)
-          .eq("year_month", new Date().toISOString().slice(0, 7))
-          .maybeSingle(),
-      ]);
-
-      if (profileResponse.error) throw profileResponse.error;
-
-      setUser({
-        ...profileResponse.data,
-        email: userEmail,
-        tasks_created: usageResponse.data?.tasks_created || 0,
-      });
-    } catch (error) {
-      console.error("Critical error fetching user profile:", error);
-      await signOut();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const updateSessionState = async (newSession: any) => {
     setSession(newSession);
     setIsLoggedIn(!!newSession);
 
     if (newSession?.user) {
       setIsLoading(true);
-      await fetchUserProfile(newSession.user.id, newSession.user.email);
+      const userProfile = await authService.getUserProfile(
+        newSession.user.id, 
+        newSession.user.email
+      );
+      
+      setUser(userProfile);
     } else {
       setUser(null);
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   // Auth methods
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const response = await authService.signOut();
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+      
       setSession(null);
       setUser(null);
       setIsLoggedIn(false);
@@ -82,12 +64,12 @@ export function useAuth(): UseAuthReturn {
     e.preventDefault();
     clearError();
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) setError(error.message);
-      console.log("✅ User logged in:", email, user);
+      const response = await authService.signIn(email, password);
+      if (!response.success) {
+        setError(response.error);
+      } else {
+        console.log("✅ User logged in:", email);
+      }
     } catch (error: any) {
       setError(error.message);
       console.error("Error logging in:", error);
@@ -96,12 +78,7 @@ export function useAuth(): UseAuthReturn {
 
   const handleGoogleLogin = async () => {
     try {
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
+      await authService.signInWithProvider("google");
     } catch (error: any) {
       setError(error.message);
       console.error("Error with Google login:", error);
@@ -111,14 +88,10 @@ export function useAuth(): UseAuthReturn {
   const handleSignup = async () => {
     clearError();
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/` },
-      });
-
-      if (error) {
-        setError(error.message);
+      const response = await authService.signUp(email, password);
+      
+      if (!response.success) {
+        setError(response.error);
       } else {
         // Note: At this point, Supabase will send a confirmation email via SMTP
         // We don't need to send our own verification email
@@ -137,9 +110,7 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const session = await authService.getSession();
         await updateSessionState(session);
       } catch (error: any) {
         console.error("Error initializing auth:", error);
@@ -150,13 +121,15 @@ export function useAuth(): UseAuthReturn {
 
     initAuth();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const subscription = authService.onAuthStateChange((session) => {
       updateSessionState(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (subscription && subscription.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   return {
