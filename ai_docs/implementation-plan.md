@@ -2,6 +2,26 @@
 
 This document outlines the step-by-step implementation plan for transforming the Task App into a template for Project Mosaic.
 
+## Phase 0: Template Cleanup & Preparation
+
+- [ ] **Remove Unnecessary Files**
+  - [ ] Clean up Supabase migration files that won't be reused
+  - [ ] Remove task-specific database schemas
+  - [ ] Remove task-specific edge functions
+  - [ ] Clean up test files specific to the task app
+
+- [ ] **Restructure Project**
+  - [ ] Create core directories for the new architecture
+  - [ ] Set up configuration system for project customization
+  - [ ] Create placeholder directories for templates
+  - [ ] Update environment variable structure
+
+- [ ] **Update Documentation**
+  - [ ] Revise README.md to reflect Project Mosaic purpose
+  - [ ] Update setup instructions for the template
+  - [ ] Create template usage guide
+  - [ ] Document customization points
+
 ## Phase 1: AI Service Abstraction Layer
 
 - [ ] **Core AI Service Interface**

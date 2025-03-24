@@ -1,26 +1,34 @@
-# Task App: Fullstack SaaS Project Tutorial 2025
+# Project Mosaic: Micro-SaaS Template Framework
 
-A full-stack SaaS task management application built with Next.js and Supabase, featuring AI-powered task labeling, image attachments, and Stripe subscriptions.
+A framework for rapidly developing profitable micro-SaaS products with Next.js, Supabase, and AI integration. Project Mosaic enables you to build and launch niche SaaS products in 1-2 weeks.
 
-- Specific tutorial documents can be found in the `/tutorial` folder.
-- Project design and spec can be found at [tutorial/PROJECT_DESIGN.md](tutorial/PROJECT_DESIGN.md).
+![Project Mosaic Banner](ai_docs/images/project-mosaic-banner.png)
 
-![image-app-dashboard](tutorial/images/task-dashboard.png)
+## Overview
 
-## Features
+Project Mosaic is designed to accelerate the development of micro-SaaS products by providing:
 
-- Task management with automatic AI labeling
-- Image attachments with cloud storage
-- Google OAuth and email authentication
-- Premium subscription with Stripe integration
-- Usage limits and tracking
+- **Provider-agnostic AI integration** supporting multiple AI services
+- **Ready-to-use marketing components** for quick landing page creation
+- **Built-in analytics dashboard** for tracking product performance
+- **Flexible subscription system** with Stripe integration
+- **White-labeling capabilities** for easy customization
+
+## Core Features
+
+- **AI Service Abstraction Layer**: Switch between AI providers seamlessly
+- **Marketing Component Library**: Build landing pages in hours, not days
+- **Analytics Dashboard**: Track performance across all your products
+- **Subscription Management**: Multiple pricing tiers with usage limits
+- **White-Labeling System**: Customize branding and appearance
 
 ## Tech Stack
 
-- Frontend: Next.js, React, TypeScript, Tailwind CSS
-- Backend: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- AI: OpenAI
-- Payments: Stripe
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
+- **AI Integration**: OpenAI, Anthropic, and more
+- **Payments**: Stripe subscription system
+- **Analytics**: Custom dashboard with key metrics
 
 ## Quick Start
 
