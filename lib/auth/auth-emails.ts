@@ -1,4 +1,4 @@
-import { emailService } from '../email/email-service';
+import { emailService } from '../email/email-service.js';
 
 export async function sendWelcomeEmail(email: string, name: string, productName: string): Promise<boolean> {
   const result = await emailService.sendEmail({
