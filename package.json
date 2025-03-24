@@ -10,7 +10,9 @@
     "lint": "next lint",
     "test": "jest",
     "setup-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/setup-email.ts",
-    "test-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-email.ts"
+    "test-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-email.ts",
+    "init-config": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/init-config.ts",
+    "quick-setup": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/quick-setup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
