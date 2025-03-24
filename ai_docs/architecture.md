@@ -46,6 +46,23 @@ The AI Service layer provides a provider-agnostic interface for integrating with
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### 2. Email Service Layer
+
+The Email Service layer provides a clean interface for sending transactional emails:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Email Service Interface                   │
+├─────────────────────────────────────────────────────────────┤
+│                        Resend Provider                      │
+├─────────────┬─────────────┬────────────────┬───────────────┤
+│  Welcome    │  Password   │  Verification  │  Custom       │
+│  Emails     │  Reset      │  Emails        │  Templates    │
+├─────────────┴─────────────┴────────────────┴───────────────┤
+│                    React Email Components                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### 2. Marketing Components
 
 Reusable components for quickly creating marketing pages and campaigns:
@@ -145,13 +162,13 @@ Project Mosaic is designed to be easily customized for different product types:
 │   └─────────────┘   │    │
 └─────────────────────┘    │
                            │
-┌─────────────────────┐    │
-│   Analytics         │    │
-│   ┌─────────────┐   │    │
-│   │  Tracking   │◄───────┘
-│   │  & Metrics  │   │
-│   └─────────────┘   │
-└─────────────────────┘
+┌─────────────────────┐    │    ┌─────────────────────┐
+│   Analytics         │    │    │   Email Service     │
+│   ┌─────────────┐   │    │    │   ┌─────────────┐   │
+│   │  Tracking   │◄───────┘    │   │   Resend    │   │
+│   │  & Metrics  │   │         │   │   Provider  │◄──┼────┐
+│   └─────────────┘   │         │   └─────────────┘   │    │
+└─────────────────────┘         └─────────────────────┘    │
 ```
 
 ## Development Workflow

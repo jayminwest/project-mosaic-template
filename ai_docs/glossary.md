@@ -21,6 +21,9 @@ The practice of removing branding from a product so it can be rebranded and reso
 ### AI Service Abstraction Layer
 A code layer that provides a unified interface to multiple AI providers, allowing the application to switch between them seamlessly.
 
+### Email Service Layer
+A system that provides a unified interface for sending transactional emails using Resend, with React-based email templates.
+
 ### Prompt Management System
 A system for storing, versioning, and optimizing prompts used for AI interactions.
 

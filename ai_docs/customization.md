@@ -212,6 +212,13 @@ Follow this step-by-step process to customize the template:
 3. Implement UI components that use these functions
 4. Add fallback mechanisms for when AI is unavailable
 
+### Customizing Email Templates
+
+1. Create new React Email templates in `lib/email/templates/components/`
+2. Register templates in `lib/email/templates/index.ts`
+3. Create helper functions in your service to send emails
+4. Update environment variables with your Resend API key
+
 ### Customizing Subscription Tiers
 
 1. Update `productConfig.limits` with tier-specific limits
@@ -244,5 +251,10 @@ Follow this step-by-step process to customize the template:
 6. **Test Thoroughly**
    - Create tests for all product-specific functionality
    - Test with different subscription tiers
+
+7. **Email Communication**
+   - Use React Email templates for consistent branding
+   - Test email deliverability across different clients
+   - Implement proper email verification flows
 
 By following this guide, you can quickly adapt the Project Mosaic template for different product types while maintaining a consistent architecture and leveraging the shared infrastructure.

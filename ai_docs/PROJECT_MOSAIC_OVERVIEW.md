@@ -22,6 +22,7 @@ All products are built on a common technical foundation:
 - **Payments**: Stripe
 - **Analytics**: Plausible/Google Analytics
 - **AI Integration**: Provider-agnostic interfaces for multiple AI services
+- **Email Service**: Resend with React Email templates
 
 ## Development Philosophy
 

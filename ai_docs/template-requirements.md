@@ -37,6 +37,7 @@ This document outlines the requirements for adapting the Task App micro-SaaS tem
 - **Graceful Degradation** when services are unavailable
 - **Unified Error Handling** across integrations
 - **Environment Variable Management** with validation
+- **Email Service Integration** using Resend for transactional emails
 
 ### Marketing Components
 
