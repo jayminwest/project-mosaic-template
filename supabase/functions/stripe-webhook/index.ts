@@ -18,6 +18,37 @@ const stripe = new Stripe(STRIPE_SECRET_KEY, {
 // This is needed in order to use the Web Crypto API in Deno.
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
+// Map Stripe price IDs to subscription plans
+const priceToPlanMap = new Map();
+
+// Initialize price to plan mapping
+async function initializePriceToPlanMap() {
+  try {
+    const products = await stripe.products.list({
+      active: true,
+      expand: ['data.default_price'],
+    });
+    
+    for (const product of products.data) {
+      if (product.metadata && product.metadata.plan_type) {
+        const priceId = typeof product.default_price === 'object' 
+          ? product.default_price.id 
+          : product.default_price;
+        
+        if (priceId) {
+          priceToPlanMap.set(priceId, product.metadata.plan_type);
+          console.log(`Mapped price ${priceId} to plan ${product.metadata.plan_type}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error initializing price to plan map:", error);
+  }
+}
+
+// Initialize the price map when the function starts
+initializePriceToPlanMap();
+
 Deno.serve(async (req) => {
   const signature = req.headers.get("Stripe-Signature");
   const body = await req.text();
@@ -43,13 +74,27 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        await supabase
-          .from("profiles")
-          .update({
-            subscription_plan: "premium",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("stripe_customer_id", session.customer);
+        
+        // Get the line items to find the price ID
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        if (lineItems.data.length > 0) {
+          const priceId = lineItems.data[0].price?.id;
+          
+          // Get the plan type from the price ID, default to "premium" if not found
+          const planType = priceId && priceToPlanMap.has(priceId) 
+            ? priceToPlanMap.get(priceId) 
+            : "premium";
+          
+          await supabase
+            .from("profiles")
+            .update({
+              subscription_plan: planType,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_customer_id", session.customer);
+          
+          console.log(`Updated user to plan: ${planType} for customer: ${session.customer}`);
+        }
         break;
       }
 
@@ -62,6 +107,29 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_customer_id", subscription.customer);
+        break;
+      }
+      
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const subscription = event.data.object;
+        
+        // Get the price ID from the subscription
+        const priceId = subscription.items.data[0]?.price?.id;
+        
+        if (priceId && priceToPlanMap.has(priceId)) {
+          const planType = priceToPlanMap.get(priceId);
+          
+          await supabase
+            .from("profiles")
+            .update({
+              subscription_plan: planType,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_customer_id", subscription.customer);
+          
+          console.log(`Updated subscription to plan: ${planType} for customer: ${subscription.customer}`);
+        }
         break;
       }
     }

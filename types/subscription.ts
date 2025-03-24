@@ -1,5 +1,13 @@
-export interface SubscriptionOperations {
-  manageSubscription: (accessToken: string) => Promise<void>;
+import { SubscriptionPlan } from "@/hooks/useSubscription";
+
+export interface SubscriptionState {
+  isLoading: boolean;
+  error: string | null;
+  plans: SubscriptionPlan[];
 }
 
-export type UseSubscriptionReturn = SubscriptionOperations;
+export interface SubscriptionOperations {
+  manageSubscription: (accessToken: string, priceId?: string) => Promise<void>;
+}
+
+export type UseSubscriptionReturn = SubscriptionOperations & SubscriptionState;
