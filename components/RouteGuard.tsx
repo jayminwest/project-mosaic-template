@@ -18,7 +18,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
   // Get routes from config or use defaults
   const publicRoutes = productConfig?.routes?.public || PUBLIC_ROUTES;
-  const authenticatedRoute = productConfig?.routes?.authenticated || DEFAULT_AUTHENTICATED_ROUTE;
+  const authenticatedRoute = productConfig?.routes?.authenticated || '/dashboard';
   const publicRoute = productConfig?.routes?.public?.[0] || DEFAULT_PUBLIC_ROUTE;
 
   useEffect(() => {
