@@ -42,53 +42,56 @@ using (auth.uid() = user_id);
 -- Enable RLS for profiles
 alter table public.profiles enable row level security;
 
--- Create storage bucket with size and MIME type restrictions
+-- Create generic storage bucket with size and MIME type restrictions
 -- First, try a direct insert approach
 insert into storage.buckets (id, name, public)
-values ('task-attachments', 'task-attachments', true)
+values ('app-storage', 'app-storage', true)
 on conflict (id) do nothing;
 
 -- Then update the bucket properties if it exists
 update storage.buckets
 set 
-  file_size_limit = 1000000,
+  file_size_limit = 5000000, -- 5MB in bytes
   allowed_mime_types = array[
     'image/jpeg',
     'image/png',
     'image/gif',
-    'image/webp'
+    'image/webp',
+    'application/pdf',
+    'text/plain',
+    'application/json'
   ]
-where id = 'task-attachments';
+where id = 'app-storage';
 
 -- Log the operation
 do $$
 begin
-  raise notice 'Storage bucket task-attachments created or updated';
+  raise notice 'Storage bucket app-storage created or updated';
 end $$;
 
--- Security policy: Public can view attachments
-drop policy if exists "Public can view attachments" on storage.objects;
-create policy "Public can view attachments"
+-- Security policy: Public can view files
+drop policy if exists "Public can view files" on storage.objects;
+create policy "Public can view files"
 on storage.objects for select
-using (bucket_id = 'task-attachments');
+using (bucket_id = 'app-storage');
 
--- Security policy: Users can upload their own attachments
-drop policy if exists "Users can upload their own attachments" on storage.objects;
-create policy "Users can upload their own attachments"
+-- Security policy: Users can upload their own files
+drop policy if exists "Users can upload their own files" on storage.objects;
+create policy "Users can upload their own files"
 on storage.objects for insert
 to authenticated
 with check (
-  bucket_id = 'task-attachments'
+  bucket_id = 'app-storage'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
--- Security policy: Users can delete their own attachments
-drop policy if exists "Users can delete their own attachments" on storage.objects;
-create policy "Users can delete their own attachments"
+-- Security policy: Users can delete their own files
+drop policy if exists "Users can delete their own files" on storage.objects;
+create policy "Users can delete their own files"
 on storage.objects for delete
 to authenticated
 using (
-  bucket_id = 'task-attachments'
+  bucket_id = 'app-storage'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
