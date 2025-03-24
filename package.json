@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "setup-email": "ts-node scripts/setup-email.ts",
+    "test-email": "ts-node scripts/test-email.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.2",
