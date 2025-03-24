@@ -1,4 +1,4 @@
-import { emailService } from '../lib/email/email-service.ts';
+import { Resend } from 'resend';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
@@ -14,98 +14,54 @@ async function testEmail() {
   console.log(chalk.blue('Project Mosaic - Email Test'));
   
   // Check if API key is configured
-  if (!process.env.RESEND_API_KEY) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
     console.log(chalk.red('Email service is not configured correctly'));
     console.log(chalk.gray('Please run the setup script: npm run setup-email'));
     return;
   }
   
+  const resend = new Resend(apiKey);
   console.log(chalk.gray('Verifying email configuration...'));
   
   // Get test email address
-  const { email, template } = await inquirer.prompt([
+  const { email } = await inquirer.prompt([
     {
       type: 'input',
       name: 'email',
       message: 'Send test email to:',
       validate: (input) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input) || 'Please enter a valid email'
-    },
-    {
-      type: 'list',
-      name: 'template',
-      message: 'Select email template to test:',
-      choices: [
-        { name: 'Welcome Email', value: 'welcome' },
-        { name: 'Password Reset', value: 'passwordReset' },
-        { name: 'Email Verification', value: 'verification' },
-        { name: 'Invitation', value: 'invitation' }
-      ]
     }
   ]);
   
   console.log(chalk.gray(`Sending test email to ${email}...`));
   
   try {
-    let result = { success: false, error: 'Unknown error', messageId: '' };
+    const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
     
-    switch (template) {
-      case 'welcome':
-        result = await emailService.sendEmail({
-          to: email,
-          subject: 'Welcome to Project Mosaic',
-          template: 'welcome',
-          props: {
-            username: 'Developer',
-            productName: 'Project Mosaic',
-            actionUrl: 'https://example.com/dashboard'
-          }
-        });
-        break;
-        
-      case 'passwordReset':
-        result = await emailService.sendEmail({
-          to: email,
-          subject: 'Reset your Project Mosaic password',
-          template: 'passwordReset',
-          props: {
-            resetLink: 'https://example.com/reset-password?token=sample-token',
-            productName: 'Project Mosaic'
-          }
-        });
-        break;
-        
-      case 'verification':
-        result = await emailService.sendEmail({
-          to: email,
-          subject: 'Verify your Project Mosaic email',
-          template: 'verification',
-          props: {
-            verificationLink: 'https://example.com/verify?token=sample-token',
-            productName: 'Project Mosaic'
-          }
-        });
-        break;
-        
-      case 'invitation':
-        result = await emailService.sendEmail({
-          to: email,
-          subject: 'You\'ve been invited to Project Mosaic',
-          template: 'invitation',
-          props: {
-            inviterName: 'The Project Mosaic Team',
-            productName: 'Project Mosaic',
-            inviteLink: 'https://example.com/invite?token=sample-token'
-          }
-        });
-        break;
-    }
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Project Mosaic - Email Test',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #4f46e5;">Project Mosaic</h1>
+          <p>This is a test email from Project Mosaic.</p>
+          <p>If you're receiving this, your email configuration is working correctly!</p>
+          <div style="margin-top: 24px; padding: 16px; background-color: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0; color: #4b5563;">From: ${fromEmail}</p>
+            <p style="margin: 8px 0 0; color: #4b5563;">Sent: ${new Date().toLocaleString()}</p>
+          </div>
+        </div>
+      `,
+    });
     
-    if (result.success) {
-      console.log(chalk.green('✓ Test email sent successfully!'));
-      console.log(chalk.gray(`Message ID: ${result.messageId}`));
-    } else {
+    if (result.error) {
       console.log(chalk.red('Failed to send test email'));
-      console.log(chalk.gray(result.error));
+      console.log(chalk.gray(result.error.message));
+    } else {
+      console.log(chalk.green('✓ Test email sent successfully!'));
+      console.log(chalk.gray(`Message ID: ${result.data.id}`));
     }
   } catch (error: any) {
     console.log(chalk.red('Error sending test email:'));

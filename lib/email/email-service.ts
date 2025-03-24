@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { renderAsync } from '@react-email/components';
+import React from 'react';
 import { emailTemplates, EmailTemplateType } from './templates/index.ts';
 
 export interface EmailOptions {

@@ -1,5 +1,4 @@
 import { Resend } from 'resend';
-import { emailService } from '../lib/email/email-service.ts';
 import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';

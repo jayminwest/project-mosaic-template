@@ -1,7 +1,8 @@
-import WelcomeEmail from './components/WelcomeEmail.jsx';
-import PasswordResetEmail from './components/PasswordResetEmail.jsx';
-import VerificationEmail from './components/VerificationEmail.jsx';
-import InvitationEmail from './components/InvitationEmail.jsx';
+// Import React components directly
+import { default as WelcomeEmail } from './components/WelcomeEmail';
+import { default as PasswordResetEmail } from './components/PasswordResetEmail';
+import { default as VerificationEmail } from './components/VerificationEmail';
+import { default as InvitationEmail } from './components/InvitationEmail';
 
 export const emailTemplates = {
   welcome: WelcomeEmail,
