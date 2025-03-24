@@ -12,13 +12,6 @@ Project Mosaic is a 12-week initiative to rapidly develop, launch, and iterate o
 - **Progressive Automation**: Increase automation with each product cycle
 - **Reflection Periods**: Dedicated weeks for improvement and optimization
 
-## Timeline
-
-- **Preparation Week** (March 24-30, 2025): Build foundational systems and templates
-- **Phase 1** (March 31-May 18): Build first 3 products with 2-week cycles
-- **Phase 2** (May 19-June 21): Build 3-6 more products with 1-2 week cycles
-- **Final Evaluation** (June 22-28): Comprehensive program review
-
 ## Technical Foundation
 
 All products are built on a common technical foundation:
