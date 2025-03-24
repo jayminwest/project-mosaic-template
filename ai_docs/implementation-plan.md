@@ -19,6 +19,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Tests: `1_task_crud.test.ts`, `5_task_limits.test.ts`
     - Utilities: `/lib/labels.ts`
   - [x] Clean up tutorial files specific to the task app
+  - [x] Standardize micro-SaaS terminology across documentation
 
 - [x] **Database Schema Restructuring**
   - [x] Combine core Supabase migrations into a single initialization file
