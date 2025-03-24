@@ -25,13 +25,27 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     const isPublicRoute = publicRoutes.includes(pathname);
+    
+    // Add debugging
+    console.log("RouteGuard state:", { 
+      isLoggedIn, 
+      pathname, 
+      isPublicRoute,
+      publicRoutes
+    });
 
     try {
       if (isLoggedIn && pathname === publicRoute) {
+        // If logged in and on the landing page, redirect to dashboard
+        console.log("Redirecting to dashboard");
         router.replace(authenticatedRoute);
       } else if (!isLoggedIn && !isPublicRoute) {
+        // If not logged in and trying to access a protected route
+        console.log("Not logged in, redirecting to landing page");
         router.replace(publicRoute);
       } else {
+        // Either logged in and not on landing page, or not logged in but on a public route
+        console.log("No redirect needed, showing content");
         setIsReady(true);
       }
     } catch (error) {

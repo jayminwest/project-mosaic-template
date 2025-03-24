@@ -121,11 +121,15 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        console.log("Initializing auth state...");
+        setIsLoading(true);
         const session = await authService.getSession();
+        console.log("Session retrieved:", !!session);
         await updateSessionState(session);
       } catch (error: any) {
         console.error("Error initializing auth:", error);
         setError(error.message);
+        setIsLoading(false);
         await signOut();
       }
     };
@@ -133,6 +137,7 @@ export function useAuth(): UseAuthReturn {
     initAuth();
 
     const subscription = authService.onAuthStateChange((session) => {
+      console.log("Auth state changed:", !!session);
       updateSessionState(session);
     });
 
