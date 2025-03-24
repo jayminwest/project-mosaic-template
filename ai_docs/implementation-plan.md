@@ -48,20 +48,21 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create basic prompt management system in `/lib/ai/prompts/index.ts`
   - [ ] Create new generic AI edge function template
 
-- [ ] **Email Service Layer**
-  - [ ] Install required packages (resend, react-email, @react-email/components)
-  - [ ] Create `/lib/email/email-service.ts` with provider-agnostic interface
-  - [ ] Create `/lib/email/templates/index.ts` for template management
-  - [ ] Implement basic email templates:
+- [x] **Email Service Layer**
+  - [x] Install required packages (resend, react-email, @react-email/components)
+  - [x] Create `/lib/email/email-service.ts` with provider-agnostic interface
+  - [x] Create `/lib/email/templates/index.ts` for template management
+  - [x] Implement basic email templates:
     - `/lib/email/templates/components/WelcomeEmail.tsx`
     - `/lib/email/templates/components/PasswordResetEmail.tsx`
     - `/lib/email/templates/components/VerificationEmail.tsx`
-  - [ ] Create `/lib/auth/auth-emails.ts` to integrate with auth system
-  - [ ] Update auth hooks to use the email service
-  - [ ] Create setup scripts:
+    - `/lib/email/templates/components/InvitationEmail.tsx`
+  - [x] Create `/lib/auth/auth-emails.ts` to integrate with auth system
+  - [x] Update auth hooks to use the email service
+  - [x] Create setup scripts:
     - `/scripts/setup-email.ts` - Interactive email configuration
     - `/scripts/test-email.ts` - Email testing utility
-  - [ ] Update documentation in ai_docs/ and tutorial/ to include email setup
+  - [x] Update documentation in ai_docs/ and tutorial/ to include email setup
 
 - [ ] **Auth & Payment Services**
   - [ ] Update auth services to be template-ready
