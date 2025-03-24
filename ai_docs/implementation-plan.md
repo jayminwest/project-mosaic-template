@@ -221,20 +221,36 @@ This document outlines the step-by-step implementation plan for transforming the
         
         const { messages, config } = options;
         
-        const response = await this.client.chat.completions.create({
-          model: config?.model || 'gpt-4o',
-          messages: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          temperature: config?.temperature || 0.7,
-          max_tokens: config?.maxTokens,
-          top_p: config?.topP,
-          frequency_penalty: config?.frequencyPenalty,
-          presence_penalty: config?.presencePenalty,
-        });
-        
-        return response.choices[0].message.content || '';
+        // Using the Responses API (newer approach)
+        try {
+          const response = await this.client.responses.create({
+            model: config?.model || 'gpt-4o',
+            input: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            temperature: config?.temperature || 0.7,
+            max_tokens: config?.maxTokens,
+          });
+          
+          return response.output_text || '';
+        } catch (error) {
+          // Fallback to Chat Completions API
+          const response = await this.client.chat.completions.create({
+            model: config?.model || 'gpt-4o',
+            messages: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            temperature: config?.temperature || 0.7,
+            max_tokens: config?.maxTokens,
+            top_p: config?.topP,
+            frequency_penalty: config?.frequencyPenalty,
+            presence_penalty: config?.presencePenalty,
+          });
+          
+          return response.choices[0].message.content || '';
+        }
       }
       
       async streamComplete(
@@ -247,24 +263,45 @@ This document outlines the step-by-step implementation plan for transforming the
         
         const { messages, config } = options;
         
-        const stream = await this.client.chat.completions.create({
-          model: config?.model || 'gpt-4o',
-          messages: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          temperature: config?.temperature || 0.7,
-          max_tokens: config?.maxTokens,
-          top_p: config?.topP,
-          frequency_penalty: config?.frequencyPenalty,
-          presence_penalty: config?.presencePenalty,
-          stream: true,
-        });
-        
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          if (content) {
-            callback(content);
+        // Try Responses API first (newer approach)
+        try {
+          const stream = await this.client.responses.create({
+            model: config?.model || 'gpt-4o',
+            input: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            temperature: config?.temperature || 0.7,
+            max_tokens: config?.maxTokens,
+            stream: true,
+          });
+          
+          for await (const event of stream) {
+            if (event.output_text_delta) {
+              callback(event.output_text_delta);
+            }
+          }
+        } catch (error) {
+          // Fallback to Chat Completions API
+          const stream = await this.client.chat.completions.create({
+            model: config?.model || 'gpt-4o',
+            messages: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            temperature: config?.temperature || 0.7,
+            max_tokens: config?.maxTokens,
+            top_p: config?.topP,
+            frequency_penalty: config?.frequencyPenalty,
+            presence_penalty: config?.presencePenalty,
+            stream: true,
+          });
+          
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              callback(content);
+            }
           }
         }
       }
@@ -322,7 +359,7 @@ This document outlines the step-by-step implementation plan for transforming the
         });
         
         const response = await this.client.messages.create({
-          model: config?.model || 'claude-3-opus-20240229',
+          model: config?.model || 'claude-3-5-sonnet-latest',
           messages: anthropicMessages,
           max_tokens: config?.maxTokens || 1000,
           temperature: config?.temperature || 0.7,
@@ -354,7 +391,7 @@ This document outlines the step-by-step implementation plan for transforming the
         });
         
         const stream = await this.client.messages.create({
-          model: config?.model || 'claude-3-opus-20240229',
+          model: config?.model || 'claude-3-5-sonnet-latest',
           messages: anthropicMessages,
           max_tokens: config?.maxTokens || 1000,
           temperature: config?.temperature || 0.7,
@@ -362,9 +399,9 @@ This document outlines the step-by-step implementation plan for transforming the
           stream: true,
         });
         
-        for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta.text) {
-            callback(chunk.delta.text);
+        for await (const messageStreamEvent of stream) {
+          if (messageStreamEvent.type === 'content_block_delta' && messageStreamEvent.delta.text) {
+            callback(messageStreamEvent.delta.text);
           }
         }
       }
