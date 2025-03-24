@@ -1,6 +1,6 @@
 -- Enable required extensions
 create extension if not exists "uuid-ossp";
-create extension if not exists wrappers with schema extensions;
+create extension if not exists "wrappers" schema extensions;
 
 -- User Profile table (extends Supabase auth.users)
 drop table if exists public.profiles;
@@ -18,7 +18,7 @@ create table public.profiles (
 create or replace function public.handle_new_user() 
 returns trigger
 security definer
-set search_path = public
+set search_path to public
 as $$
 begin
   insert into public.profiles (user_id, name)
