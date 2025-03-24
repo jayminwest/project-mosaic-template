@@ -44,7 +44,7 @@ alter table public.profiles enable row level security;
 
 -- Create generic storage bucket with size and MIME type restrictions
 -- First, try a direct insert approach
-insert into storage.buckets (id, name, public)
+insert into storage.buckets (id, name, public_access)
 values ('app-storage', 'app-storage', true)
 on conflict (id) do nothing;
 
