@@ -28,11 +28,13 @@ end;
 $$ language plpgsql;
 
 -- Trigger to create profile for new (auth) users
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
 -- Security policy: Users can read their own profile
+drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
 on public.profiles for select
 using (auth.uid() = user_id);
@@ -75,11 +77,13 @@ values (
 );
 
 -- Security policy: Public can view attachments
+drop policy if exists "Public can view attachments" on storage.objects;
 create policy "Public can view attachments"
 on storage.objects for select
 using (bucket_id = 'task-attachments');
 
 -- Security policy: Users can upload their own attachments
+drop policy if exists "Users can upload their own attachments" on storage.objects;
 create policy "Users can upload their own attachments"
 on storage.objects for insert
 to authenticated
@@ -89,6 +93,7 @@ with check (
 );
 
 -- Security policy: Users can delete their own attachments
+drop policy if exists "Users can delete their own attachments" on storage.objects;
 create policy "Users can delete their own attachments"
 on storage.objects for delete
 to authenticated
@@ -112,6 +117,7 @@ create table public.usage_tracking (
 );
 
 -- Security policy: Users can read their own usage tracking
+drop policy if exists "Users can read own usage tracking" on public.usage_tracking;
 create policy "Users can read own usage tracking"
 on public.usage_tracking for select
 using (auth.uid() = user_id);
@@ -120,32 +126,51 @@ using (auth.uid() = user_id);
 alter table public.usage_tracking enable row level security;
 
 -- Stripe integration
-create foreign data wrapper stripe_wrapper
-  handler stripe_fdw_handler
-  validator stripe_fdw_validator;
-
-create server stripe_server
-foreign data wrapper stripe_wrapper
-options (
-  api_key_name 'stripe'
-);
-
-create schema stripe;
+do $$
+begin
+  if not exists (select 1 from pg_foreign_data_wrapper where fdwname = 'stripe_wrapper') then
+    create foreign data wrapper stripe_wrapper
+      handler stripe_fdw_handler
+      validator stripe_fdw_validator;
+  end if;
+  
+  if not exists (select 1 from pg_foreign_server where srvname = 'stripe_server') then
+    create server stripe_server
+    foreign data wrapper stripe_wrapper
+    options (
+      api_key_name 'stripe'
+    );
+  end if;
+  
+  if not exists (select 1 from information_schema.schemata where schema_name = 'stripe') then
+    create schema stripe;
+  end if;
+end
+$$;
 
 -- Stripe customers table
-create foreign table stripe.customers (
-  id text,
-  email text,
-  name text,
-  description text,
-  created timestamp,
-  attrs jsonb
-)
-server stripe_server
-options (
-  object 'customers',
-  rowid_column 'id'
-);
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.tables 
+    where table_schema = 'stripe' and table_name = 'customers'
+  ) then
+    create foreign table stripe.customers (
+      id text,
+      email text,
+      name text,
+      description text,
+      created timestamp,
+      attrs jsonb
+    )
+    server stripe_server
+    options (
+      object 'customers',
+      rowid_column 'id'
+    );
+  end if;
+end
+$$;
 
 -- Function to handle Stripe customer creation
 create or replace function public.handle_stripe_customer_creation()
@@ -177,6 +202,7 @@ end;
 $$ language plpgsql;
 
 -- Trigger to create Stripe customer on profile creation
+drop trigger if exists create_stripe_customer_on_profile_creation on public.profiles;
 create trigger create_stripe_customer_on_profile_creation
   before insert on public.profiles
   for each row
@@ -202,12 +228,14 @@ end;
 $$ language plpgsql;
 
 -- Trigger to delete Stripe customer on profile deletion
+drop trigger if exists delete_stripe_customer_on_profile_deletion on public.profiles;
 create trigger delete_stripe_customer_on_profile_deletion
   before delete on public.profiles
   for each row
   execute function public.handle_stripe_customer_deletion();
 
 -- Security policy: Users can read their own Stripe data
+drop policy if exists "Users can read own Stripe data" on public.profiles;
 create policy "Users can read own Stripe data"
   on public.profiles
   for select
