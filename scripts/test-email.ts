@@ -37,8 +37,6 @@ async function testEmail() {
   console.log(chalk.gray(`Sending test email to ${email}...`));
   
   try {
-    let result;
-    
     let result = { success: false, error: 'Unknown error', messageId: '' };
     
     switch (template) {

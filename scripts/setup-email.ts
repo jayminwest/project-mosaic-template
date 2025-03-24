@@ -8,15 +8,31 @@ async function setupEmail() {
   console.log(chalk.blue('Project Mosaic - Email Setup'));
   console.log(chalk.gray('This tool will help you configure email for your micro-SaaS project'));
   
-  // Get API key
-  const { apiKey } = await inquirer.prompt([
-    {
-      type: 'password',
-      name: 'apiKey',
-      message: 'Resend API Key:',
-      validate: (input) => input.length > 0 || 'API Key is required'
+  // Check if RESEND_API_KEY is already in .env.local
+  const envLocalPath = path.join(process.cwd(), '.env.local');
+  let apiKey = '';
+  
+  if (fs.existsSync(envLocalPath)) {
+    const envContent = fs.readFileSync(envLocalPath, 'utf8');
+    const match = envContent.match(/RESEND_API_KEY=(.+)/);
+    if (match && match[1]) {
+      apiKey = match[1];
+      console.log(chalk.blue('Found existing Resend API key in .env.local'));
     }
-  ]);
+  }
+  
+  // If no API key found, prompt for it
+  if (!apiKey) {
+    const response = await inquirer.prompt([
+      {
+        type: 'password',
+        name: 'apiKey',
+        message: 'Resend API Key:',
+        validate: (input) => input.length > 0 || 'API Key is required'
+      }
+    ]);
+    apiKey = response.apiKey;
+  }
   
   // Test the API key
   try {
@@ -81,27 +97,13 @@ async function setupEmail() {
       }
     }
     
-    // Update .env file
-    console.log(chalk.gray('\nUpdating environment variables...'));
-    const envPath = path.join(process.cwd(), '.env');
+    // Update .env.local file
+    console.log(chalk.gray('\nUpdating environment variables in .env.local...'));
     const envLocalPath = path.join(process.cwd(), '.env.local');
-    const envExamplePath = path.join(process.cwd(), '.env.example');
     
     let envContent = '';
-    let targetEnvPath = '';
-    
-    // Determine which env file to update
     if (fs.existsSync(envLocalPath)) {
       envContent = fs.readFileSync(envLocalPath, 'utf8');
-      targetEnvPath = envLocalPath;
-    } else if (fs.existsSync(envPath)) {
-      envContent = fs.readFileSync(envPath, 'utf8');
-      targetEnvPath = envPath;
-    } else if (fs.existsSync(envExamplePath)) {
-      envContent = fs.readFileSync(envExamplePath, 'utf8');
-      targetEnvPath = envPath;
-    } else {
-      targetEnvPath = envPath;
     }
     
     // Update or add email variables
@@ -119,8 +121,8 @@ async function setupEmail() {
       }
     });
     
-    fs.writeFileSync(targetEnvPath, envContent);
-    console.log(chalk.green(`Environment variables updated in ${targetEnvPath}`));
+    fs.writeFileSync(envLocalPath, envContent);
+    console.log(chalk.green(`Environment variables updated in .env.local`));
     
     console.log(chalk.green('\nEmail setup complete!'));
     console.log(chalk.blue('Next steps:'));
