@@ -220,7 +220,11 @@ console.log(`Storage limit: ${limits.storageLimit} MB`);
 The `environment.ts` file validates required and optional environment variables:
 
 ```typescript
-export function validateEnvironment(): void {
+export function validateEnvironment(): { 
+  valid: boolean; 
+  missingRequired: string[]; 
+  missingOptional: string[]; 
+} {
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -235,11 +239,22 @@ export function validateEnvironment(): void {
     'EMAIL_FROM',
   ];
 
+  const featureSpecificVars = {
+    enableAI: ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'],
+    enableEmail: ['RESEND_API_KEY', 'EMAIL_FROM'],
+  };
+
   // Validation logic...
+  
+  return {
+    valid: missingRequired.length === 0,
+    missingRequired,
+    missingOptional,
+  };
 }
 ```
 
-This function is automatically called when the application starts, warning you about any missing environment variables.
+This function is automatically called when the application starts, warning you about any missing environment variables. It also returns an object with validation results that can be used programmatically.
 
 ## Quick Setup Configuration
 
