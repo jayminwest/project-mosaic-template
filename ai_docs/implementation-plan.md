@@ -32,6 +32,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create core directories for the new architecture:
     - `/lib/ai` - AI service abstraction
     - `/lib/config` - Configuration system
+    - `/lib/email` - Email service system
     - `/components/marketing` - Marketing components
     - `/components/analytics` - Analytics components
   - [ ] Set up configuration system for project customization
@@ -46,6 +47,21 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Implement `/lib/ai/providers/openai.ts` provider
   - [ ] Create basic prompt management system in `/lib/ai/prompts/index.ts`
   - [ ] Create new generic AI edge function template
+
+- [ ] **Email Service Layer**
+  - [ ] Install required packages (resend, react-email, @react-email/components)
+  - [ ] Create `/lib/email/email-service.ts` with provider-agnostic interface
+  - [ ] Create `/lib/email/templates/index.ts` for template management
+  - [ ] Implement basic email templates:
+    - `/lib/email/templates/components/WelcomeEmail.tsx`
+    - `/lib/email/templates/components/PasswordResetEmail.tsx`
+    - `/lib/email/templates/components/VerificationEmail.tsx`
+  - [ ] Create `/lib/auth/auth-emails.ts` to integrate with auth system
+  - [ ] Update auth hooks to use the email service
+  - [ ] Create setup scripts:
+    - `/scripts/setup-email.ts` - Interactive email configuration
+    - `/scripts/test-email.ts` - Email testing utility
+  - [ ] Update documentation in ai_docs/ and tutorial/ to include email setup
 
 - [ ] **Auth & Payment Services**
   - [ ] Update auth services to be template-ready
@@ -86,20 +102,24 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create architecture overview documentation
   - [ ] Add getting started guide
   - [ ] Develop GLOSSARY.md for quick reference
+  - [ ] Create email configuration documentation
+  - [ ] Update tutorial files with email setup instructions
 
 - [ ] **Developer Tools**
   - [ ] Create setup script for initial project configuration
   - [ ] Add deployment automation script
   - [ ] Create customization guide with examples
+  - [ ] Add email testing and configuration scripts
 
 ## Testing & Validation
 
 - [ ] **Core Testing**
   - [ ] Create template-agnostic test utilities
-  - [ ] Implement tests for core services (AI, Auth, Storage, Payments)
+  - [ ] Implement tests for core services (AI, Auth, Email, Storage, Payments)
   - [ ] Test with different product types as examples
 
 - [ ] **Quality Assurance**
   - [ ] Verify performance metrics
   - [ ] Test accessibility compliance
   - [ ] Perform security audit
+  - [ ] Test email deliverability and template rendering
