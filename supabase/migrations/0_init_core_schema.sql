@@ -69,14 +69,14 @@ begin
     insert into storage.buckets (
       id, 
       name,
-      public,
+      public_access,
       file_size_limit,
       allowed_mime_types
     )
     values (
       'task-attachments',
       'task-attachments',
-      true,
+      'public',
       1000000, -- 1MB in bytes
       array[
         'image/jpeg',
