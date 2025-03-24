@@ -12,7 +12,7 @@ import {
   quickSubscriptionPlans,
   quickStripeConfig,
   quickEmailConfig
-} from '../lib/config/quick-setup.js';
+} from '../lib/config/quick-setup';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -85,7 +85,7 @@ async function main() {
     // Write default-config.ts
     const defaultConfigPath = path.join(configDir, 'default-config.ts');
     const defaultConfigContent = `
-import { ProductConfig } from './types.js';
+import { ProductConfig } from './types';
 
 export const productConfig: ProductConfig = ${JSON.stringify(quickProductConfig, null, 2)};
 `;
@@ -94,7 +94,7 @@ export const productConfig: ProductConfig = ${JSON.stringify(quickProductConfig,
     // Write theme.ts
     const themePath = path.join(configDir, 'theme.ts');
     const themeContent = `
-import { ThemeConfig } from './types.js';
+import { ThemeConfig } from './types';
 
 export const themeConfig: ThemeConfig = ${JSON.stringify(quickThemeConfig, null, 2)};
 `;
@@ -110,7 +110,7 @@ export const featureFlags = ${JSON.stringify(quickFeatureFlags, null, 2)};
     // Write subscription.ts
     const subscriptionPath = path.join(configDir, 'subscription.ts');
     const subscriptionContent = `
-import { SubscriptionPlan } from './types.js';
+import { SubscriptionPlan } from './types';
 
 export const subscriptionPlans: SubscriptionPlan[] = ${JSON.stringify(quickSubscriptionPlans, null, 2)};
 `;

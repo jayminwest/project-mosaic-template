@@ -1,4 +1,4 @@
-import { ThemeConfig } from './types.js';
+import { ThemeConfig } from './types';
 
 export const themeConfig: ThemeConfig = {
   colors: {
@@ -9,6 +9,18 @@ export const themeConfig: ThemeConfig = {
     secondary: {
       light: "#0ea5e9", // Sky
       dark: "#38bdf8",
+    },
+    background: {
+      light: "#ffffff",
+      dark: "#1e293b",
+    },
+    text: {
+      light: "#334155",
+      dark: "#e2e8f0",
+    },
+    accent: {
+      light: "#f97316", // Orange
+      dark: "#fb923c",
     },
   },
   fonts: {

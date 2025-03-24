@@ -22,6 +22,8 @@ export interface FeatureFlags {
   enableAI: boolean;
   enableStorage: boolean;
   enableSharing: boolean;
+  enableAnalytics: boolean;
+  enableMarketing: boolean;
   [key: string]: boolean;
 }
 
@@ -29,7 +31,9 @@ export interface ThemeConfig {
   colors: {
     primary: { light: string; dark: string };
     secondary: { light: string; dark: string };
-    // Other color variables
+    background: { light: string; dark: string };
+    text: { light: string; dark: string };
+    accent: { light: string; dark: string };
   };
   fonts: {
     heading: string;

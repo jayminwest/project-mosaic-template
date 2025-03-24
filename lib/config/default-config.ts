@@ -1,4 +1,4 @@
-import { ProductConfig } from './types.js';
+import { ProductConfig } from './types';
 
 export const productConfig: ProductConfig = {
   name: "Your Product Name",

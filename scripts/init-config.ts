@@ -185,7 +185,7 @@ async function main() {
     // Update default-config.ts
     const defaultConfigPath = path.join(configDir, 'default-config.ts');
     const defaultConfigTemplate = `
-import { ProductConfig } from './types.js';
+import { ProductConfig } from './types';
 
 export const productConfig: ProductConfig = {
   name: "${productAnswers.name}",
@@ -212,7 +212,7 @@ export const productConfig: ProductConfig = {
     // Update subscription.ts
     const subscriptionPath = path.join(configDir, 'subscription.ts');
     const subscriptionTemplate = `
-import { SubscriptionPlan } from './types.js';
+import { SubscriptionPlan } from './types';
 
 export const subscriptionPlans: SubscriptionPlan[] = [
   {

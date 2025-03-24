@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { productConfig, themeConfig, subscriptionPlans, featureFlags } from './index.js';
-import { SubscriptionPlan } from './types.js';
+import { productConfig, themeConfig, subscriptionPlans, featureFlags } from './index';
+import { SubscriptionPlan } from './types';
 
 export function useConfig() {
   const getSubscriptionPlan = useCallback((planId: string): SubscriptionPlan | undefined => {

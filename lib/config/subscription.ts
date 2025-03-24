@@ -1,4 +1,4 @@
-import { SubscriptionPlan } from './types.js';
+import { SubscriptionPlan } from './types';
 
 export const subscriptionPlans: SubscriptionPlan[] = [
   {

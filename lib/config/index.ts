@@ -1,8 +1,8 @@
-import { productConfig } from './default-config.js';
-import { themeConfig } from './theme.js';
-import { subscriptionPlans } from './subscription.js';
-import { featureFlags } from './features.js';
-import { validateEnvironment } from './environment.js';
+import { productConfig } from './default-config';
+import { themeConfig } from './theme';
+import { subscriptionPlans } from './subscription';
+import { featureFlags } from './features';
+import { validateEnvironment } from './environment';
 
 // Validate environment variables on startup
 validateEnvironment();
@@ -12,7 +12,10 @@ export {
   themeConfig,
   subscriptionPlans,
   featureFlags,
+  validateEnvironment,
 };
+
+export { useConfig } from './useConfig';
 
 // Helper function to check if a feature is enabled
 export function isFeatureEnabled(featureName: keyof typeof featureFlags): boolean {
