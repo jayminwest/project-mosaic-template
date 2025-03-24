@@ -13,6 +13,7 @@ Project Mosaic is designed to accelerate the development of micro-SaaS products 
 - **Built-in analytics dashboard** for tracking product performance
 - **Flexible subscription system** with Stripe integration
 - **White-labeling capabilities** for easy customization
+- **Transactional email system** with customizable templates
 
 ## Core Features
 
@@ -21,6 +22,7 @@ Project Mosaic is designed to accelerate the development of micro-SaaS products 
 - **Analytics Dashboard**: Track performance across all your products
 - **Subscription Management**: Multiple pricing tiers with usage limits
 - **White-Labeling System**: Customize branding and appearance
+- **Email Service Layer**: Send transactional emails with React Email templates
 
 ## Tech Stack
 
@@ -29,6 +31,7 @@ Project Mosaic is designed to accelerate the development of micro-SaaS products 
 - **AI Integration**: OpenAI, Anthropic, and more
 - **Payments**: Stripe subscription system
 - **Analytics**: Custom dashboard with key metrics
+- **Email**: Resend with React Email templates
 
 ## Quick Start
 
@@ -105,6 +108,22 @@ supabase functions deploy stripe-webhook
 supabase secrets set OPENAI_API_KEY=your-key
 ```
 
+### Email Setup
+
+1. Create a Resend account at [resend.com](https://resend.com)
+2. Get your API key from the Resend dashboard
+3. Run the setup script:
+
+```bash
+npm run setup-email
+```
+
+4. Test your email configuration:
+
+```bash
+npm run test-email
+```
+
 ### Stripe Setup
 
 1. Create Stripe test account and get API keys
@@ -151,6 +170,8 @@ Add to `.env.local` and `.env.test.local`:
 # Add this to both:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+RESEND_API_KEY=re_...
+EMAIL_FROM=noreply@yourdomain.com
 
 # Only .env.test.local needs these:
 SUPABASE_SERVICE_KEY=your-service-key
