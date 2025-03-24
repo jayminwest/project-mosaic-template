@@ -26,11 +26,17 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
     const isPublicRoute = publicRoutes.includes(pathname);
 
-    if (isLoggedIn && pathname === publicRoute) {
-      router.replace(authenticatedRoute);
-    } else if (!isLoggedIn && !isPublicRoute) {
-      router.replace(publicRoute);
-    } else {
+    try {
+      if (isLoggedIn && pathname === publicRoute) {
+        router.replace(authenticatedRoute);
+      } else if (!isLoggedIn && !isPublicRoute) {
+        router.replace(publicRoute);
+      } else {
+        setIsReady(true);
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // If there's an error, still show the content
       setIsReady(true);
     }
   }, [isLoggedIn, isLoading, pathname, router, publicRoutes, authenticatedRoute, publicRoute]);

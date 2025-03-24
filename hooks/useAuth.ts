@@ -27,12 +27,23 @@ export function useAuth(): UseAuthReturn {
 
     if (newSession?.user) {
       setIsLoading(true);
-      const userProfile = await authService.getUserProfile(
-        newSession.user.id, 
-        newSession.user.email
-      );
-      
-      setUser(userProfile);
+      try {
+        const userProfile = await authService.getUserProfile(
+          newSession.user.id, 
+          newSession.user.email
+        );
+        
+        setUser(userProfile);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        // Create a minimal user object with just the email
+        setUser({
+          email: newSession.user.email,
+          user_id: newSession.user.id,
+          subscription_plan: 'free',
+          usage_metrics: { resources_used: 0, storage_used: 0 }
+        } as User);
+      }
     } else {
       setUser(null);
     }

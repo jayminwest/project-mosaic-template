@@ -3,6 +3,7 @@ create extension if not exists "uuid-ossp";
 create extension if not exists wrappers with schema extensions;
 
 -- User Profile table (extends Supabase auth.users)
+drop table if exists public.profiles;
 create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   name text,
@@ -100,11 +101,13 @@ using (
 grant delete on storage.objects to authenticated;
 
 -- Usage tracking
+drop table if exists public.usage_tracking;
 create table public.usage_tracking (
   user_id uuid references public.profiles on delete cascade,
   year_month text,
   api_calls integer default 0,
   storage_used integer default 0,
+  resources_used integer default 0,
   primary key (user_id, year_month)
 );
 
