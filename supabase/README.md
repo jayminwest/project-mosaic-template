@@ -8,6 +8,11 @@ To reset your local database to match the migrations:
 
 ```bash
 npx supabase db reset
+
+To push your local schema changes to your remote Supabase project:
+```bash
+npx supabase db push
+```
 ```
 
 ## Pushing Changes to Remote
