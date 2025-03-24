@@ -44,37 +44,49 @@ alter table public.profiles enable row level security;
 
 -- Create storage bucket with size and MIME type restrictions
 do $$
+declare
+  bucket_exists boolean;
 begin
-  if exists (
+  -- Check if bucket exists
+  select exists(
     select 1 from storage.buckets where id = 'task-attachments'
-  ) then
-    -- Delete all objects in bucket first
-    delete from storage.objects where bucket_id = 'task-attachments';
-    -- Then delete bucket
-    delete from storage.buckets where id = 'task-attachments';
+  ) into bucket_exists;
+  
+  if bucket_exists then
+    -- Update existing bucket instead of recreating it
+    update storage.buckets
+    set 
+      file_size_limit = 1000000,
+      allowed_mime_types = array[
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+    where id = 'task-attachments';
+  else
+    -- Create new bucket
+    insert into storage.buckets (
+      id, 
+      name,
+      public,
+      file_size_limit,
+      allowed_mime_types
+    )
+    values (
+      'task-attachments',
+      'task-attachments',
+      true,
+      1000000, -- 1MB in bytes
+      array[
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+    );
   end if;
 end $$;
-
--- Create storage bucket with size and MIME type restrictions
-insert into storage.buckets (
-  id, 
-  name,
-  public,
-  file_size_limit,
-  allowed_mime_types
-)
-values (
-  'task-attachments',
-  'task-attachments',
-  true,
-  1000000, -- 1MB in bytes
-  array[
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ]
-);
 
 -- Security policy: Public can view attachments
 drop policy if exists "Public can view attachments" on storage.objects;
