@@ -139,27 +139,27 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Add configuration options for auth providers
   - [x] Integrate with email service
 
-- [x] **Payment Service Abstraction**
+- [ ] **Payment Service Abstraction**
   - [x] Create provider-agnostic interface in `/lib/payment/payment-service.ts`
   - [x] Implement Stripe payment provider using Supabase Edge Functions
-  - [x] Update subscription hooks to use the new abstraction
-  - [x] Add support for tiered pricing
-  - [x] Improve subscription management
+  - [ ] Update subscription hooks to use the new abstraction
+  - [ ] Add support for tiered pricing
+  - [ ] Improve subscription management
 
-- [x] **Service Configuration System**
+- [ ] **Service Configuration System**
   - [x] Create service configuration helpers in `/lib/config/service-config.ts`
   - [x] Add default configurations for auth and payment services
-  - [x] Implement resource limit helpers based on subscription plans
+  - [ ] Implement resource limit helpers based on subscription plans
 
-- [x] **Unified Service Provider**
+- [ ] **Unified Service Provider**
   - [x] Create a service provider in `/lib/services/index.ts`
   - [x] Implement singleton pattern for efficient service management
-  - [x] Add helper functions for accessing services
+  - [ ] Add helper functions for accessing payment services
 
-- [x] **Update Edge Functions**
-  - [x] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
-  - [x] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
-  - [x] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
+- [ ] **Update Edge Functions**
+  - [ ] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
+  - [ ] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
+  - [ ] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
 
 ## Phase 4: Marketing & Analytics Essentials
 
