@@ -48,12 +48,13 @@ export default function Profile() {
                 manageSubscription(session.access_token);
               } else {
                 console.error("No access token available");
+                setError("Authentication error. Please try logging out and back in.");
               }
             }}
-            disabled={!session?.access_token || isLoading}
+            disabled={!session?.access_token || subscriptionLoading}
           >
             <CreditCard className="mr-2 h-4 w-4" />
-            {isLoading ? "Loading..." : "Manage Subscription"}
+            {subscriptionLoading ? "Loading..." : "Manage Subscription"}
           </Button>
         </CardContent>
       </Card>

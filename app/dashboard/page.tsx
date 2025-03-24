@@ -82,7 +82,9 @@ export default function DashboardPage() {
                 <div className="flex justify-between">
                   <span>Resources Used:</span>
                   <span className="font-medium">
-                    {user?.usage_metrics?.resources_used || 0} / 
+                    {user?.usage_metrics?.resources_used !== undefined 
+                      ? user.usage_metrics.resources_used 
+                      : "0"} / 
                     {user?.subscription_plan === "premium" 
                       ? productConfig?.limits?.premium?.resourceLimit || 100
                       : productConfig?.limits?.free?.resourceLimit || 10}
@@ -91,7 +93,9 @@ export default function DashboardPage() {
                 <div className="flex justify-between">
                   <span>Storage Used:</span>
                   <span className="font-medium">
-                    {(user?.usage_metrics?.storage_used || 0).toFixed(2)} MB / 
+                    {user?.usage_metrics?.storage_used !== undefined 
+                      ? (user.usage_metrics.storage_used).toFixed(2) 
+                      : "0.00"} MB / 
                     {user?.subscription_plan === "premium" 
                       ? productConfig?.limits?.premium?.storageLimit || 50
                       : productConfig?.limits?.free?.storageLimit || 5} MB
