@@ -64,6 +64,21 @@ This document outlines the step-by-step implementation plan for transforming the
     - [x] `/scripts/test-email.ts` - Email testing utility ✅
   - [x] Update documentation in ai_docs/ and tutorial/ to include email setup ✅
 
+- [ ] **Supabase Email Integration**
+  - [ ] Enhance `/scripts/setup-email.ts` to guide Supabase SMTP configuration
+  - [ ] Update the email setup script to provide Resend SMTP credentials
+  - [ ] Add instructions for configuring Supabase auth email templates
+  - [ ] Create documentation on dual email approach:
+    - Supabase handles auth emails via Resend SMTP
+    - Custom email service handles transactional emails
+  - [ ] Update tutorial documentation:
+    - Update `/tutorial/7_EMAIL_INTEGRATION.md` with Supabase SMTP setup
+    - Add section on customizing Supabase email templates
+  - [ ] Update AI documentation:
+    - Enhance `/ai_docs/email-configuration.md` with Supabase integration
+    - Update `/ai_docs/email-service-guide.md` to clarify the dual approach
+  - [ ] Create example for sending custom transactional emails
+
 - [ ] **Auth & Payment Services**
   - [ ] Update auth services to be template-ready
   - [ ] Enhance payment services for tiered pricing
