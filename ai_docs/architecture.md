@@ -63,7 +63,13 @@ The Email Service layer provides a clean interface for sending transactional ema
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Marketing Components
+The Email Service has been implemented with:
+- A provider-agnostic interface in `lib/email/email-service.ts`
+- React Email templates in `lib/email/templates/components/`
+- Integration with the auth system via `lib/auth/auth-emails.ts`
+- Configuration and testing utilities in `scripts/setup-email.ts` and `scripts/test-email.ts`
+
+### 3. Marketing Components
 
 Reusable components for quickly creating marketing pages and campaigns:
 
@@ -73,7 +79,7 @@ Reusable components for quickly creating marketing pages and campaigns:
 - SEO optimization tools
 - A/B testing framework
 
-### 3. Analytics & Metrics
+### 4. Analytics & Metrics
 
 Unified dashboard for tracking product performance:
 
@@ -83,7 +89,7 @@ Unified dashboard for tracking product performance:
 - Churn analysis
 - Marketing campaign ROI
 
-### 4. Subscription Management
+### 5. Subscription Management
 
 Flexible subscription system supporting multiple pricing tiers:
 
@@ -98,6 +104,7 @@ Flexible subscription system supporting multiple pricing tiers:
    - Registration/Login via Supabase Auth
    - Profile creation and storage
    - Session management
+   - Email verification and welcome emails
 
 2. **Subscription Flow**
    - Tier selection
@@ -110,6 +117,12 @@ Flexible subscription system supporting multiple pricing tiers:
    - Provider selection and fallback
    - Context management
    - Response processing
+
+4. **Email Communication Flow**
+   - Event triggers (signup, password reset, etc.)
+   - Template selection and rendering
+   - Personalization with user data
+   - Delivery via Resend API
 
 ## Customization Points
 
@@ -124,6 +137,7 @@ Project Mosaic is designed to be easily customized for different product types:
    - Theme customization
    - Logo and imagery
    - Typography and colors
+   - Email templates and styling
 
 3. **AI Configuration**
    - Provider selection
