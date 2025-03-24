@@ -33,16 +33,19 @@ export function useAuth(): UseAuthReturn {
           newSession.user.email
         );
         
-        setUser(userProfile);
+        if (userProfile) {
+          setUser(userProfile);
+        } else {
+          console.error("No user profile found for authenticated user");
+          setUser(null);
+          // Force logout if profile doesn't exist
+          await signOut();
+        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        // Create a minimal user object with just the email
-        setUser({
-          email: newSession.user.email,
-          user_id: newSession.user.id,
-          subscription_plan: 'free',
-          usage_metrics: { resources_used: 0, storage_used: 0 }
-        } as User);
+        setUser(null);
+        // Force logout on error
+        await signOut();
       }
     } else {
       setUser(null);
