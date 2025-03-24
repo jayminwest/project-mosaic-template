@@ -359,7 +359,7 @@ This document outlines the step-by-step implementation plan for transforming the
         });
         
         const response = await this.client.messages.create({
-          model: config?.model || 'claude-3-5-sonnet-latest',
+          model: config?.model || 'claude-3-7-sonnet-latest',
           messages: anthropicMessages,
           max_tokens: config?.maxTokens || 1000,
           temperature: config?.temperature || 0.7,
@@ -391,7 +391,7 @@ This document outlines the step-by-step implementation plan for transforming the
         });
         
         const stream = await this.client.messages.create({
-          model: config?.model || 'claude-3-5-sonnet-latest',
+          model: config?.model || 'claude-3-7-sonnet-latest',
           messages: anthropicMessages,
           max_tokens: config?.maxTokens || 1000,
           temperature: config?.temperature || 0.7,
