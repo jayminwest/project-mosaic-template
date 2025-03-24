@@ -18,6 +18,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Types: `/types/taskManager.ts`
     - Tests: `1_task_crud.test.ts`, `5_task_limits.test.ts`
     - Utilities: `/lib/labels.ts`
+  - [x] Standardize test file naming with proper sequence (01_core, 02_auth, etc.)
   - [x] Clean up tutorial files specific to the task app
   - [x] Standardize micro-SaaS terminology across documentation
 
