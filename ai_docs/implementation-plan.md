@@ -110,26 +110,222 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create example for sending custom transactional emails
 
 - [ ] **Auth & Payment Services**
-  - [ ] Update auth services to be template-ready
-  - [ ] Enhance payment services for tiered pricing
-  - [ ] Create abstraction layers for external services
-  - [ ] Improve subscription management hooks
+  - [ ] Create auth service abstraction in `/lib/auth/auth-service.ts`
+    ```typescript
+    // Provider-agnostic interface
+    export interface AuthProvider {
+      getSession(): Promise<any>;
+      signIn(email: string, password: string): Promise<AuthResponse>;
+      signUp(email: string, password: string): Promise<AuthResponse>;
+      signInWithProvider(provider: string): Promise<AuthResponse>;
+      signOut(): Promise<AuthResponse>;
+      getUserProfile(userId: string, userEmail: string): Promise<User | null>;
+      onAuthStateChange(callback: (session: any) => void): any;
+    }
+    
+    // Factory function to create auth service
+    export function createAuthService(config: AuthConfig = {}): AuthProvider {
+      return new SupabaseAuthProvider(config);
+    }
+    ```
+  
+  - [ ] Create payment service abstraction in `/lib/payment/payment-service.ts`
+    ```typescript
+    // Provider-agnostic interface
+    export interface PaymentProvider {
+      getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+      createCheckoutSession(accessToken: string, priceId?: string): Promise<PaymentResponse>;
+      getCurrentPlan(userId: string): Promise<SubscriptionPlan | undefined>;
+    }
+    
+    // Factory function to create payment service
+    export function createPaymentService(config: PaymentServiceConfig = {}): PaymentProvider {
+      return new StripePaymentProvider(config);
+    }
+    ```
+  
+  - [ ] Create service configuration helpers in `/lib/config/service-config.ts`
+    ```typescript
+    export function getAuthConfig(overrides: Partial<AuthConfig> = {}): AuthConfig {
+      return {
+        redirectUrl: typeof window !== 'undefined' ? window.location.origin : '',
+        providers: ['google', 'github'],
+        ...overrides,
+      };
+    }
+    
+    export function getPaymentConfig(overrides: Partial<PaymentServiceConfig> = {}): PaymentServiceConfig {
+      return {
+        apiUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        successUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?success=true` : '',
+        cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?canceled=true` : '',
+        ...overrides,
+      };
+    }
+    ```
+  
+  - [ ] Create unified service provider in `/lib/services/index.ts`
+    ```typescript
+    export class ServiceProvider {
+      private static instance: ServiceProvider;
+      private authService;
+      private paymentService;
+      
+      public static getInstance(authConfig: AuthConfig = {}, paymentConfig: PaymentServiceConfig = {}): ServiceProvider {
+        if (!ServiceProvider.instance) {
+          ServiceProvider.instance = new ServiceProvider(authConfig, paymentConfig);
+        }
+        return ServiceProvider.instance;
+      }
+      
+      public getAuthService() {
+        return this.authService;
+      }
+      
+      public getPaymentService() {
+        return this.paymentService;
+      }
+    }
+    ```
+  
+  - [ ] Update hooks to use new abstraction layers
+    ```typescript
+    // hooks/useAuth.ts
+    export function useAuth(config: AuthConfig = {}): UseAuthReturn {
+      const authService = createAuthService(config);
+      // Use authService for all auth operations
+    }
+    
+    // hooks/useSubscription.ts
+    export function useSubscription(config: PaymentServiceConfig = {}): UseSubscriptionReturn {
+      const paymentService = createPaymentService(config);
+      // Use paymentService for all subscription operations
+    }
+    ```
 
-## Phase 3: Marketing & Analytics Essentials
+## Phase 3: Auth & Payment Services
 
-- [ ] **Marketing Components**
-  - [ ] Create `/components/marketing/HeroSection.tsx`
-  - [ ] Create `/components/marketing/FeatureSection.tsx`
-  - [ ] Create `/components/marketing/PricingSection.tsx`
-  - [ ] Implement basic welcome email template
+- [ ] **Auth Service Abstraction**
+  - [ ] Create provider-agnostic interface in `/lib/auth/auth-service.ts`
+  - [ ] Implement Supabase auth provider
+  - [ ] Update auth hooks to use the new abstraction
+  - [ ] Add configuration options for auth providers
+  - [ ] Integrate with email service
 
-- [ ] **Analytics Components**
-  - [ ] Create dashboard layout component
-  - [ ] Implement conversion tracking
-  - [ ] Add revenue metrics components
-  - [ ] Create basic user engagement tracking
+  **Implementation Details:**
+  ```typescript
+  // /lib/auth/auth-service.ts
+  export interface AuthProvider {
+    getSession(): Promise<any>;
+    signIn(email: string, password: string): Promise<AuthResponse>;
+    signUp(email: string, password: string): Promise<AuthResponse>;
+    signInWithProvider(provider: string): Promise<AuthResponse>;
+    signOut(): Promise<AuthResponse>;
+    getUserProfile(userId: string, userEmail: string): Promise<User | null>;
+    onAuthStateChange(callback: (session: any) => void): any;
+  }
 
-## Phase 4: Customization Framework
+  // Example usage in hooks/useAuth.ts
+  const authService = createAuthService({
+    redirectUrl: `${window.location.origin}/dashboard`,
+    providers: ['google', 'github']
+  });
+  
+  // Sign in a user
+  const response = await authService.signIn(email, password);
+  if (response.success) {
+    // User signed in successfully
+  }
+  ```
+
+- [ ] **Payment Service Abstraction**
+  - [ ] Create provider-agnostic interface in `/lib/payment/payment-service.ts`
+  - [ ] Implement Stripe payment provider using Supabase Edge Functions
+  - [ ] Update subscription hooks to use the new abstraction
+  - [ ] Add support for tiered pricing
+  - [ ] Improve subscription management
+
+  **Implementation Details:**
+  ```typescript
+  // /lib/payment/payment-service.ts
+  export interface PaymentProvider {
+    getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+    createCheckoutSession(accessToken: string, priceId?: string): Promise<PaymentResponse>;
+    getCurrentPlan(userId: string): Promise<SubscriptionPlan | undefined>;
+  }
+
+  // Example usage in hooks/useSubscription.ts
+  const paymentService = createPaymentService({
+    successUrl: `${window.location.origin}/profile?success=true`,
+    cancelUrl: `${window.location.origin}/profile?canceled=true`
+  });
+  
+  // Get subscription plans
+  const plans = await paymentService.getSubscriptionPlans();
+  
+  // Create checkout session
+  const response = await paymentService.createCheckoutSession(accessToken, priceId);
+  if (response.success) {
+    window.location.href = response.url;
+  }
+  ```
+
+- [ ] **Service Configuration System**
+  - [ ] Create service configuration helpers in `/lib/config/service-config.ts`
+  - [ ] Add default configurations for auth and payment services
+  - [ ] Implement resource limit helpers based on subscription plans
+
+  **Implementation Details:**
+  ```typescript
+  // /lib/config/service-config.ts
+  export function getAuthConfig(overrides: Partial<AuthConfig> = {}): AuthConfig {
+    return {
+      redirectUrl: typeof window !== 'undefined' ? window.location.origin : '',
+      providers: ['google', 'github'],
+      ...overrides,
+    };
+  }
+
+  export function getPaymentConfig(overrides: Partial<PaymentServiceConfig> = {}): PaymentServiceConfig {
+    return {
+      apiUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?success=true` : '',
+      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?canceled=true` : '',
+      ...overrides,
+    };
+  }
+  ```
+
+- [ ] **Unified Service Provider**
+  - [ ] Create a service provider in `/lib/services/index.ts`
+  - [ ] Implement singleton pattern for efficient service management
+  - [ ] Add helper functions for accessing services
+
+  **Implementation Details:**
+  ```typescript
+  // /lib/services/index.ts
+  export function getServiceProvider(
+    authConfig: AuthConfig = {}, 
+    paymentConfig: PaymentServiceConfig = {}
+  ): ServiceProvider {
+    return ServiceProvider.getInstance(authConfig, paymentConfig);
+  }
+
+  // Example usage in a component
+  const services = getServiceProvider();
+  const authService = services.getAuthService();
+  const paymentService = services.getPaymentService();
+  
+  // Sign in a user
+  const response = await authService.signIn(email, password);
+  ```
+
+- [ ] **Update Edge Functions**
+  - [ ] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
+  - [ ] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
+  - [ ] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
+
+## Phase 4: Marketing & Analytics Essentials
 
 - [ ] **Theme & Branding**
   - [ ] Implement theme configuration system
