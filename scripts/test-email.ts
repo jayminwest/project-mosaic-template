@@ -1,4 +1,4 @@
-import { emailService } from '../lib/email/email-service';
+import { emailService } from '../lib/email/email-service.js';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
