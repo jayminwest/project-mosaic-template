@@ -48,20 +48,7 @@ insert into storage.buckets (id, name)
 values ('app-storage', 'app-storage')
 on conflict (id) do nothing;
 
--- Then update the bucket properties if it exists
-update storage.buckets
-set 
-  file_size_limit = 5000000, -- 5MB in bytes
-  allowed_mime_types = array[
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-    'text/plain',
-    'application/json'
-  ]
-where id = 'app-storage';
+-- Note: Skipping bucket property updates as they're not supported in this version
 
 -- Log the operation
 do $$
