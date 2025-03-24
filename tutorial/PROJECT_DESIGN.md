@@ -1,105 +1,109 @@
-# Task App: Project Spec
+# Project Mosaic: Template Design
 
-TaskApp is a task management SaaS application built with Next.js and Supabase. It provides users with a clean interface to manage their tasks, complete with AI-powered task labeling and image attachments.
+Project Mosaic is a framework for rapidly developing multiple micro-SaaS products. This document outlines the architecture and design principles of the template that serves as the foundation for all products built within Project Mosaic.
 
 ![image-task-app-architecture.png](images/image-task-app-architecture.png)
 
-## App Views
+## Core Architecture
 
-User can log in with Google or email/password.
+The template is built on a modern stack optimized for rapid development and scalability:
 
-![image-login](images/task-login.png)
+- **Frontend**: Next.js with React and Tailwind CSS
+- **Backend/Database**: Supabase (PostgreSQL, Authentication, Storage)
+- **Deployment**: Vercel
+- **Payments**: Stripe
+- **Analytics**: Plausible/Google Analytics
+- **AI Integration**: Provider-agnostic interfaces for multiple AI services
 
-If logged in, users will be re-directed to the dashboard.
+## Template Features
 
-![image-dashboard](images/task-dashboard.png)
-
-Users can create a new task.
-
-![image-new-task](images/task-new.png)
-
-Users can also edit an existing one.
-
-![image-edit-task](images/task-page.png)
-
-On the Profile page, users can view their usage, manage their premium subscription, or log out.
-
-![image-profile](images/task-profile.png)
-
-## Product Features
-
-A list of key product features, and the key technology used to implement it.
-
-| Feature              | Description                                                            | Tech           |
-| -------------------- | ---------------------------------------------------------------------- | -------------- |
-| Task CRUD            | Can create, update and delete tasks.                                   | Database       |
-| Task Details         | Tasks can have details like: title, description, due date.             | Database       |
-| Image Attachments    | An image of up to 1MB can be attached to a task.                       | Storage        |
-| User System          | Users can log in with email or Google.                                 | Auth           |
-| User Auth            | Tasks are protected by authorization.                                  | Auth           |
-| AI Labels            | Use AI to generate automatic labels (tags) upon task creation.         | Edge Functions |
-| Usage Limits         | Task creation is limited to 100 tasks for free users, 10k for premium. | DB Triggers    |
-| Premium Subscription | Users can upgrade to premium for $10 / month.                          | Stripe         |
+| Feature                | Description                                                      | Technology                |
+|------------------------|------------------------------------------------------------------|---------------------------|
+| Authentication         | Email/password and social login                                  | Supabase Auth             |
+| User Management        | Profile creation and management                                  | Database + Triggers       |
+| Subscription System    | Tiered pricing with free and premium plans                       | Stripe + DB Triggers      |
+| Storage                | Secure file uploads with access control                          | Supabase Storage          |
+| AI Integration         | Provider-agnostic AI service layer                               | Edge Functions            |
+| Usage Tracking         | Monitor and limit resource usage based on subscription           | DB Triggers               |
+| White-labeling         | Customizable branding and theming                                | Tailwind + Config System  |
+| Analytics              | User behavior and conversion tracking                            | Analytics Hooks           |
 
 ## Data Model
 
-### Profiles Table
+### Core Tables
+
+#### Profiles Table
 
 | Column             | Type    | Description                            |
-| ------------------ | ------- | -------------------------------------- |
-| user_id            | uuid    | Primary key, references auth.users(id) |
-| name               | text    | User's display name                    |
-| subscription_plan  | text    | User's plan (free/premium)             |
-| tasks_limit        | integer | Task creation limit (100/10000)        |
-| stripe_customer_id | text    | Stripe customer identifier             |
+|--------------------|---------|-----------------------------------------|
+| user_id            | uuid    | Primary key, references auth.users(id)  |
+| name               | text    | User's display name                     |
+| subscription_plan  | text    | User's plan (free/premium)              |
+| usage_limit        | integer | Resource usage limit based on plan      |
+| stripe_customer_id | text    | Stripe customer identifier              |
 
-### Tasks Table
-
-| Column      | Type      | Description                     |
-| ----------- | --------- | ------------------------------- |
-| task_id     | uuid      | Primary key                     |
-| user_id     | uuid      | Foreign key to profiles.user_id |
-| title       | text      | Task title (required)           |
-| description | text      | Task description                |
-| image_url   | text      | URL to attached image           |
-| label       | text      | Task label (work/personal/etc)  |
-| due_date    | timestamp | When task is due                |
-| completed   | boolean   | Whether task is completed       |
-
-### Usage Tracking Table
+#### Usage Tracking Table
 
 | Column        | Type    | Description                              |
-| ------------- | ------- | ---------------------------------------- |
+|---------------|---------|------------------------------------------|
 | user_id       | uuid    | Foreign key to profiles.user_id          |
 | year_month    | text    | Month of tracking (YYYY-MM format)       |
-| tasks_created | integer | Number of tasks created in current month |
+| usage_count   | integer | Number of resources used in current month|
 
-## Premium Model
+### Product-Specific Tables
 
-The premium subscription ($10/month) includes a 14-day trial and is managed through Stripe integration.
+Each product will extend the core data model with its own tables. For example, a content calendar might add:
 
-Each user automatically gets a Stripe customer ID on sign-up, with subscription changes handled through webhooks. When users upgrade, their task limit increases from 100 to 10,000 tasks per month.
+```sql
+CREATE TABLE public.content_items (
+  item_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  content TEXT,
+  status TEXT DEFAULT 'draft',
+  scheduled_date TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+```
 
-Cancellations are processed through Stripe's billing portal, automatically reverting users to the free tier (when the actual subscription expires). The entire subscription lifecycle is automated through database triggers and webhook handlers.
+## Subscription Model
 
-The "Manage Subscription" button will take the user to either the check out page (if they have never subscribed before), or to the billing portal where they can manage, cancel, or renew.
+The template includes a complete subscription system with:
+
+- Free tier with usage limits
+- Premium tier(s) with higher limits
+- 14-day trial period for premium features
+- Automated subscription lifecycle management
+- Customer portal for subscription management
 
 ## Edge Functions
 
-| Function              | Description                                                                             |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| create-task-with-ai   | Creates tasks and uses AI to automatically generate labels for them.                    |
-| create-stripe-session | Creates Stripe checkout/billing portal sessions for premium subscriptions.              |
-| stripe-webhook        | Handles Stripe webhook events for subscription management (begin or end subscriptions). |
+| Function                  | Description                                                   |
+|---------------------------|---------------------------------------------------------------|
+| create-stripe-session     | Creates checkout/portal sessions for subscription management  |
+| list-subscription-plans   | Returns available subscription plans and pricing              |
+| stripe-webhook            | Processes Stripe events (subscriptions, payments, etc.)       |
+| ai-service                | Provider-agnostic AI service endpoint                         |
 
-## Database Triggers
+## Customization System
 
-| Trigger Name                               | What it Does                                                                      |
-| ------------------------------------------ | --------------------------------------------------------------------------------- |
-| on_auth_user_created                       | Creates a new profile in profiles table when a user signs up.                     |
-| create_stripe_customer_on_profile_creation | Creates a Stripe customer for the user and saves the Stripe ID.                   |
-| delete_stripe_customer_on_profile_deletion | Deletes the associated Stripe customer when a profile is deleted.                 |
-| cleanup_storage_on_task_delete             | Deletes any attached image from storage when a task is deleted.                   |
-| increment_task_count_after_insert          | Increments the monthly task counter in usage tracking when a new task is created. |
-| enforce_task_limit                         | Checks if creating a new task would exceed the user's monthly limit.              |
-| update_task_limit                          | Updates the task limit when subscription changes.                                 |
+The template is designed to be easily customized for different product types through:
+
+1. **Configuration Files**: Central configuration for product-specific settings
+2. **Theme System**: Customizable colors, typography, and layout
+3. **Feature Flags**: Toggle features on/off without code changes
+4. **Content Management**: Easily update marketing copy and product information
+
+## Development Workflow
+
+Project Mosaic enables a rapid development workflow:
+
+1. **Fork Template**: Start with the base template
+2. **Configure Product**: Set product name, branding, and subscription tiers
+3. **Add Product Tables**: Create database schema for product-specific data
+4. **Implement Features**: Build product-specific functionality
+5. **Deploy**: Launch on Vercel with Supabase backend
+6. **Iterate**: Collect feedback and improve
+
+This template serves as the foundation for building 6-9 profitable micro-SaaS products over a 12-week period, with the goal of generating $3,000+ in monthly recurring revenue.

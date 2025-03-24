@@ -1,116 +1,162 @@
-# Tutorial 2: User Authentication
+# Tutorial 2: Authentication and User Management
 
-Every SaaS app needs to have user authentication. This will let us implement security boundaries (e.g. Alice can't read Bob's data), and other thing that are important to our business (like usage tracking, payments, account recovery, etc).
+This tutorial implements authentication and user management for your Project Mosaic product. We'll set up both social and email authentication, configure security policies, and implement the necessary client-side hooks.
 
-The goal of this tutorial is to implement authentication for our SaaS.
+## Authentication Objectives
 
-### Objectives
+- **Social Login**: Implement Google OAuth for frictionless onboarding
+- **Email/Password**: Provide traditional authentication as an alternative
+- **Security Policies**: Ensure users can only access their own data
+- **Profile Management**: Automatically create and manage user profiles
+- **Route Protection**: Redirect unauthenticated users to login
 
-- **Google Integration (OAuth)**: Managing our own auth is hard. I generally recommend to just use some other 3rd party (like Google) and hook it into our system. This way we don't need to deal with things like password recovery and privacy policies around user data.
-- **Email/Password**: We'll implement these in our project as well for learning purposes. But I wouldn't normally enable this in a production system, unless it was big enough or had a good reason to have it.
-- **User/Auth Triggers**: Wire up our DB so a new profile is created whenever a new "auth user" enters our system. Inversely, make sure that profiles/tasks are deleted when their owning auth user is deleted.
-- **Database Security**: Set security boundaries for tasks and profiles. Users cannot edit their profile information (we control that). Users can CRUD their own tasks. Add security policies and enable "Row Level Security" to our tables.
-- **Auth Based Routing**: Our app should re-direct to the login page if the user is not signed in. Otherwise, go to the dashboard.
+## Configure Supabase Authentication
 
-## Enable Auth in Supabase
+### Email Authentication Setup
 
-### Email Auth Setup
+1. Go to your Supabase Dashboard → Authentication → Providers
+2. Under the "Email" tab:
+   - Ensure it's enabled
+   - For development, you can disable "Confirm email" (enable in production)
+   - Save changes
 
-1. Go to Supabase Dashboard > Authentication > Providers.
-2. Click "Email" tab (it should already be enabled).
-3. Disable "Confirm email".
-4. Save changes.
-
-We disabled the "confirmation email" so it's easier to test. But if you want to use it in production, it's probably good to have it on. You'll just have to modify the tests to work with that.
-
-### Google Auth Setup
+### Google Authentication Setup
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create new project or select existing.
-3. Enable Google OAuth API: Go to **API and Services > Credentials**.
+2. Create a new project or select an existing one
+3. Navigate to API and Services → Credentials
 4. Create OAuth credentials:
-   - Application type: `Web application`.
-   - Add authorized redirect URI: `https://[PROJECT_ID].supabase.co/auth/v1/callback`.
-5. Copy Client ID and Secret
-6. In Supabase **Dashboard > Authentication > Providers**:
-   - Click "Google" tab.
-   - Enable provider.
-   - Paste Client ID and Secret.
-   - Save changes.
+   - Application type: Web application
+   - Add authorized redirect URI: `https://[YOUR-PROJECT-ID].supabase.co/auth/v1/callback`
+   - Add your production domain if available
+5. Copy the Client ID and Client Secret
+6. In Supabase Dashboard → Authentication → Providers:
+   - Click the "Google" tab
+   - Enable the provider
+   - Paste your Client ID and Client Secret
+   - Save changes
 
-## Apply Auth SQL Migrations
+## Apply Authentication Migrations
 
-Next we need to apply some changes to our database. You'll find all the changes in `supabase/migrations/2_init_auth.sql`.
+The template includes a migration file `supabase/migrations/2_init_auth.sql` that sets up:
 
-- Trigger to automatically create a new **profile** whenever a new user signs up (or joins from OAuth).
-- Security policy so that users can only _read_ their profile (but not modify it). This is because we want to later store usage and subscription information in the profile.
-- Security policy so that users can perform any CRUD operations on their own tasks.
-- Row Level Security: the `user_id` of a row has to match the authenticated user for them to be able to perform any operations (including read) on it.
-- A index based on `user_id` and `created_at` time. This is an optimization so that when users view X most recent tasks on their dashboard, it's a fast query.
+- Automatic profile creation when users sign up
+- Row-level security policies for user data
+- Indexes for optimized queries
 
-Apply all migrations (you can optionally reset it as well, to clear all previous data).
-
-```sh
-supabase db reset --linked
-```
-
-### Test User Creation Trigger
-
-At this stage, you can quickly test the user creation trigger. Go to your Supabase dashboard **Authentication > Add User > Create New User** and create one.
-
-This will create a user in Supabase's built-in **Users** (auth.users) table. This is not the same as our profile table.
-
-But we _did_ create a trigger so that a new profile will be created whenever a new `auth.user` is created.
-
-Go to your table and verify that a new profile was automatically created: **Table Editor > Profiles**.
-
-## Implementing Auth Hooks
-
-Now that the backend (Supabase, Google) providers are set up, and the database is updated, we can implement the client side hooks for logging in.
-
-#### Changes `hooks/useAuth.ts`
-
-- Add Supabase client.
-- Implement these hooks using the Supabase client:
-  - handleSignup
-  - handleLogin
-  - handleGoogleLogin
-  - signOut
-  - fetchUserProfile
-- Set up the initial session/state in a `useEffect` hook.
-
-#### Changes `hooks/useTaskManager.ts`
-
-- Use `supabase.auth.getSession()` to find the auth session (and therefore user ID).
-- Add `user_id` to our create and fetch queries, so users can only create and view their own tasks—complying with our security policies.
-
-## Implement Route Guard
-
-In this project, we are using 100% client side routing. To enable this, we wrap a component around all our pages to re-direct based on the user's authentication status.
-
-This is implemented in `components/RouteGuard.tsx`, which is then used in our `app/layout.tsx`:
-
-```jsx
-// Wrap all content with the RouteGuard.
-<RouteGuard>{children}</RouteGuard>
-```
-
-The RouteGuard itself defines some routing logic:
-
-- If the page is NOT a **public route** (`/`) then check if the user is authenticated.
-- If the user is NOT authenticated, re-direct to the **default public route** (the login page).
-- If the user IS authenticated, but is visiting the login page, just re-direct them immediately to the **default authenticated route** (which is the `/dashboard`).
-
-Basically, force the user to the login page (index page) if they are not logged in. Otherwise, make the index page re-direct to the dashboard page.
-
-## Testing
-
-The integration tests have been now updated to have utility functions for creating and deleting test users.
-
-You will need the Supabase service client to do this, so update your `.env.test.local` to also have the Supabase secret key, which you can find in your Supabase dashboard: **Project Settings > API > API Keys > `service_role` `secret`**.
+Apply the migration:
 
 ```sh
-SUPABASE_SERVICE_KEY="XXXX"
+supabase db push
 ```
 
-Auth tests are in `tests/integration/2_auth.test.ts`. The CRUD tests were also updated to use a test user, and some utility functions.
+Verify it worked by creating a test user in the Supabase dashboard (Authentication → Users → Add User) and checking that a profile was automatically created in the Profiles table.
+
+## Customize Authentication for Your Product
+
+The template includes a complete `useAuth` hook in `hooks/useAuth.ts`. Review this implementation to understand how it:
+
+1. Manages authentication state
+2. Handles login, signup, and logout
+3. Fetches user profile data
+4. Integrates with the route guard
+
+You may need to customize this hook based on your product's specific requirements:
+
+```typescript
+// Example customization: Add additional profile fields
+const fetchUserProfile = async (userId: string, userEmail: string) => {
+  try {
+    // Get profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*, product_specific_settings(*)")  // Add your product-specific joins
+      .eq("user_id", userId)
+      .single();
+      
+    if (profileError) throw profileError;
+    
+    // Combine with user email
+    setUser({
+      ...profileData,
+      email: userEmail,
+      // Add any product-specific transformations
+    });
+  } catch (error: any) {
+    console.error("Error fetching user profile:", error.message);
+    setError(error.message);
+  }
+};
+```
+
+## Implement Product-Specific Security Policies
+
+For your product-specific tables, add appropriate security policies:
+
+```sql
+-- Example for a content calendar product
+ALTER TABLE public.content_items ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read their own content
+CREATE POLICY "Users can read their own content" 
+  ON public.content_items FOR SELECT 
+  USING (auth.uid() = user_id);
+
+-- Users can only insert their own content
+CREATE POLICY "Users can insert their own content" 
+  ON public.content_items FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+-- Similar policies for UPDATE and DELETE
+```
+
+## Customize the Route Guard
+
+The template includes a `RouteGuard` component that protects authenticated routes. Review `components/RouteGuard.tsx` to understand how it:
+
+1. Checks authentication status
+2. Redirects unauthenticated users to login
+3. Redirects authenticated users away from public routes
+
+You may need to customize the public routes array for your product:
+
+```typescript
+// Add your product-specific public routes
+const PUBLIC_ROUTES = [
+  "/",
+  "/pricing",
+  "/features",
+  "/about",
+  // Add any other public routes
+];
+
+// Update the default authenticated route if needed
+const DEFAULT_AUTHENTICATED_ROUTE = "/dashboard";
+```
+
+## Testing Authentication
+
+Run the authentication tests to verify your setup:
+
+```sh
+npm test tests/integration/2_auth.test.ts
+```
+
+Make sure your `.env.test.local` file includes the Supabase service role key:
+
+```
+SUPABASE_SERVICE_KEY="your-service-role-key"
+```
+
+You can find this key in your Supabase dashboard under Project Settings → API → API Keys → `service_role` key.
+
+## Next Steps
+
+With authentication in place, you can now:
+
+1. Create product-specific pages that require authentication
+2. Implement user profile settings specific to your product
+3. Add role-based access control if your product requires it
+4. Customize the login and signup experience with your branding
+
+In the next tutorial, we'll implement file storage for your product.

@@ -1,113 +1,316 @@
-# Tutorial 4: Usage Limits (Triggers)
+# Tutorial 5: Usage Limits and Subscription Tiers
 
-If we want to be able to have free/premium tiers based on app usage, we'll need a way to track customer usage, and to limit access based on that.
+This tutorial guides you through implementing usage tracking and limits for your Project Mosaic product. We'll create a system that enforces different usage limits based on subscription tiers.
 
-The goal of this section is to implement usage limits and enforcement for task creation:
+## Usage Tracking Objectives
 
-* Free users can create 100 tasks per month
-* Premium users can create 10,000 tasks per month.
+- **Tiered Usage Limits**: Implement different resource limits for free and premium users
+- **Usage Tracking**: Monitor resource consumption without destructive resets
+- **Limit Enforcement**: Prevent users from exceeding their plan's limits
+- **Subscription-Based Limits**: Automatically adjust limits when users upgrade or downgrade
 
-## Usage Tracking Strategy
+## Understanding the Usage Tracking Strategy
 
-One possible way to track usage is by using a field in the user's profile (e.g. `tasks_created`), which is reset once a month. It's a simpler model, but I have two issues with that: 
+The template uses a scalable approach to usage tracking:
 
-1. Resetting usage to 0 is a destructive operation (we lose history of previous month usage).
-2. It doesn't scale well with number of users (even inactive ones).
+1. **Separate Usage Table**: Tracks usage with a composite primary key of `(user_id, year_month)`
+2. **Non-Destructive Tracking**: Preserves historical usage data by month
+3. **Automatic Enforcement**: Uses database triggers to enforce limits
+4. **Subscription Integration**: Automatically updates limits when subscription changes
 
-So instead, I've decided to use a separate table to store usage information. It will use a primary key of `(user_id, year_month)`, so for any given month, we can instantly check a customer's usage in O(1) time. We also don't need to reset the counters, because over time the `year_month` portion will already serve that function for us. Data will accumulate over time, but it's likely not going to be our scaling bottleneck.
+## Apply Usage Tracking Migrations
 
-## SQL Migration: Usage Tracking Table
+The template includes migration files for usage tracking:
 
-First, we will create a new table to track task usage (see `supabase/migrations/4_init_usage_tracking.sql`).
+1. `supabase/migrations/4_init_usage_tracking.sql`: Creates the usage tracking table
+2. `supabase/migrations/5_init_usage_limit_triggers.sql`: Implements limit enforcement
+3. `supabase/migrations/6_init_account_tier_triggers.sql`: Updates limits based on subscription
 
-```sql
-create table public.usage_tracking (
-  user_id uuid references public.profiles on delete cascade,
-  year_month text,
-  tasks_created integer default 0,
-  primary key (user_id, year_month)
-);
+Apply these migrations:
+
+```sh
+supabase db push
 ```
 
-We also also apply some rules and triggers:
+## Customize for Your Product
 
-* Users can read their own usage tracking data (to show how many tasks they've used), but cannot modify it themselves. Only the service role (our server) will be able to modify it.
-* Whenever a user creates a task, the usage value for that period (YYYY-MM) is incremented.
+Modify the usage tracking system for your specific product:
 
-## SQL Migration: Task Limits
+1. Create a new migration file `supabase/migrations/10_product_usage_tracking.sql`:
 
-Our next migration `supabase/migrations/5_init_task_limit_triggers.sql` will enforce that when a user is at their limit, they are not able to create new tasks.
+```sql
+-- Update the usage_tracking table to include your product-specific metrics
+ALTER TABLE public.usage_tracking 
+ADD COLUMN IF NOT EXISTS your_product_metric integer DEFAULT 0;
 
-It will query the `usage_tracking` table for the current's month usage, and compare it against the `tasks_limit` that we store in the user's `profiles` table.
+-- Create a function to increment your product metric
+CREATE OR REPLACE FUNCTION increment_product_metric()
+RETURNS TRIGGER AS $$
+DECLARE
+  current_month TEXT;
+  current_usage INT;
+  user_limit INT;
+BEGIN
+  -- Get current month in YYYY-MM format
+  current_month := to_char(now(), 'YYYY-MM');
+  
+  -- Get user's limit from profiles
+  SELECT usage_limit INTO user_limit
+  FROM public.profiles
+  WHERE user_id = NEW.user_id;
+  
+  -- Get current usage for this month
+  SELECT COALESCE(your_product_metric, 0) INTO current_usage
+  FROM public.usage_tracking
+  WHERE user_id = NEW.user_id AND year_month = current_month;
+  
+  -- If no record exists yet, current_usage will be null
+  IF current_usage IS NULL THEN
+    current_usage := 0;
+  END IF;
+  
+  -- Check if creating this would exceed the limit
+  IF current_usage >= user_limit THEN
+    RAISE EXCEPTION 'Usage limit exceeded for the current month';
+  END IF;
+  
+  -- Increment the usage counter
+  INSERT INTO public.usage_tracking (user_id, year_month, your_product_metric)
+  VALUES (NEW.user_id, current_month, 1)
+  ON CONFLICT (user_id, year_month)
+  DO UPDATE SET your_product_metric = public.usage_tracking.your_product_metric + 1;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-## SQL Migration: Account Tier Triggers
+-- Create a trigger to increment the counter when a new item is created
+CREATE TRIGGER increment_product_metric_after_insert
+AFTER INSERT ON your_product_table
+FOR EACH ROW
+EXECUTE FUNCTION increment_product_metric();
+```
 
-Finally, we will create a trigger so that whenever the user's `subscription_plan` field changes, it will also update the limit. This way, if we want to implement any free/premium products, we only need to worry about changing one field in one place.
+2. Apply the migration:
 
-* Changing from `free` to `premium` sets `tasks_limit` to `10_000`.
-* Changing from `premium` to `free` sets `tasks_limit` to `100`.
+```sh
+supabase db push
+```
 
-This is a simple, straightforward trigger. But it does have some opportunities for extension. For example, what happens when the user's subscription expires mid-month (e.g. mid April)? The `tasks_created` are bucketed into months, so they might have 500 tasks created so far, and then suddenly see their limit reset to 100, making them unable to create tasks for the rest of April. 
+## Update the Auth Hook
 
-One easy solution is to also make the trigger reset `tasks_created` to 0. But that would that cause any secondary issues?
+Modify the `useAuth` hook to fetch and display usage information:
+
+```typescript
+// In hooks/useAuth.ts
+const fetchUserProfile = async (userId: string, userEmail: string) => {
+  try {
+    // Get current month in YYYY-MM format
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    
+    // Query profile and usage data in parallel
+    const [profileResponse, usageResponse] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", userId).single(),
+      supabase
+        .from("usage_tracking")
+        .select("*")  // Select all columns to get your product metric
+        .eq("user_id", userId)
+        .eq("year_month", currentMonth)
+        .maybeSingle(),
+    ]);
+    
+    if (profileResponse.error) throw profileResponse.error;
+    
+    // Combine profile and usage data
+    setUser({
+      ...profileResponse.data,
+      email: userEmail,
+      // Add your product-specific usage metric
+      product_usage: usageResponse.data?.your_product_metric || 0,
+    });
+  } catch (error: any) {
+    console.error("Error fetching user profile:", error.message);
+    setError(error.message);
+  }
+};
+```
+
+## Create a Usage Display Component
+
+Create a component to display usage information:
+
+```tsx
+// components/UsageDisplay.tsx
+import { useAuth } from "@/hooks/useAuth";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function UsageDisplay() {
+  const { user } = useAuth();
+  
+  if (!user) return null;
+  
+  const usageLimit = user.usage_limit || 100;
+  const currentUsage = user.product_usage || 0;
+  const usagePercentage = Math.min((currentUsage / usageLimit) * 100, 100);
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Usage</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between text-sm">
+            <span>
+              {currentUsage} / {usageLimit} {user.subscription_plan === "premium" ? "Premium" : "Free"}
+            </span>
+            <span>{Math.round(usagePercentage)}%</span>
+          </div>
+          
+          <Progress value={usagePercentage} className="h-2" />
+          
+          {usagePercentage >= 80 && (
+            <p className="text-sm text-amber-500">
+              You're approaching your usage limit for this month.
+              {user.subscription_plan !== "premium" && " Consider upgrading to Premium."}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## Add Usage Limit Handling in Your Product Service
+
+Update your product service to handle usage limit errors:
+
+```typescript
+// In hooks/useProductService.ts
+const createItem = async (title: string, content: string) => {
+  try {
+    setIsLoading(true);
+    setError(null);
+    
+    const { data, error } = await supabase
+      .from("your_product_table")
+      .insert({ title, content })
+      .select();
+      
+    if (error) {
+      // Check for usage limit error
+      if (error.message.includes("Usage limit exceeded")) {
+        setError("You've reached your usage limit for this month. Please upgrade your plan to continue.");
+      } else {
+        setError(error.message);
+      }
+      return null;
+    }
+    
+    return data;
+  } catch (err: any) {
+    setError(err.message);
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
 
 ## Testing
 
-New integration tests for task limits and premium/free tiers are created in `tests/integration/5_task_limits.test.ts`. We want to test these specific cases:
+Create tests for your usage limits in `tests/integration/5_usage_limits.test.ts`:
 
-* Free user can create tasks (when within limit).
-* Free user cannot exceed free task limit (100).
-* Premium user can exceed free tier limit.
-* Premium user cannot exceed premium task limit (10,000).
+```typescript
+import { createClient } from "@supabase/supabase-js";
+import { getOrCreateTestUser, cleanupTestUser } from "../test-utils/user-testing-utils";
+import { setUserSubscriptionTier, setProductUsageCount } from "../test-utils/limit-testing-utils";
 
-We've also added a utility file (`tests/test-utils/limit-testing-utils.ts`) to override values for user subscriptions and task usage (requires the Supabase service role).
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-```sh
-# Run the test suite.
-npm test tests/integration/5_task_limits.test.ts
-```
+describe("Usage Limits", () => {
+  const testUser = {
+    email: "test-limits-user@example.com",
+    password: "Test123!@#",
+  };
+  let userId: string;
 
-This far into the application, I find it's easier to validate application logic via integration tests first. Once you know it's working, then you can implement it with the rest of the app.
+  beforeAll(async () => {
+    const user = await getOrCreateTestUser(testUser);
+    userId = user.id!;
+    
+    // Sign in as the test user
+    await supabase.auth.signInWithPassword({
+      email: testUser.email,
+      password: testUser.password,
+    });
+  }, 15000);
 
-## Update `useAuth` Hook
+  afterAll(async () => {
+    await cleanupTestUser(userId);
+  }, 15000);
 
-The `` hook is responsible for fetching data about a user's profile (include their usage and limits). We need to update it to get data from the new table as well.
+  test("free user can create items within limit", async () => {
+    // Set user to free tier
+    await setUserSubscriptionTier(userId, "free");
+    
+    // Reset usage count
+    await setProductUsageCount(userId, 0);
+    
+    // Create an item
+    const { data, error } = await supabase
+      .from("your_product_table")
+      .insert({ title: "Test Item", content: "Test content" })
+      .select();
+      
+    expect(error).toBeNull();
+    expect(data).not.toBeNull();
+  });
 
-```tsx
-// Query the profile and usage data in parallel.
-const [profileResponse, usageResponse] = await Promise.all([
-    supabase.from("profiles").select("*").eq("user_id", userId).single(),
-    supabase
-        .from("usage_tracking")
-        .select("tasks_created")
-        .eq("user_id", userId)
-        .eq("year_month", new Date().toISOString().slice(0, 7))
-        .maybeSingle(),
-]);
-```
+  test("free user cannot exceed usage limit", async () => {
+    // Set user to free tier
+    await setUserSubscriptionTier(userId, "free");
+    
+    // Set usage to limit
+    await setProductUsageCount(userId, 100);
+    
+    // Try to create another item
+    const { error } = await supabase
+      .from("your_product_table")
+      .insert({ title: "Limit Test", content: "This should fail" });
+      
+    expect(error).not.toBeNull();
+    expect(error!.message).toContain("Usage limit exceeded");
+  });
 
-```tsx
-// Combine them to display the profile and curren usage.
-setUser({
-    ...profileResponse.data,
-    email: userEmail,
-    tasks_created: usageResponse.data?.tasks_created || 0,
+  test("premium user can exceed free tier limit", async () => {
+    // Set user to premium tier
+    await setUserSubscriptionTier(userId, "premium");
+    
+    // Set usage to just above free tier limit
+    await setProductUsageCount(userId, 101);
+    
+    // Create an item
+    const { data, error } = await supabase
+      .from("your_product_table")
+      .insert({ title: "Premium Test", content: "This should work" })
+      .select();
+      
+    expect(error).toBeNull();
+    expect(data).not.toBeNull();
+  });
 });
 ```
 
-Now when you go back and test the app on `localhost` and go to the **Profile** page you should see the task usage (tasks created) updated whenever you create a new task.
-
-If you want to test the UX for when a user is at their limit, just comment out the `afterAll` method in `tests/integration/5_task_limits.test.ts` and run a single test to create a user with exceeded limits.
+Run the tests:
 
 ```sh
-npm test tests/integration/5_task_limits.test.ts -- -t "free user cannot exceed task limit"
+npm test tests/integration/5_usage_limits.test.ts
 ```
 
-Then just go and log in using the test user's credential.
-
-```tsx
-const TEST_USER_FRANK = {
-  email: "test-user.frank@pixegami.io",
-  password: "Test123!@#Frank",
-};
-```
+This tutorial provides a foundation for implementing usage limits in your Project Mosaic product. The system automatically tracks usage, enforces limits based on subscription tier, and provides a good user experience by showing usage information and appropriate upgrade prompts.
