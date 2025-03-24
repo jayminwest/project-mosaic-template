@@ -43,15 +43,43 @@ using (auth.uid() = user_id);
 alter table public.profiles enable row level security;
 
 -- Create storage bucket with size and MIME type restrictions
-insert into storage.buckets
-  (id, name, public, file_size_limit, allowed_mime_types)
-values
-  ('task-attachments', 'task-attachments', true, 1000000, array[
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ]);
+do $$
+declare
+  bucket_id text := 'task-attachments';
+  bucket_exists boolean;
+begin
+  -- Check if bucket exists
+  select exists(
+    select 1 from storage.buckets where id = bucket_id
+  ) into bucket_exists;
+  
+  if not bucket_exists then
+    -- Create bucket with proper parameters
+    insert into storage.buckets (
+      id, 
+      name,
+      public,
+      file_size_limit,
+      allowed_mime_types
+    )
+    values (
+      bucket_id,
+      bucket_id,
+      true,
+      1000000, -- 1MB in bytes
+      array[
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+    );
+    
+    raise notice 'Created storage bucket: %', bucket_id;
+  else
+    raise notice 'Storage bucket already exists: %', bucket_id;
+  end if;
+end $$;
 
 -- Security policy: Public can view attachments
 drop policy if exists "Public can view attachments" on storage.objects;
