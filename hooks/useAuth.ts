@@ -101,6 +101,7 @@ export function useAuth(): UseAuthReturn {
 
   const handleSignup = async () => {
     clearError();
+    setIsLoading(true);
     try {
       const response = await authService.signUp(email, password);
       
@@ -117,6 +118,8 @@ export function useAuth(): UseAuthReturn {
     } catch (error: any) {
       setError(error.message);
       console.error("Error signing up:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -114,7 +114,32 @@ class SupabaseAuthProvider implements AuthProvider {
           .maybeSingle(),
       ]);
 
-      if (profileResponse.error) throw profileResponse.error;
+      if (profileResponse.error) {
+        console.error("Profile fetch error:", profileResponse.error);
+        
+        // If the profile doesn't exist yet, try to create it
+        if (profileResponse.error.code === 'PGRST116') {
+          // Create a basic profile for the user
+          const { data: newProfile, error: createError } = await this.supabase
+            .from("profiles")
+            .insert([{ user_id: userId, name: userEmail.split('@')[0] }])
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error("Error creating profile:", createError);
+            throw createError;
+          }
+          
+          return {
+            ...newProfile,
+            email: userEmail,
+            usage_metrics: {},
+          };
+        } else {
+          throw profileResponse.error;
+        }
+      }
 
       return {
         ...profileResponse.data,

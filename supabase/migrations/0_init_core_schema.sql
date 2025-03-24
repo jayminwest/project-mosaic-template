@@ -180,22 +180,41 @@ set search_path = public
 as $$
 declare
   customer_email text;
+  stripe_enabled boolean := false;
 begin
-  -- Get user email
-  select email into customer_email
-  from auth.users
-  where id = new.user_id;
+  -- Check if Stripe is properly configured
+  begin
+    -- Test if we can access the stripe schema
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
 
-  -- Create Stripe customer
-  insert into stripe.customers (email, name)
-  values (customer_email, new.name);
-  
-  -- Get the created customer ID from Stripe
-  select id into new.stripe_customer_id
-  from stripe.customers
-  where email = customer_email
-  order by created desc
-  limit 1;
+  -- Only proceed with Stripe customer creation if Stripe is enabled
+  if stripe_enabled then
+    -- Get user email
+    select email into customer_email
+    from auth.users
+    where id = new.user_id;
+
+    -- Create Stripe customer
+    begin
+      insert into stripe.customers (email, name)
+      values (customer_email, new.name);
+      
+      -- Get the created customer ID from Stripe
+      select id into new.stripe_customer_id
+      from stripe.customers
+      where email = customer_email
+      order by created desc
+      limit 1;
+    exception when others then
+      -- Log error but continue with user creation
+      raise notice 'Failed to create Stripe customer: %', SQLERRM;
+    end;
+  end if;
   
   return new;
 end;
