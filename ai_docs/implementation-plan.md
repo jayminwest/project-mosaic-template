@@ -29,6 +29,12 @@ This document outlines the step-by-step implementation plan for transforming the
     - `/lib/labels.ts` - Task labeling utilities
   - [ ] Clean up tutorial files specific to the task app
 
+- [x] **Database Schema Restructuring**
+  - [x] Combine core Supabase migrations into a single initialization file
+  - [x] Update database schema to be more generic and reusable
+  - [x] Update types to match the exact database structure
+  - [x] Refine subscription plan structure for better extensibility
+
 - [ ] **Restructure Project**
   - [ ] Create core directories for the new architecture
   - [ ] Set up configuration system for project customization
