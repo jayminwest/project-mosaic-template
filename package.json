@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "setup-email": "NODE_OPTIONS=--experimental-specifier-resolution=node ts-node --esm scripts/setup-email.ts",
-    "test-email": "NODE_OPTIONS=--experimental-specifier-resolution=node ts-node --esm scripts/test-email.ts"
+    "setup-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm scripts/setup-email.ts",
+    "test-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm scripts/test-email.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.2",
