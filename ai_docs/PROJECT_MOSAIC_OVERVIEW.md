@@ -2,7 +2,7 @@
 
 ## What is Project Mosaic?
 
-Project Mosaic is a 12-week initiative to rapidly develop, launch, and iterate on multiple micro-SaaS products. The goal is to build 6-9 profitable products that collectively generate $3,000+ in monthly recurring revenue, creating a portfolio of small pieces that together form something valuable.
+Project Mosaic is a 12-week initiative to rapidly develop, launch, and iterate on multiple micro-SaaS products. The goal is to build 6-9 profitable micro-SaaS products that collectively generate $3,000+ in monthly recurring revenue, creating a portfolio of small pieces that together form something valuable.
 
 ## Core Strategy
 

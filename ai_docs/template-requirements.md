@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the requirements for adapting the Task App SaaS template to serve as the foundation for Project Mosaic - a 12-week initiative to build multiple micro-SaaS products rapidly. The template must support quick deployment of diverse products while maintaining high quality and scalability.
+This document outlines the requirements for adapting the Task App micro-SaaS template to serve as the foundation for Project Mosaic - a 12-week initiative to build multiple micro-SaaS products rapidly. The template must support quick deployment of diverse micro-SaaS products while maintaining high quality and scalability.
 
 ## Core Objectives
 

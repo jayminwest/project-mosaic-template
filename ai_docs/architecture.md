@@ -164,7 +164,7 @@ Project Mosaic is designed to support a rapid development workflow:
    - Configure AI capabilities
 
 2. **Customization** (2-3 days)
-   - Implement product-specific features
+   - Implement micro-SaaS-specific features
    - Customize UI and branding
    - Configure pricing tiers
 
