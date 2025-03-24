@@ -39,6 +39,8 @@ async function testEmail() {
   try {
     let result;
     
+    let result = { success: false, error: 'Unknown error', messageId: '' };
+    
     switch (template) {
       case 'welcome':
         result = await emailService.sendEmail({
@@ -98,9 +100,9 @@ async function testEmail() {
       console.log(chalk.red('Failed to send test email'));
       console.log(chalk.gray(result.error));
     }
-  } catch (error) {
+  } catch (error: any) {
     console.log(chalk.red('Error sending test email:'));
-    console.log(chalk.gray(error.message));
+    console.log(chalk.gray(error?.message || 'Unknown error occurred'));
   }
 }
 

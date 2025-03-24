@@ -128,9 +128,9 @@ async function setupEmail() {
     console.log(chalk.gray('2. Test email functionality with the test command:'));
     console.log(chalk.gray('   npm run test-email'));
     
-  } catch (error) {
+  } catch (error: any) {
     console.log(chalk.red('Error setting up email:'));
-    console.log(chalk.gray(error.message));
+    console.log(chalk.gray(error?.message || 'Unknown error occurred'));
   }
 }
 
