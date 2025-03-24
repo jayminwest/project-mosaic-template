@@ -61,6 +61,21 @@ class SupabaseAuthProvider implements AuthProvider {
 
   async signUp(email: string, password: string): Promise<AuthResponse> {
     try {
+      // First check if the user already exists
+      const { data: existingUser } = await this.supabase.auth.signInWithPassword({
+        email,
+        password: password + '_check_existence_only', // Use an intentionally wrong password
+      });
+      
+      // If we get a user back, it means the email exists
+      if (existingUser?.user) {
+        return { 
+          success: false, 
+          error: "An account with this email already exists. Please sign in instead." 
+        };
+      }
+      
+      // Proceed with signup
       const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
@@ -69,7 +84,17 @@ class SupabaseAuthProvider implements AuthProvider {
         },
       });
 
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        // Handle specific error cases
+        if (error.message.includes("User already registered")) {
+          return { 
+            success: false, 
+            error: "An account with this email already exists. Please sign in instead." 
+          };
+        }
+        
+        return { success: false, error: error.message };
+      }
       
       // Even if signup appears successful, check if the user was actually created
       if (!data?.user?.id) {

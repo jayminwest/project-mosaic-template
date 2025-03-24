@@ -182,9 +182,20 @@ set search_path = public
 as $$
 declare
   customer_email text;
+  stripe_enabled boolean;
 begin
+  -- Check if Stripe is properly configured
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
+
   -- Skip Stripe integration if not configured
-  if not public.is_stripe_configured() then
+  if not stripe_enabled then
     return new;
   end if;
 
@@ -216,15 +227,11 @@ $$ language plpgsql;
 -- Conditionally create the trigger only if Stripe is configured
 drop trigger if exists create_stripe_customer_on_profile_creation on public.profiles;
 
-do $$
-begin
-  if public.is_stripe_configured() then
-    execute 'create trigger create_stripe_customer_on_profile_creation
-      before insert on public.profiles
-      for each row
-      execute function public.handle_stripe_customer_creation()';
-  end if;
-end $$;
+-- Create the trigger but make the function handle the Stripe configuration check
+create trigger create_stripe_customer_on_profile_creation
+  before insert on public.profiles
+  for each row
+  execute function public.handle_stripe_customer_creation();
 
 -- Function to handle Stripe customer deletion
 create or replace function public.handle_stripe_customer_deletion()
@@ -232,9 +239,21 @@ returns trigger
 security definer
 set search_path = public
 as $$
+declare
+  stripe_enabled boolean;
 begin
+  -- Check if Stripe is properly configured
+  begin
+    -- Test if we can access the stripe schema and customers table
+    perform 1 from stripe.customers limit 1;
+    stripe_enabled := true;
+  exception when others then
+    -- If there's an error, Stripe is not properly configured
+    stripe_enabled := false;
+  end;
+
   -- Skip Stripe integration if not configured
-  if not public.is_stripe_configured() then
+  if not stripe_enabled then
     return old;
   end if;
 
@@ -253,15 +272,11 @@ $$ language plpgsql;
 -- Conditionally create the trigger only if Stripe is configured
 drop trigger if exists delete_stripe_customer_on_profile_deletion on public.profiles;
 
-do $$
-begin
-  if public.is_stripe_configured() then
-    execute 'create trigger delete_stripe_customer_on_profile_deletion
-      before delete on public.profiles
-      for each row
-      execute function public.handle_stripe_customer_deletion()';
-  end if;
-end $$;
+-- Create the trigger but make the function handle the Stripe configuration check
+create trigger delete_stripe_customer_on_profile_deletion
+  before delete on public.profiles
+  for each row
+  execute function public.handle_stripe_customer_deletion();
 
 -- Security policy: Users can read their own Stripe data
 drop policy if exists "Users can read own Stripe data" on public.profiles;
