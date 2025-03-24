@@ -4,28 +4,28 @@ This document outlines the step-by-step implementation plan for transforming the
 
 ## Phase 0: Template Cleanup & Preparation
 
-- [ ] **Remove Unnecessary Files**
-  - [ ] Clean up Supabase migration files that won't be reused:
+- [x] **Remove Unnecessary Files**
+  - [x] Clean up Supabase migration files that won't be reused:
     - `/supabase/migrations/1_init_tasks.sql` - Task-specific schema
     - `/supabase/migrations/5_init_task_limit_triggers.sql` - Task-specific limits
     - `/supabase/migrations/6_init_account_tier_triggers.sql` - Task-specific tier logic
-  - [ ] Remove task-specific edge functions:
+  - [x] Remove task-specific edge functions:
     - `/supabase/functions/create-task-with-ai/index.ts` - Task-specific AI function
-  - [ ] Remove task-specific components:
+  - [x] Remove task-specific components:
     - `/components/CreateTaskForm.tsx`
     - `/components/TaskList.tsx`
     - `/components/TaskRow.tsx`
-  - [ ] Remove task-specific pages:
+  - [x] Remove task-specific pages:
     - `/app/task/page.tsx` - Task detail page
     - `/app/dashboard/page.tsx` - Task dashboard
-  - [ ] Remove task-specific hooks:
+  - [x] Remove task-specific hooks:
     - `/hooks/useTaskManager.ts` - Task management logic
-  - [ ] Remove task-specific types:
+  - [x] Remove task-specific types:
     - `/types/taskManager.ts`
-  - [ ] Remove task-specific tests:
+  - [x] Remove task-specific tests:
     - `/tests/integration/1_task_crud.test.ts`
     - `/tests/integration/5_task_limits.test.ts`
-  - [ ] Remove task-specific utilities:
+  - [x] Remove task-specific utilities:
     - `/lib/labels.ts` - Task labeling utilities
   - [ ] Clean up tutorial files specific to the task app
 
