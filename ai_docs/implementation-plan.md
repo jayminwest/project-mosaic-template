@@ -2,31 +2,22 @@
 
 This document outlines the step-by-step implementation plan for transforming the Task App into a template for Project Mosaic.
 
-## Phase 0: Template Cleanup & Preparation
+## Phase 1: Template Cleanup & Core Structure
 
-- [x] **Remove Unnecessary Files**
-  - [x] Clean up Supabase migration files that won't be reused:
-    - `/supabase/migrations/1_init_tasks.sql` - Task-specific schema
-    - `/supabase/migrations/5_init_task_limit_triggers.sql` - Task-specific limits
-    - `/supabase/migrations/6_init_account_tier_triggers.sql` - Task-specific tier logic
+- [x] **Remove Task-Specific Components**
+  - [x] Clean up Supabase migration files:
+    - `/supabase/migrations/1_init_tasks.sql`
+    - `/supabase/migrations/5_init_task_limit_triggers.sql`
+    - `/supabase/migrations/6_init_account_tier_triggers.sql`
   - [x] Remove task-specific edge functions:
-    - `/supabase/functions/create-task-with-ai/index.ts` - Task-specific AI function
-  - [x] Remove task-specific components:
-    - `/components/CreateTaskForm.tsx`
-    - `/components/TaskList.tsx`
-    - `/components/TaskRow.tsx`
-  - [x] Remove task-specific pages:
-    - `/app/task/page.tsx` - Task detail page
-    - `/app/dashboard/page.tsx` - Task dashboard
-  - [x] Remove task-specific hooks:
-    - `/hooks/useTaskManager.ts` - Task management logic
-  - [x] Remove task-specific types:
-    - `/types/taskManager.ts`
-  - [x] Remove task-specific tests:
-    - `/tests/integration/1_task_crud.test.ts`
-    - `/tests/integration/5_task_limits.test.ts`
-  - [x] Remove task-specific utilities:
-    - `/lib/labels.ts` - Task labeling utilities
+    - `/supabase/functions/create-task-with-ai/index.ts`
+  - [x] Remove task-specific components, pages, hooks, and types:
+    - Components: `CreateTaskForm.tsx`, `TaskList.tsx`, `TaskRow.tsx`
+    - Pages: `/app/task/page.tsx`, `/app/dashboard/page.tsx`
+    - Hooks: `/hooks/useTaskManager.ts`
+    - Types: `/types/taskManager.ts`
+    - Tests: `1_task_crud.test.ts`, `5_task_limits.test.ts`
+    - Utilities: `/lib/labels.ts`
   - [ ] Clean up tutorial files specific to the task app
 
 - [x] **Database Schema Restructuring**
@@ -35,198 +26,78 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Update types to match the exact database structure
   - [x] Refine subscription plan structure for better extensibility
 
-- [ ] **Restructure Project**
-  - [ ] Create core directories for the new architecture
+- [ ] **Core Project Structure**
+  - [ ] Create core directories for the new architecture:
+    - `/lib/ai` - AI service abstraction
+    - `/lib/config` - Configuration system
+    - `/components/marketing` - Marketing components
+    - `/components/analytics` - Analytics components
   - [ ] Set up configuration system for project customization
-  - [ ] Create placeholder directories for templates
-  - [ ] Update environment variable structure
+  - [ ] Update environment variable structure with better documentation
+  - [ ] Create placeholder dashboard page
 
-- [ ] **Update Documentation**
-  - [ ] Revise README.md to reflect Project Mosaic purpose
-  - [ ] Update setup instructions for the template
-  - [ ] Create template usage guide
-  - [ ] Document customization points
+## Phase 2: Essential Service Layers
 
-## Phase 1: AI Service Abstraction Layer
-
-- [ ] **Core AI Service Interface**
+- [ ] **AI Service Layer**
   - [ ] Create `/lib/ai/core/types.ts` with base interfaces
   - [ ] Create `/lib/ai/core/ai-service.ts` with provider-agnostic interface
-  - [ ] Create `/lib/ai/core/ai-service-factory.ts` for provider instantiation
-
-- [ ] **AI Providers**
   - [ ] Implement `/lib/ai/providers/openai.ts` provider
-  - [ ] Implement `/lib/ai/providers/anthropic.ts` provider
-
-- [ ] **Prompt Management System**
-  - [ ] Create `/lib/ai/prompts/index.ts` with prompt registry
-  - [ ] Create `/lib/ai/prompts/content-generation.ts` for marketing content
-  - [ ] Create `/lib/ai/prompts/seo-optimization.ts` for SEO content
-
-- [ ] **Context Management**
-  - [ ] Implement `/lib/ai/context/conversation.ts` for maintaining history
-  - [ ] Add context persistence in `/lib/ai/context/storage.ts`
-
-- [ ] **Fallback Mechanisms**
-  - [ ] Create `/lib/ai/core/fallback.ts` for handling service unavailability
-  - [ ] Implement automatic retry and provider switching
-
-- [ ] **Edge Function Updates**
+  - [ ] Create basic prompt management system in `/lib/ai/prompts/index.ts`
   - [ ] Create new generic AI edge function template
-  - [ ] Add environment variables for AI configuration
 
-## Phase 2: Marketing Components
+- [ ] **Auth & Payment Services**
+  - [ ] Update auth services to be template-ready
+  - [ ] Enhance payment services for tiered pricing
+  - [ ] Create abstraction layers for external services
+  - [ ] Improve subscription management hooks
 
-- [ ] **Landing Page Components**
+## Phase 3: Marketing & Analytics Essentials
+
+- [ ] **Marketing Components**
   - [ ] Create `/components/marketing/HeroSection.tsx`
   - [ ] Create `/components/marketing/FeatureSection.tsx`
   - [ ] Create `/components/marketing/PricingSection.tsx`
-  - [ ] Create `/components/marketing/TestimonialSection.tsx`
-  - [ ] Create `/components/marketing/CTASection.tsx`
-  - [ ] Create `/components/marketing/FAQSection.tsx`
+  - [ ] Implement basic welcome email template
 
-- [ ] **Email Templates**
-  - [ ] Create `/components/marketing/email/WelcomeEmail.tsx`
-  - [ ] Create `/components/marketing/email/OnboardingEmail.tsx`
-  - [ ] Create `/components/marketing/email/NewsletterEmail.tsx`
+- [ ] **Analytics Components**
+  - [ ] Create dashboard layout component
+  - [ ] Implement conversion tracking
+  - [ ] Add revenue metrics components
+  - [ ] Create basic user engagement tracking
 
-- [ ] **Social Media Components**
-  - [ ] Create `/components/marketing/social/TwitterCard.tsx`
-  - [ ] Create `/components/marketing/social/LinkedInPost.tsx`
-  - [ ] Create `/components/marketing/social/FacebookCard.tsx`
+## Phase 4: Customization Framework
 
-- [ ] **SEO Components**
-  - [ ] Create `/components/marketing/seo/MetaTags.tsx`
-  - [ ] Create `/components/marketing/seo/SiteMap.tsx`
-  - [ ] Create `/components/marketing/seo/StructuredData.tsx`
-
-## Phase 3: Analytics & Metrics Dashboard
-
-- [ ] **Dashboard Components**
-  - [ ] Create `/components/analytics/DashboardLayout.tsx`
-  - [ ] Create `/components/analytics/MetricsCard.tsx`
-  - [ ] Create `/components/analytics/MetricsGrid.tsx`
-
-- [ ] **Conversion Tracking**
-  - [ ] Create `/components/analytics/ConversionFunnel.tsx`
-  - [ ] Create `/lib/analytics/conversion-tracking.ts`
-
-- [ ] **Revenue Metrics**
-  - [ ] Create `/components/analytics/RevenueChart.tsx`
-  - [ ] Create `/components/analytics/MRRBreakdown.tsx`
-  - [ ] Create `/components/analytics/ChurnAnalysis.tsx`
-
-- [ ] **User Engagement**
-  - [ ] Create `/components/analytics/UserEngagement.tsx`
-  - [ ] Create `/components/analytics/RetentionHeatmap.tsx`
-  - [ ] Create `/lib/analytics/engagement-scoring.ts`
-
-- [ ] **Marketing ROI**
-  - [ ] Create `/components/analytics/MarketingROI.tsx`
-  - [ ] Create `/components/analytics/CampaignPerformance.tsx`
-  - [ ] Create `/lib/analytics/roi-calculator.ts`
-
-## Phase 4: White-Labeling & Customization
-
-- [ ] **Theme System**
+- [ ] **Theme & Branding**
   - [ ] Create `/lib/config/theme.ts` for theme configuration
-  - [ ] Create `/lib/config/theme-provider.tsx` for theme context
-  - [ ] Create `/components/admin/ThemeEditor.tsx` for visual customization
+  - [ ] Implement theme provider context
+  - [ ] Add configuration for logo and brand assets
 
-- [ ] **Branding Customization**
-  - [ ] Create `/lib/config/branding.ts` for logo and brand assets
-  - [ ] Create `/components/admin/BrandingEditor.tsx` for brand management
-
-- [ ] **Feature Flags**
-  - [ ] Create `/lib/config/features.ts` for feature toggling
-  - [ ] Create `/components/admin/FeatureManager.tsx` for enabling/disabling features
-
-- [ ] **Custom Domain Configuration**
-  - [ ] Create `/lib/config/domains.ts` for domain management
-  - [ ] Create `/components/admin/DomainSettings.tsx` for domain configuration
-
-- [ ] **Legal Document Templates**
-  - [ ] Create `/templates/legal/PrivacyPolicy.md`
-  - [ ] Create `/templates/legal/TermsOfService.md`
-  - [ ] Create `/templates/legal/CookiePolicy.md`
+- [ ] **Legal & Configuration**
+  - [ ] Create basic legal document templates:
+    - `/templates/legal/PrivacyPolicy.md`
+    - `/templates/legal/TermsOfService.md`
+  - [ ] Add feature flag system for enabling/disabling features
 
 ## Phase 5: Developer Experience
 
-- [ ] **AI-Centric Documentation**
-  - [ ] Create `/docs/architecture/overview.md`
-  - [ ] Create `/docs/architecture/ai-service.md`
-  - [ ] Create `/docs/guides/getting-started.md`
-  - [ ] Create `/docs/guides/customization.md`
-  - [ ] Create `/docs/GLOSSARY.md`
+- [ ] **Documentation**
+  - [ ] Create architecture overview documentation
+  - [ ] Add getting started guide
+  - [ ] Develop GLOSSARY.md for quick reference
 
-- [ ] **Specialized Prompts**
-  - [ ] Create `/docs/prompts/development.md`
-  - [ ] Create `/docs/prompts/debugging.md`
-  - [ ] Create `/docs/prompts/feature-creation.md`
-
-- [ ] **Code Generation Utilities**
-  - [ ] Create `/lib/dev/code-generator.ts`
-  - [ ] Create `/lib/dev/component-generator.ts`
-  - [ ] Create `/lib/dev/api-generator.ts`
-
-- [ ] **Deployment Scripts**
-  - [ ] Create `/scripts/setup.js` for initial project setup
-  - [ ] Create `/scripts/deploy.js` for deployment automation
-  - [ ] Create `/scripts/customize.js` for template customization
-
-## Phase 6: Project Structure Reorganization
-
-- [ ] **Core Services**
-  - [ ] Create `/core/ai/index.ts` exporting AI services
-  - [ ] Create `/core/auth/index.ts` exporting auth services
-  - [ ] Create `/core/storage/index.ts` exporting storage services
-  - [ ] Create `/core/payments/index.ts` exporting payment services
-  - [ ] Create `/core/analytics/index.ts` exporting analytics services
-
-- [ ] **UI Components**
-  - [ ] Reorganize components into `/ui/components`
-  - [ ] Create `/ui/layouts` for page layouts
-  - [ ] Move marketing components to `/ui/marketing`
-
-- [ ] **Templates**
-  - [ ] Move task app components to `/templates/task-app`:
-    - Task-specific components (CreateTaskForm, TaskList, TaskRow)
-    - Task-specific pages (dashboard, task detail)
-    - Task-specific hooks (useTaskManager)
-    - Task-specific types and utilities
-  - [ ] Create skeleton for `/templates/blog`
-  - [ ] Create skeleton for `/templates/crm`
-
-- [ ] **Configuration**
-  - [ ] Create `/config/project.ts` for project-wide settings
-  - [ ] Create `/config/environment.ts` for environment variables
-  - [ ] Create `/config/validation.ts` for configuration validation
+- [ ] **Developer Tools**
+  - [ ] Create setup script for initial project configuration
+  - [ ] Add deployment automation script
+  - [ ] Create customization guide with examples
 
 ## Testing & Validation
 
-- [ ] **Create New Test Framework**
-  - [ ] Replace task-specific tests with template-agnostic tests
-  - [ ] Create generic test utilities to replace task-specific ones
+- [ ] **Core Testing**
+  - [ ] Create template-agnostic test utilities
   - [ ] Implement tests for core services (AI, Auth, Storage, Payments)
+  - [ ] Test with different product types as examples
 
-- [ ] **Test with Different Product Types**
-  - [ ] Test with content tool (e.g., content calendar)
-  - [ ] Test with marketing tool (e.g., testimonial collector)
-  - [ ] Test with developer tool (e.g., API documentation generator)
-  - [ ] Test with productivity tool (e.g., meeting notes app)
-  - [ ] Test with business tool (e.g., invoice generator)
-
-- [ ] **Performance Testing**
-  - [ ] Verify initial load under 2 seconds
-  - [ ] Verify interactions under 100ms
-  - [ ] Test mobile responsiveness
-
-- [ ] **Accessibility Testing**
-  - [ ] Verify WCAG 2.1 AA compliance
-  - [ ] Test with screen readers
-  - [ ] Test keyboard navigation
-
-- [ ] **Security & Privacy**
-  - [ ] Perform OWASP security audit
-  - [ ] Verify GDPR/CCPA compliance
-  - [ ] Test data isolation between tenants
+- [ ] **Quality Assurance**
+  - [ ] Verify performance metrics
+  - [ ] Test accessibility compliance
+  - [ ] Perform security audit
