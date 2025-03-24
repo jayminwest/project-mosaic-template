@@ -12,17 +12,11 @@ import {
   Button 
 } from '@react-email/components';
 
-interface InvitationEmailProps {
-  inviterName?: string;
-  productName?: string;
-  inviteLink: string;
-}
-
-export const InvitationEmail = ({
+const InvitationEmail = ({
   inviterName = 'Someone',
   productName = 'Our Product',
   inviteLink,
-}: InvitationEmailProps) => {
+}) => {
   return (
     <Html>
       <Head />
@@ -89,7 +83,7 @@ const linkText = {
   fontSize: '14px',
   margin: '20px 0',
   lineHeight: '1.5',
-  wordBreak: 'break-all' as const,
+  wordBreak: 'break-all',
 };
 
 const buttonContainer = {
@@ -102,7 +96,7 @@ const button = {
   color: '#fff',
   fontSize: '16px',
   textDecoration: 'none',
-  textAlign: 'center' as const,
+  textAlign: 'center',
   display: 'block',
   padding: '12px',
 };

@@ -12,17 +12,11 @@ import {
   Button 
 } from '@react-email/components';
 
-interface WelcomeEmailProps {
-  username?: string;
-  productName?: string;
-  actionUrl?: string;
-}
-
-export const WelcomeEmail = ({
+const WelcomeEmail = ({
   username = 'there',
   productName = 'Our Product',
   actionUrl = 'https://example.com/dashboard',
-}: WelcomeEmailProps) => {
+}) => {
   return (
     <Html>
       <Head />
@@ -89,7 +83,7 @@ const button = {
   color: '#fff',
   fontSize: '16px',
   textDecoration: 'none',
-  textAlign: 'center' as const,
+  textAlign: 'center',
   display: 'block',
   padding: '12px',
 };

@@ -12,15 +12,10 @@ import {
   Button 
 } from '@react-email/components';
 
-interface VerificationEmailProps {
-  verificationLink: string;
-  productName?: string;
-}
-
-export const VerificationEmail = ({
+const VerificationEmail = ({
   verificationLink,
   productName = 'Our Product',
-}: VerificationEmailProps) => {
+}) => {
   return (
     <Html>
       <Head />
@@ -87,7 +82,7 @@ const linkText = {
   fontSize: '14px',
   margin: '20px 0',
   lineHeight: '1.5',
-  wordBreak: 'break-all' as const,
+  wordBreak: 'break-all',
 };
 
 const buttonContainer = {
@@ -100,7 +95,7 @@ const button = {
   color: '#fff',
   fontSize: '16px',
   textDecoration: 'none',
-  textAlign: 'center' as const,
+  textAlign: 'center',
   display: 'block',
   padding: '12px',
 };
