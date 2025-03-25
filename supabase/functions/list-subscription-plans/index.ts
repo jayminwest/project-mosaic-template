@@ -97,8 +97,19 @@ serve(async (req) => {
   }
   
   // Check for authorization
-  const authHeader = req.headers.get("apikey") || req.headers.get("Authorization");
-  if (!authHeader) {
+  const apiKey = req.headers.get("apikey");
+  const authHeader = req.headers.get("Authorization");
+  
+  // Extract token from Authorization header (Bearer token)
+  let token = null;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  }
+  
+  // Use either apikey header or token from Authorization header
+  const authToken = apiKey || token;
+  
+  if (!authToken) {
     // Log headers for debugging
     console.log("Headers received:", Object.fromEntries(req.headers.entries()));
     
@@ -114,7 +125,7 @@ serve(async (req) => {
     );
   }
   
-  console.log("Auth header found:", authHeader.substring(0, 10) + "...");
+  console.log("Auth token found:", authToken.substring(0, 10) + "...");
 
   try {
     // Fetch all active products with their prices
