@@ -7,7 +7,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
-import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 export default function DashboardPage() {
@@ -20,7 +19,6 @@ export default function DashboardPage() {
     return (
       <>
         <div className="flex flex-col min-h-screen">
-          <Header />
           <main className="flex-grow container mx-auto px-4 py-8">
             <LoadingSkeleton count={3} />
           </main>
@@ -34,7 +32,6 @@ export default function DashboardPage() {
     return (
       <>
         <div className="flex flex-col min-h-screen">
-          <Header />
           <main className="flex-grow container mx-auto px-4 py-8">
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
               <h1 className="text-2xl font-bold mb-4">Please log in to access your dashboard</h1>
@@ -55,7 +52,6 @@ export default function DashboardPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen">
-      <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
