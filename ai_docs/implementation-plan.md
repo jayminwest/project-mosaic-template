@@ -274,7 +274,14 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure Stripe products are created with proper metadata including `plan_type`
     - Add comprehensive logging in Edge Functions to debug issues
     - Enhance the price-to-plan mapping in the webhook handler
-  - **Status**: ✅ Verified - Edge Function is working correctly, products need to be configured in Stripe
+  - **Status**: ⚠️ Partially Resolved - Edge Function returns empty plans array despite products being created in Stripe
+
+- **Subscription Plans Test Script Issue**: The test-subscription-plans script shows "No subscription plans found" despite plans being created in Stripe.
+  - **Solution**:
+    - Debug the list-subscription-plans Edge Function to ensure it correctly fetches and formats Stripe products
+    - Verify that product metadata is being properly set during plan creation
+    - Add additional logging to trace the flow from Stripe API to response
+  - **Status**: 🔄 In Progress - Need to fix the Edge Function or product configuration
 
 ## Testing & Validation
 
