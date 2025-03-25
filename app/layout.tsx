@@ -15,6 +15,8 @@ export default function RootLayout({
       <head>
         <title>Project Mosaic - Build Micro-SaaS Products Faster</title>
         <meta name="description" content="A powerful framework for building micro-SaaS products quickly and efficiently. Launch your next product in days, not months." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={`${inter.className} min-h-screen bg-background`}>
         <div className="flex flex-col min-h-screen">
