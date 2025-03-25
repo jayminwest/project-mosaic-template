@@ -12,6 +12,7 @@ import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -91,13 +92,23 @@ export default function LoginPage() {
   return (
     <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
       <Card className="w-full max-w-md mx-auto">
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
+        <div className="w-full">
+          <div className="flex w-full mb-4 border-b">
+            <button 
+              onClick={() => setActiveTab("login")}
+              className={`flex-1 py-2 text-center font-medium ${activeTab === "login" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+            >
+              Login
+            </button>
+            <button 
+              onClick={() => setActiveTab("signup")}
+              className={`flex-1 py-2 text-center font-medium ${activeTab === "signup" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+            >
+              Sign Up
+            </button>
+          </div>
           
-          <TabsContent value="login">
+          {activeTab === "login" && (
             <CardHeader>
               <CardTitle className="text-2xl">Welcome back</CardTitle>
               <CardDescription>
@@ -158,14 +169,14 @@ export default function LoginPage() {
             <CardFooter className="flex justify-center">
               <p className="text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
-                <Link href="#" className="text-primary underline" onClick={() => document.querySelector('[data-value="signup"]')?.click()}>
+                <Link href="#" className="text-primary underline" onClick={() => setActiveTab("signup")}>
                   Sign up
                 </Link>
               </p>
             </CardFooter>
-          </TabsContent>
+          )}
           
-          <TabsContent value="signup">
+          {activeTab === "signup" && (
             <CardHeader>
               <CardTitle className="text-2xl">Create an account</CardTitle>
               <CardDescription>
@@ -230,13 +241,13 @@ export default function LoginPage() {
             <CardFooter className="flex justify-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="#" className="text-primary underline" onClick={() => document.querySelector('[data-value="login"]')?.click()}>
+                <Link href="#" className="text-primary underline" onClick={() => setActiveTab("login")}>
                   Sign in
                 </Link>
               </p>
             </CardFooter>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </Card>
     </div>
   );
