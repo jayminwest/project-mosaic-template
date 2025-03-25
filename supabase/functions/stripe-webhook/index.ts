@@ -41,6 +41,22 @@ async function initializePriceToPlanMap() {
         }
       }
     }
+    
+    // Also fetch all prices to ensure we have complete mapping
+    const prices = await stripe.prices.list({
+      active: true,
+      expand: ['data.product'],
+    });
+    
+    for (const price of prices.data) {
+      if (price.product && typeof price.product === 'object' && 
+          price.product.metadata && price.product.metadata.plan_type) {
+        priceToPlanMap.set(price.id, price.product.metadata.plan_type);
+        console.log(`Mapped price ${price.id} to plan ${price.product.metadata.plan_type}`);
+      }
+    }
+    
+    console.log(`Price to plan map initialized with ${priceToPlanMap.size} entries`);
   } catch (error) {
     console.error("Error initializing price to plan map:", error);
   }

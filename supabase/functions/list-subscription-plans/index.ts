@@ -81,6 +81,20 @@ serve(async (req) => {
       headers: CORS_HEADERS,
     });
   }
+  
+  // Accept both GET and POST methods
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 
   try {
     // Fetch all active products with their prices

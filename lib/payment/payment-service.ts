@@ -89,16 +89,17 @@ class StripePaymentProvider implements PaymentProvider {
       const response = await fetch(
         `${this.config.apiUrl}/functions/v1/list-subscription-plans`,
         {
-          method: "GET",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
           },
+          body: JSON.stringify({}), // Empty body for POST request
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch subscription plans");
+        throw new Error(`Failed to fetch subscription plans: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
