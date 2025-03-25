@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { UseSubscriptionReturn, SubscriptionPlan } from "@/types/subscription";
 import { getServiceProvider } from "@/lib/services";
 import { useAuth } from "./useAuth";
+import { SubscriptionStatus, Invoice, PaymentResponse } from "@/lib/payment/payment-service";
 
 export function useSubscription(): UseSubscriptionReturn {
   const services = getServiceProvider();
@@ -12,6 +13,7 @@ export function useSubscription(): UseSubscriptionReturn {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | undefined>(undefined);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
 
   // Fetch available subscription plans
   useEffect(() => {
@@ -31,20 +33,25 @@ export function useSubscription(): UseSubscriptionReturn {
     fetchPlans();
   }, []);
 
-  // Fetch current plan when user is available
+  // Fetch current plan and subscription status when user is available
   useEffect(() => {
-    const fetchCurrentPlan = async () => {
+    const fetchUserSubscriptionData = async () => {
       if (user?.user_id) {
         try {
+          // Fetch current plan
           const plan = await paymentService.getCurrentPlan(user.user_id);
           setCurrentPlan(plan);
+          
+          // Fetch subscription status
+          const status = await paymentService.getSubscriptionStatus(user.user_id);
+          setSubscriptionStatus(status);
         } catch (error: any) {
-          console.error("Error fetching current plan:", error);
+          console.error("Error fetching subscription data:", error);
         }
       }
     };
 
-    fetchCurrentPlan();
+    fetchUserSubscriptionData();
   }, [user]);
 
   const manageSubscription = async (accessToken: string, priceId?: string) => {
@@ -98,12 +105,128 @@ export function useSubscription(): UseSubscriptionReturn {
     }
   };
 
+  const cancelSubscription = async (): Promise<PaymentResponse | undefined> => {
+    if (!user?.user_id) {
+      setError('You must be logged in to cancel a subscription');
+      return undefined;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await paymentService.cancelSubscription(user.user_id);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to cancel subscription');
+      }
+      
+      // Refresh subscription status
+      const status = await paymentService.getSubscriptionStatus(user.user_id);
+      setSubscriptionStatus(status);
+      
+      return response;
+    } catch (error: any) {
+      console.error("Error canceling subscription:", error);
+      setError(error.message || 'An unknown error occurred. Please try again later.');
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateSubscription = async (newPriceId: string): Promise<PaymentResponse | undefined> => {
+    if (!user?.user_id) {
+      setError('You must be logged in to update a subscription');
+      return undefined;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await paymentService.updateSubscription(user.user_id, newPriceId);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update subscription');
+      }
+      
+      // Refresh subscription status and current plan
+      const status = await paymentService.getSubscriptionStatus(user.user_id);
+      setSubscriptionStatus(status);
+      
+      const plan = await paymentService.getCurrentPlan(user.user_id);
+      setCurrentPlan(plan);
+      
+      return response;
+    } catch (error: any) {
+      console.error("Error updating subscription:", error);
+      setError(error.message || 'An unknown error occurred. Please try again later.');
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getInvoices = async (limit?: number): Promise<Invoice[]> => {
+    if (!user?.user_id) return [];
+    
+    try {
+      return await paymentService.getInvoices(user.user_id, limit);
+    } catch (error: any) {
+      console.error("Error getting invoices:", error);
+      return [];
+    }
+  };
+
+  const hasFeatureAccess = async (featureName: string): Promise<boolean> => {
+    if (!user?.user_id) return false;
+    
+    try {
+      return await paymentService.hasFeatureAccess(user.user_id, featureName);
+    } catch (error: any) {
+      console.error("Error checking feature access:", error);
+      return false;
+    }
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
+
+  // Status helper methods
+  const isSubscriptionActive = useCallback((): boolean => {
+    return subscriptionStatus?.isActive || false;
+  }, [subscriptionStatus]);
+
+  const willSubscriptionRenew = useCallback((): boolean => {
+    return subscriptionStatus?.willRenew || false;
+  }, [subscriptionStatus]);
+
+  const getSubscriptionEndDate = useCallback((): Date | undefined => {
+    return subscriptionStatus?.currentPeriodEnd;
+  }, [subscriptionStatus]);
+
+  const isPremiumTier = useCallback((): boolean => {
+    return currentPlan?.planType === 'premium' || currentPlan?.planType === 'enterprise';
+  }, [currentPlan]);
+
   return {
     manageSubscription,
     getCurrentPlan,
+    cancelSubscription,
+    updateSubscription,
+    getInvoices,
+    hasFeatureAccess,
+    clearError,
+    isSubscriptionActive,
+    willSubscriptionRenew,
+    getSubscriptionEndDate,
+    isPremiumTier,
     plans,
     currentPlan,
     isLoading,
     error,
+    subscriptionStatus,
   };
 }

@@ -169,3 +169,75 @@ describe("Suite 6: Stripe Payments Integration", () => {
     expect(profile.tasks_limit).toBe(TASK_LIMITS.FREE_TIER);
   }, 30_000);
 });
+import { createPaymentService } from '@/lib/payment/payment-service';
+import { getOrCreateTestUser, cleanupTestUser } from '../test-utils/user-testing-utils';
+import { setUserSubscriptionTier } from '../test-utils/limit-testing-utils';
+
+describe('Payment Service', () => {
+  let testUser: any;
+  
+  beforeAll(async () => {
+    // Create a test user
+    const result = await getOrCreateTestUser({
+      email: 'payment-test@example.com',
+      password: 'password123',
+      name: 'Payment Test User'
+    });
+    
+    testUser = result.user;
+  });
+  
+  afterAll(async () => {
+    // Clean up the test user
+    await cleanupTestUser(testUser?.user_id);
+  });
+  
+  it('should retrieve subscription plans', async () => {
+    const paymentService = createPaymentService();
+    const plans = await paymentService.getSubscriptionPlans();
+    
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans[0]).toHaveProperty('id');
+    expect(plans[0]).toHaveProperty('name');
+    expect(plans[0]).toHaveProperty('features');
+  });
+  
+  it('should get the current plan for a user', async () => {
+    const paymentService = createPaymentService();
+    const plan = await paymentService.getCurrentPlan(testUser.user_id);
+    
+    // By default, users start on the free plan
+    expect(plan?.planType).toBe('free');
+  });
+  
+  it('should check feature access correctly', async () => {
+    const paymentService = createPaymentService();
+    
+    // Free tier should have access to basic features
+    const hasBasicAccess = await paymentService.hasFeatureAccess(testUser.user_id, 'basic');
+    expect(hasBasicAccess).toBe(true);
+    
+    // Free tier should not have access to premium features
+    const hasPremiumAccess = await paymentService.hasFeatureAccess(testUser.user_id, 'premium');
+    expect(hasPremiumAccess).toBe(false);
+    
+    // Set user to premium tier
+    await setUserSubscriptionTier(testUser.user_id, 'premium');
+    
+    // Premium tier should have access to premium features
+    const hasPremiumAccessAfterUpgrade = await paymentService.hasFeatureAccess(testUser.user_id, 'premium');
+    expect(hasPremiumAccessAfterUpgrade).toBe(true);
+  });
+  
+  it('should get subscription status', async () => {
+    const paymentService = createPaymentService();
+    const status = await paymentService.getSubscriptionStatus(testUser.user_id);
+    
+    expect(status).toHaveProperty('isActive');
+    expect(status).toHaveProperty('willRenew');
+    expect(status).toHaveProperty('status');
+  });
+  
+  // Note: We can't easily test actual subscription creation/cancellation in tests
+  // without creating real Stripe charges, so we'll mock those or test them manually
+});
