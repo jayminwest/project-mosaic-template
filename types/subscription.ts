@@ -1,3 +1,5 @@
+import { SubscriptionStatus, Invoice, PaymentResponse } from "@/lib/payment/payment-service";
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -18,11 +20,23 @@ export interface SubscriptionState {
   error: string | null;
   plans: SubscriptionPlan[];
   currentPlan?: SubscriptionPlan;
+  subscriptionStatus: SubscriptionStatus | null;
 }
 
 export interface SubscriptionOperations {
   manageSubscription: (accessToken: string, priceId?: string) => Promise<void>;
   getCurrentPlan: () => Promise<SubscriptionPlan | undefined>;
+  cancelSubscription: () => Promise<PaymentResponse | undefined>;
+  updateSubscription: (newPriceId: string) => Promise<PaymentResponse | undefined>;
+  getInvoices: (limit?: number) => Promise<Invoice[]>;
+  hasFeatureAccess: (featureName: string) => Promise<boolean>;
+  clearError: () => void;
+  
+  // Status helpers
+  isSubscriptionActive: () => boolean;
+  willSubscriptionRenew: () => boolean;
+  getSubscriptionEndDate: () => Date | undefined;
+  isPremiumTier: () => boolean;
 }
 
 export type UseSubscriptionReturn = SubscriptionOperations & SubscriptionState;
