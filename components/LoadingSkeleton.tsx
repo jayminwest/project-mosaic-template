@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConfig } from "@/lib/config/useConfig";
 
 interface LoadingSkeletonProps {
   type?: 'card' | 'list' | 'table' | 'form';
@@ -8,8 +7,6 @@ interface LoadingSkeletonProps {
 }
 
 export function LoadingSkeleton({ type = 'card', count = 1 }: LoadingSkeletonProps) {
-  const { theme } = useConfig();
-  
   // Card skeleton
   if (type === 'card') {
     return (
