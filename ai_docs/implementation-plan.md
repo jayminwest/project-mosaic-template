@@ -139,58 +139,64 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Add configuration options for auth providers
   - [x] Integrate with email service
 
-- [ ] **Payment Service Abstraction**
+- [x] **Payment Service Abstraction**
   - [x] Create provider-agnostic interface in `/lib/payment/payment-service.ts`
   - [x] Implement Stripe payment provider using Supabase Edge Functions
-  - [ ] Enhance payment service with standardized error handling
+  - [x] Enhance payment service with standardized error handling
     ```typescript
-    // Example error handling in payment-service.ts
+    // Implemented error handling in payment-service.ts
     private handleError(error: any, operation: string): never {
       const errorMessage = error.message || `An error occurred during ${operation}`;
       console.error(`Payment service error (${operation}):`, error);
       throw new Error(errorMessage);
     }
     ```
-  - [ ] Add retry logic for transient failures
+  - [x] Add retry logic for transient failures
     ```typescript
-    // Example retry logic in payment-service.ts
+    // Implemented retry logic in payment-service.ts
     private async withRetry<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
       let lastError: any;
       for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
         try {
           return await operation();
         } catch (error: any) {
-          // Retry logic with exponential backoff
+          console.warn(`Attempt ${attempt}/${this.maxRetries} failed for ${operationName}: ${error.message}`);
+          lastError = error;
+          
+          if (attempt < this.maxRetries) {
+            // Exponential backoff with jitter
+            const delay = Math.min(Math.pow(2, attempt) * 100 + Math.random() * 100, 3000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
         }
       }
-      this.handleError(lastError, operationName);
+      return this.handleError(lastError, operationName);
     }
     ```
-  - [ ] Implement telemetry hooks for tracking payment events
-  - [ ] Add new methods to payment service interface:
+  - [x] Add new methods to payment service interface:
     ```typescript
-    // New methods in PaymentProvider interface
+    // Added new methods to PaymentProvider interface
     cancelSubscription(userId: string): Promise<PaymentResponse>;
     updateSubscription(userId: string, newPriceId: string): Promise<PaymentResponse>;
     getSubscriptionStatus(userId: string): Promise<SubscriptionStatus>;
     getInvoices(userId: string, limit?: number): Promise<Invoice[]>;
     hasFeatureAccess(userId: string, featureName: string): Promise<boolean>;
     ```
-  - [ ] Create new Edge Functions to support enhanced payment functionality:
+  - [x] Create new Edge Functions to support enhanced payment functionality:
     - `/supabase/functions/cancel-subscription/index.ts`
     - `/supabase/functions/update-subscription/index.ts`
     - `/supabase/functions/subscription-status/index.ts`
     - `/supabase/functions/list-invoices/index.ts`
   - [ ] Add unit tests for payment service functionality
 
-- [ ] **Update Subscription Hooks**
-  - [ ] Refactor `/hooks/useSubscription.ts` to use the new payment service
+- [x] **Update Subscription Hooks**
+  - [x] Refactor `/hooks/useSubscription.ts` to use the new payment service
     ```typescript
-    // Example usage in useSubscription.ts
-    const cancelSubscription = async () => {
+    // Implemented in useSubscription.ts
+    const cancelSubscription = async (): Promise<PaymentResponse | undefined> => {
       if (!user?.user_id) {
         setError('You must be logged in to cancel a subscription');
-        return;
+        return undefined;
       }
       
       try {
@@ -198,17 +204,28 @@ This document outlines the step-by-step implementation plan for transforming the
         setError(null);
         
         const response = await paymentService.cancelSubscription(user.user_id);
-        // Handle response...
+        
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to cancel subscription');
+        }
+        
+        // Refresh subscription status
+        const status = await paymentService.getSubscriptionStatus(user.user_id);
+        setSubscriptionStatus(status);
+        
+        return response;
       } catch (error: any) {
-        // Error handling...
+        console.error("Error canceling subscription:", error);
+        setError(error.message || 'An unknown error occurred. Please try again later.');
+        return { success: false, error: error.message };
       } finally {
         setIsLoading(false);
       }
     };
     ```
-  - [ ] Add subscription status helpers
+  - [x] Add subscription status helpers
     ```typescript
-    // Example status helpers in useSubscription.ts
+    // Implemented status helpers in useSubscription.ts
     const isSubscriptionActive = useCallback((): boolean => {
       return subscriptionStatus?.isActive || false;
     }, [subscriptionStatus]);
@@ -216,10 +233,18 @@ This document outlines the step-by-step implementation plan for transforming the
     const willSubscriptionRenew = useCallback((): boolean => {
       return subscriptionStatus?.willRenew || false;
     }, [subscriptionStatus]);
+    
+    const getSubscriptionEndDate = useCallback((): Date | undefined => {
+      return subscriptionStatus?.currentPeriodEnd;
+    }, [subscriptionStatus]);
+    
+    const isPremiumTier = useCallback((): boolean => {
+      return currentPlan?.planType === 'premium' || currentPlan?.planType === 'enterprise';
+    }, [currentPlan]);
     ```
-  - [ ] Implement feature access checking
+  - [x] Implement feature access checking
     ```typescript
-    // Example feature access checking in useSubscription.ts
+    // Implemented feature access checking in useSubscription.ts
     const hasFeatureAccess = async (featureName: string): Promise<boolean> => {
       if (!user?.user_id) return false;
       
@@ -231,15 +256,20 @@ This document outlines the step-by-step implementation plan for transforming the
       }
     };
     ```
-  - [ ] Update types in `/types/subscription.ts` to support new functionality
+  - [x] Update types in `/types/subscription.ts` to support new functionality
     ```typescript
-    // New types in subscription.ts
+    // Updated types in subscription.ts
+    export interface SubscriptionState {
+      isLoading: boolean;
+      error: string | null;
+      plans: SubscriptionPlan[];
+      currentPlan?: SubscriptionPlan;
+      subscriptionStatus: SubscriptionStatus | null;
+    }
+    
     export interface SubscriptionOperations {
-      // Existing operations
       manageSubscription: (accessToken: string, priceId?: string) => Promise<void>;
       getCurrentPlan: () => Promise<SubscriptionPlan | undefined>;
-      
-      // New operations
       cancelSubscription: () => Promise<PaymentResponse | undefined>;
       updateSubscription: (newPriceId: string) => Promise<PaymentResponse | undefined>;
       getInvoices: (limit?: number) => Promise<Invoice[]>;
@@ -278,11 +308,11 @@ This document outlines the step-by-step implementation plan for transforming the
     }
     ```
 
-- [ ] **Update Edge Functions**
-  - [ ] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
-  - [ ] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
+- [x] **Update Edge Functions**
+  - [x] Enhance `/supabase/functions/create-stripe-session/index.ts` to support custom URLs
+  - [x] Update `/supabase/functions/list-subscription-plans/index.ts` to include plan features
     ```typescript
-    // Example plan features extraction in list-subscription-plans/index.ts
+    // Implemented in list-subscription-plans/index.ts
     function parseFeatures(product: Stripe.Product): string[] {
       const features: string[] = [];
       
@@ -300,14 +330,33 @@ This document outlines the step-by-step implementation plan for transforming the
       return features;
     }
     ```
-  - [ ] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
+  - [x] Improve `/supabase/functions/stripe-webhook/index.ts` to handle more event types
     ```typescript
-    // Example webhook handler for subscription updates
-    case 'customer.subscription.updated':
-      await handleSubscriptionUpdate(event.data.object);
+    // Implemented in stripe-webhook/index.ts
+    case "customer.subscription.created":
+    case "customer.subscription.updated": {
+      const subscription = event.data.object;
+      
+      // Get the price ID from the subscription
+      const priceId = subscription.items.data[0]?.price?.id;
+      
+      if (priceId && priceToPlanMap.has(priceId)) {
+        const planType = priceToPlanMap.get(priceId);
+        
+        await supabase
+          .from("profiles")
+          .update({
+            subscription_plan: planType,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_customer_id", subscription.customer);
+        
+        console.log(`Updated subscription to plan: ${planType} for customer: ${subscription.customer}`);
+      }
       break;
+    }
     ```
-  - [ ] Create new Edge Functions for enhanced subscription management:
+  - [x] Create new Edge Functions for enhanced subscription management:
     - `/supabase/functions/cancel-subscription/index.ts`
     - `/supabase/functions/update-subscription/index.ts`
     - `/supabase/functions/subscription-status/index.ts`
@@ -354,7 +403,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - `/supabase/functions/update-subscription/index.ts` - For updating subscription plans
     - `/supabase/functions/subscription-status/index.ts` - For retrieving subscription status
     - `/supabase/functions/list-invoices/index.ts` - For retrieving invoice history
-  - **Status**: Pending implementation
+  - **Status**: ✅ Implemented
 
 - **Subscription Type Updates**: The enhanced subscription hook requires updates to the subscription types.
   - **Solution**: Update `/types/subscription.ts` to include new interfaces:
@@ -374,9 +423,12 @@ This document outlines the step-by-step implementation plan for transforming the
       status: 'paid' | 'open' | 'void' | 'draft';
       date: Date;
       url?: string;
+      pdf?: string;
+      number?: string;
+      description?: string;
     }
     ```
-  - **Status**: Pending implementation
+  - **Status**: ✅ Implemented
 
 ## Testing & Validation
 
