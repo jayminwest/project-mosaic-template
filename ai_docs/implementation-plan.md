@@ -227,7 +227,42 @@ This document outlines the step-by-step implementation plan for transforming the
     - `/templates/legal/TermsOfService.md`
   - [ ] Add feature flag system for enabling/disabling features
 
-## Phase 5: Developer Experience
+## Phase 5: Component Reduction & Developer Experience
+
+- [ ] **Minimalist Component Set**
+  - [ ] Reduce UI components to a focused set of essential components:
+    - **Core UI Components (shadcn/ui)**:
+      - Layout: Card, Tabs, Separator, Sheet
+      - Navigation: Navbar, Sidebar, Dropdown Menu, Command (⌘K)
+      - Input: Button, Input, Select, Checkbox, Switch, Form, Textarea, Radio Group
+      - Display: Table, Alert, Badge, Avatar, Dialog/Modal, Tooltip, Popover
+      - Feedback: Toast, Progress, Skeleton
+    - **SaaS-Specific Composed Components**:
+      - AuthForm - Login/signup forms with social providers
+      - PricingTable - Subscription options display
+      - FeatureComparison - Plan feature comparison
+      - DashboardMetric - KPI display cards
+      - EmptyState - Empty data handling
+      - PageHeader - Consistent page headers
+      - SettingsForm - User/account settings
+      - ConfirmationDialog - Action confirmation
+      - OnboardingSteps - User onboarding flow
+      - NotificationCenter - User notifications
+      - APIKeyManager - For developer-focused products
+      - UsageStats - Resource usage display
+      - InviteUsers - Team member invitation
+      - FilterBar - Data filtering interface
+      - LandingHero - Marketing landing page hero section
+  - [ ] Create component directory structure:
+    ```
+    /components
+      /ui           # shadcn components
+      /composed     # application-specific compositions
+      /layouts      # page layouts
+      /marketing    # landing page components
+    ```
+  - [ ] Implement installation script for shadcn/ui components
+  - [ ] Create component documentation page at /docs/components.tsx
 
 - [x] **Documentation**
   - [x] Create architecture overview documentation ✅
@@ -284,6 +319,33 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure proper authorization headers are sent with the request
   - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
 
+## Component Implementation Strategy
+
+- [ ] **Installation & Setup**
+  - [ ] Install shadcn/ui base components:
+    ```bash
+    npx shadcn-ui@latest init
+    npx shadcn-ui@latest add button card input form toast dialog
+    # Continue with other core components
+    ```
+  - [ ] Configure tailwind.config.js for consistent theming
+  - [ ] Set up component documentation page
+
+- [ ] **Core Components Implementation**
+  - [ ] Install and configure all core shadcn/ui components
+  - [ ] Create consistent styling overrides
+  - [ ] Document usage patterns for each component
+
+- [ ] **Composed Components Implementation**
+  - [ ] Implement high-priority composed components first:
+    - AuthForm
+    - PricingTable
+    - FeatureComparison
+    - DashboardMetric
+    - EmptyState
+  - [ ] Add remaining composed components as needed for specific products
+  - [ ] Create storybook-like examples for each composed component
+
 ## Testing & Validation
 
 - [ ] **Testing Guidelines**
@@ -291,6 +353,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Service Initialization Tests: Simple tests that verify your service abstractions initialize correctly.
   - [ ] Pre-Launch Checklist: A markdown file with a manual testing checklist for each product.
   - [ ] Strong TypeScript: Focus on robust typing rather than extensive unit tests.
+  - [ ] Component Visual Testing: Simple visual tests for core components
 
 This approach would give you practical confidence in your applications without the time sink of comprehensive test suites.
 
