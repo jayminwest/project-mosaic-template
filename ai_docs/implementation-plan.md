@@ -234,7 +234,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - **Core UI Components (shadcn/ui)**:
       - Layout: Card, Tabs, Separator, Sheet - all responsive on all screen sizes
       - Navigation: Navbar, Sidebar, Dropdown Menu, Command (⌘K) - all responsive on all screen sizes
-      - Input: Button, Input, Select, Checkbox, Switch, Form, Textarea, Radio Group - all responsive on all screen sizes
+      - Input: Button, Input, Select, Checkbox, Switch, Form, Textarea, Radio Group, Calendar - all responsive on all screen sizes
       - Display: Table, Alert, Badge, Avatar, Dialog/Modal, Tooltip, Popover - all responsive on all screen sizes
       - Feedback: Toast, Progress, Skeleton - all responsive on all screen sizes
     - **SaaS-Specific Composed Components** (all fully responsive across all screen sizes):
