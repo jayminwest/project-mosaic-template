@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConfig } from "@/lib/config/useConfig";
 import { useRouter } from "next/navigation";
 
-const Header = () => {
+export const Header = () => {
   const { productConfig } = useConfig();
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();
@@ -135,4 +135,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export { Header };
