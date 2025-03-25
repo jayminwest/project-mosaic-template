@@ -148,9 +148,41 @@ serve(async (req) => {
 
     // Format the products and prices for the frontend
     const plans = products.data
-      .filter(product => product.metadata && product.metadata.plan_type) // Only include products with plan_type metadata
+      .filter(product => {
+        // Log all products for debugging
+        console.log(`Checking product ${product.id} (${product.name})`);
+        console.log(`Metadata: ${JSON.stringify(product.metadata || {})}`);
+        
+        // Check if product has plan_type metadata
+        const hasPlanType = product.metadata && product.metadata.plan_type;
+        if (!hasPlanType) {
+          console.log(`Skipping product ${product.id} - no plan_type metadata`);
+        }
+        return hasPlanType;
+      })
       .map(product => {
-        const price = typeof product.default_price === 'object' ? product.default_price : null;
+        // Get the price object
+        let price: any = null;
+        
+        if (typeof product.default_price === 'object') {
+          price = product.default_price;
+          console.log(`Using object price: ${price.id}`);
+        } else if (product.default_price) {
+          // If default_price is just an ID, we need to fetch the price
+          console.log(`Need to fetch price: ${product.default_price}`);
+          try {
+            // Create a temporary price object with basic info
+            price = {
+              id: product.default_price,
+              unit_amount: 0,
+              currency: 'usd',
+              type: 'recurring',
+              recurring: { interval: 'month' }
+            };
+          } catch (error) {
+            console.error(`Error fetching price ${product.default_price}:`, error);
+          }
+        }
         
         if (!price) {
           console.log(`Skipping product ${product.id} - no price object`);
@@ -162,21 +194,25 @@ serve(async (req) => {
         const limits = parseLimits(product);
         
         console.log(`Processing product ${product.id} with plan_type ${product.metadata.plan_type}`);
-        console.log(`Features: ${features.join(', ')}`);
+        console.log(`Features: ${features.length > 0 ? features.join(', ') : 'none'}`);
         console.log(`Limits: ${JSON.stringify(limits || {})}`);
         
-        return {
+        // Create the plan object
+        const plan = {
           id: product.id,
           name: product.name,
-          description: product.description,
+          description: product.description || product.name,
           priceId: price.id,
           price: price.unit_amount ? price.unit_amount / 100 : 0, // Convert from cents to dollars
-          currency: price.currency,
-          interval: price.type === 'recurring' ? price.recurring?.interval : 'one-time',
+          currency: price.currency || 'usd',
+          interval: price.type === 'recurring' && price.recurring ? price.recurring.interval : 'month',
           planType: product.metadata.plan_type as 'free' | 'premium',
           features,
           ...(limits && { limits }),
         };
+        
+        console.log(`Created plan object: ${JSON.stringify(plan)}`);
+        return plan;
       })
       .filter(Boolean); // Remove null entries
     

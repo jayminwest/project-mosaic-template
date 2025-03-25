@@ -296,9 +296,13 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Perform security audit
   - [x] Test email deliverability and template rendering ✅
   - [x] Test Edge Function authorization and error handling ✅
+  - [ ] Fix subscription plans test script
+    - Debug why plans aren't being returned from Stripe
+    - Ensure proper metadata is set on products
+    - Verify Edge Function correctly processes Stripe API response
   - [ ] Test subscription management workflows
     - Subscription creation
     - Subscription cancellation
     - Subscription updates
     - Feature access control
-  - [ ] Create Stripe product configuration guide
+  - [x] Create Stripe product configuration guide ✅
