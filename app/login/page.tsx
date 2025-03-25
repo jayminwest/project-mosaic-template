@@ -109,13 +109,14 @@ export default function LoginPage() {
           </div>
           
           {activeTab === "login" && (
-            <CardHeader>
-              <CardTitle className="text-2xl">Welcome back</CardTitle>
-              <CardDescription>
-                Sign in to your account to continue
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <>
+              <CardHeader>
+                <CardTitle className="text-2xl">Welcome back</CardTitle>
+                <CardDescription>
+                  Sign in to your account to continue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
               <form onSubmit={handleEmailSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Input
@@ -165,25 +166,27 @@ export default function LoginPage() {
                 <FcGoogle className="mr-2 h-4 w-4" />
                 Google
               </Button>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link href="#" className="text-primary underline" onClick={() => setActiveTab("signup")}>
-                  Sign up
-                </Link>
-              </p>
-            </CardFooter>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <p className="text-sm text-muted-foreground">
+                  Don&apos;t have an account?{" "}
+                  <Link href="#" className="text-primary underline" onClick={() => setActiveTab("signup")}>
+                    Sign up
+                  </Link>
+                </p>
+              </CardFooter>
+            </>
           )}
           
           {activeTab === "signup" && (
-            <CardHeader>
-              <CardTitle className="text-2xl">Create an account</CardTitle>
-              <CardDescription>
-                Sign up to get started with Project Mosaic
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <>
+              <CardHeader>
+                <CardTitle className="text-2xl">Create an account</CardTitle>
+                <CardDescription>
+                  Sign up to get started with Project Mosaic
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
               <form onSubmit={handleEmailSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Input
@@ -237,15 +240,16 @@ export default function LoginPage() {
                 <FcGoogle className="mr-2 h-4 w-4" />
                 Google
               </Button>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="#" className="text-primary underline" onClick={() => setActiveTab("login")}>
-                  Sign in
-                </Link>
-              </p>
-            </CardFooter>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <p className="text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="#" className="text-primary underline" onClick={() => setActiveTab("login")}>
+                    Sign in
+                  </Link>
+                </p>
+              </CardFooter>
+            </>
           )}
         </div>
       </Card>
