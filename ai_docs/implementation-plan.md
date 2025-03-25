@@ -245,28 +245,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - **Status**: ✅ Implemented
 
 - **Subscription Type Updates**: The enhanced subscription hook requires updates to the subscription types.
-  - **Solution**: Update `/types/subscription.ts` to include new interfaces:
-    ```typescript
-    export interface SubscriptionStatus {
-      isActive: boolean;
-      willRenew: boolean;
-      currentPeriodEnd?: Date;
-      cancelAtPeriodEnd?: boolean;
-      status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete' | 'incomplete_expired' | 'unpaid';
-    }
-
-    export interface Invoice {
-      id: string;
-      amount: number;
-      currency: string;
-      status: 'paid' | 'open' | 'void' | 'draft';
-      date: Date;
-      url?: string;
-      pdf?: string;
-      number?: string;
-      description?: string;
-    }
-    ```
+  - **Solution**: Update `/types/subscription.ts` to include new interfaces for SubscriptionStatus and Invoice
   - **Status**: ✅ Implemented
 
 ## Testing & Validation
