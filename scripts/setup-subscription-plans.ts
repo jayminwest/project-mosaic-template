@@ -468,32 +468,30 @@ async function setupSubscriptionPlans() {
   
   for (const plan of plans) {
     try {
-      // Create product
+      // Create product with all metadata at once to avoid race conditions
+      const productMetadata = {
+        plan_type: plan.planType,
+        features: plan.features.map(f => f.description).join(', '),
+        ...plan.limits.reduce((acc, limit) => ({
+          ...acc,
+          [`limit_${limit.name}`]: limit.value.toString(),
+        }), {})
+      };
+      
+      // Add individual features to metadata
+      for (let i = 0; i < plan.features.length; i++) {
+        productMetadata[`feature_${i + 1}`] = plan.features[i].description;
+      }
+      
+      // Create the product with all metadata
       const product = await stripe.products.create({
         name: plan.name,
         description: plan.description,
-        metadata: {
-          plan_type: plan.planType,
-          features: plan.features.map(f => f.description).join(', '),
-          ...plan.limits.reduce((acc, limit) => ({
-            ...acc,
-            [`limit_${limit.name}`]: limit.value.toString(),
-          }), {}),
-        },
+        metadata: productMetadata,
       });
       
       console.log(chalk.green(`✓ Created product: ${product.name}`));
-      
-      // Add individual features as metadata
-      const featureUpdates = {};
-      for (let i = 0; i < plan.features.length; i++) {
-        featureUpdates[`feature_${i + 1}`] = plan.features[i].description;
-      }
-      
-      // Update all features at once to avoid race conditions
-      await stripe.products.update(product.id, {
-        metadata: featureUpdates,
-      });
+      console.log(chalk.gray(`  with metadata: ${JSON.stringify(productMetadata)}`));
       
       console.log(chalk.green(`✓ Added ${plan.features.length} features to metadata`));
       

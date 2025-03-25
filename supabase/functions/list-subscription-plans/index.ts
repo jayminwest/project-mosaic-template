@@ -31,7 +31,12 @@ function parseFeatures(product: Stripe.Product): string[] {
     // Also check for comma-separated features list
     if (product.metadata.features) {
       const metadataFeatures = product.metadata.features.split(',').map((f: string) => f.trim());
-      features.push(...metadataFeatures);
+      // Avoid duplicates by checking if feature already exists
+      metadataFeatures.forEach(feature => {
+        if (!features.includes(feature)) {
+          features.push(feature);
+        }
+      });
     }
   }
   
@@ -160,7 +165,7 @@ serve(async (req) => {
         }
         return hasPlanType;
       })
-      .map(product => {
+      .map(async (product) => {
         // Get the price object
         let price: any = null;
         
@@ -171,7 +176,13 @@ serve(async (req) => {
           // If default_price is just an ID, we need to fetch the price
           console.log(`Need to fetch price: ${product.default_price}`);
           try {
-            // Create a temporary price object with basic info
+            // Fetch the price from Stripe
+            const fetchedPrice = await stripe.prices.retrieve(product.default_price as string);
+            price = fetchedPrice;
+            console.log(`Fetched price: ${price.id}`);
+          } catch (error) {
+            console.error(`Error fetching price ${product.default_price}:`, error);
+            // Create a temporary price object with basic info as fallback
             price = {
               id: product.default_price,
               unit_amount: 0,
@@ -179,8 +190,6 @@ serve(async (req) => {
               type: 'recurring',
               recurring: { interval: 'month' }
             };
-          } catch (error) {
-            console.error(`Error fetching price ${product.default_price}:`, error);
           }
         }
         
