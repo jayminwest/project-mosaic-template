@@ -286,25 +286,16 @@ This document outlines the step-by-step implementation plan for transforming the
 
 ## Testing & Validation
 
-- [ ] **Core Testing**
-  - [ ] Create template-agnostic test utilities
-  - [ ] Implement tests for core services (AI, Auth, Email, Storage, Payments)
-  - [ ] Test with different product types as examples
+- [ ] **Testing Guidelines**
+  - [ ] One E2E Test: Create a single Playwright or Cypress test that runs through signup → payment → accessing a premium feature.
+  - [ ] Service Initialization Tests: Simple tests that verify your service abstractions initialize correctly.
+  - [ ] Pre-Launch Checklist: A markdown file with a manual testing checklist for each product.
+  - [ ] Strong TypeScript: Focus on robust typing rather than extensive unit tests.
 
-- [ ] **Quality Assurance**
-  - [ ] Verify performance metrics
-  - [ ] Test accessibility compliance
-  - [ ] Perform security audit
+This approach would give you practical confidence in your applications without the time sink of comprehensive test suites.
+
+- [x] **Completed Testing Tasks**
   - [x] Test email deliverability and template rendering ✅
   - [x] Test Edge Function authorization and error handling ✅
   - [x] Fix subscription plans test script ✅
-    - Debug why plans aren't being returned from Stripe
-    - Ensure proper metadata is set on products
-    - Verify Edge Function correctly processes Stripe API response
-    - Add proper authorization handling for Edge Functions
-  - [ ] Test subscription management workflows
-    - Subscription creation
-    - Subscription cancellation
-    - Subscription updates
-    - Feature access control
   - [x] Create Stripe product configuration guide ✅
