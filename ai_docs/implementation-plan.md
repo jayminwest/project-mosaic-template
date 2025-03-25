@@ -200,6 +200,10 @@ This document outlines the step-by-step implementation plan for transforming the
     - `/supabase/functions/update-subscription/index.ts`
     - `/supabase/functions/subscription-status/index.ts`
     - `/supabase/functions/list-invoices/index.ts`
+  - [x] Fix authorization handling in all Edge Functions:
+    - Implement consistent API key validation
+    - Support both `apikey` header and `Authorization: Bearer` token
+    - Add proper error handling and debugging
 
 ## Phase 4: Marketing & Analytics Essentials
 
@@ -248,6 +252,20 @@ This document outlines the step-by-step implementation plan for transforming the
   - **Solution**: Update `/types/subscription.ts` to include new interfaces for SubscriptionStatus and Invoice
   - **Status**: ✅ Implemented
 
+- **Edge Function Authorization**: Edge Functions were returning 401 Unauthorized errors due to inconsistent API key handling.
+  - **Solution**: 
+    - Update all Edge Functions to properly handle both `apikey` header and `Authorization: Bearer` token format
+    - Ensure payment service sends consistent authorization headers with both formats
+    - Add proper error handling and debugging for authorization issues
+  - **Status**: ✅ Resolved - All Edge Functions now properly validate API keys
+
+- **Stripe Product Configuration**: The subscription plans endpoint was returning an empty array due to missing product configuration in Stripe.
+  - **Solution**:
+    - Ensure Stripe products are created with proper metadata including `plan_type`
+    - Add comprehensive logging in Edge Functions to debug issues
+    - Enhance the price-to-plan mapping in the webhook handler
+  - **Status**: ✅ Verified - Edge Function is working correctly, products need to be configured in Stripe
+
 ## Testing & Validation
 
 - [ ] **Core Testing**
@@ -260,8 +278,10 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Test accessibility compliance
   - [ ] Perform security audit
   - [x] Test email deliverability and template rendering ✅
+  - [x] Test Edge Function authorization and error handling ✅
   - [ ] Test subscription management workflows
     - Subscription creation
     - Subscription cancellation
     - Subscription updates
     - Feature access control
+  - [ ] Create Stripe product configuration guide
