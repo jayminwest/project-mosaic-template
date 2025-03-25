@@ -95,6 +95,21 @@ serve(async (req) => {
       }
     );
   }
+  
+  // Check for authorization
+  const authHeader = req.headers.get("apikey") || req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized - API key required" }),
+      {
+        status: 401,
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 
   try {
     // Fetch all active products with their prices
