@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -17,25 +17,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, signInWithProvider } = useAuth();
+  const { handleLogin, handleSignup, handleGoogleLogin, setEmail: setAuthEmail, setPassword: setAuthPassword } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  // Update auth hook state when form values change
+  useEffect(() => {
+    setAuthEmail(email);
+    setAuthPassword(password);
+  }, [email, password, setAuthEmail, setAuthPassword]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const result = await signIn(email, password);
-      if (result.success) {
-        router.push("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: result.error || "Please check your credentials and try again.",
-          variant: "destructive",
-        });
-      }
+      await handleLogin(e);
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Login error",
@@ -52,20 +50,12 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const result = await signUp(email, password);
-      if (result.success) {
-        toast({
-          title: "Account created",
-          description: "Please check your email to confirm your account.",
-        });
-        router.push("/dashboard");
-      } else {
-        toast({
-          title: "Signup failed",
-          description: result.error || "Please try again with a different email.",
-          variant: "destructive",
-        });
-      }
+      await handleSignup();
+      toast({
+        title: "Account created",
+        description: "Please check your email to confirm your account.",
+      });
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Signup error",
@@ -79,7 +69,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithProvider("google");
+      await handleGoogleLogin();
       // No need to redirect as the OAuth flow will handle this
     } catch (error: any) {
       toast({
