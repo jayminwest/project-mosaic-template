@@ -44,37 +44,89 @@ stripe config list
 
 ## Create Your Product and Pricing Tiers
 
-Define your product's subscription tiers. For example, a basic and premium tier:
+You can create your subscription tiers using either the interactive setup script or manually with the Stripe CLI.
+
+### Option 1: Using the Setup Script (Recommended)
+
+The easiest way to set up your subscription plans is to use our interactive setup script:
+
+```bash
+npm run setup-subscription-plans
+```
+
+This script will:
+1. Check if your Stripe API key is configured
+2. Guide you through creating Free, Premium, and Enterprise plans
+3. Configure features and resource limits for each plan
+4. Create the products and prices in Stripe with proper metadata
+5. Set up default prices for each product
+
+After setup, you can verify your configuration with:
+
+```bash
+npm run test-subscription-plans
+```
+
+### Option 2: Manual Setup with Stripe CLI
+
+Alternatively, you can define your product's subscription tiers manually:
 
 ```bash
 # Create a product for your Project Mosaic micro-SaaS
-stripe products create --name="Your Product Name"
+stripe products create --name="Your Product Name" \
+  --description="Your product description" \
+  -d "metadata[plan_type]=premium" \
+  -d "metadata[features]=Feature 1, Feature 2, Feature 3" \
+  -d "metadata[feature_1]=Advanced AI capabilities" \
+  -d "metadata[feature_2]=50MB storage limit" \
+  -d "metadata[feature_3]=Priority support" \
+  -d "metadata[limit_storage]=50" \
+  -d "metadata[limit_resources]=100"
 
 # Save the product ID
 PRODUCT_ID="prod_xxx"
 
-# Create a free tier (for display purposes)
+# Create a free tier
+stripe products create --name="Free Plan" \
+  --description="Basic features for personal use" \
+  -d "metadata[plan_type]=free" \
+  -d "metadata[features]=Basic AI, 10MB Storage, Standard Support" \
+  -d "metadata[feature_1]=Basic AI capabilities" \
+  -d "metadata[feature_2]=10MB storage limit" \
+  -d "metadata[feature_3]=Standard support" \
+  -d "metadata[limit_storage]=10" \
+  -d "metadata[limit_resources]=10"
+
+# Save the free product ID
+FREE_PRODUCT_ID="prod_yyy"
+
+# Create a free tier price
 stripe prices create \
-  --product=$PRODUCT_ID \
+  --product=$FREE_PRODUCT_ID \
   --currency=usd \
   --unit-amount=0 \
   -d "recurring[interval]"=month \
   -d "nickname"="Free Tier"
 
-# Create a premium tier ($19/month with 14-day trial)
+# Create a premium tier price ($19/month)
 stripe prices create \
   --product=$PRODUCT_ID \
   --currency=usd \
   --unit-amount=1900 \
   -d "recurring[interval]"=month \
-  -d "recurring[trial_period_days]"=14 \
   -d "nickname"="Premium Tier"
+
+# Set as default price for the products
+stripe products update $FREE_PRODUCT_ID -d default_price=price_free_xxx
+stripe products update $PRODUCT_ID -d default_price=price_premium_xxx
 
 # List prices to get the price IDs
 stripe prices list --product=$PRODUCT_ID
 ```
 
 Save the price ID for your premium tier (`price_xxx`) - you'll need it for your implementation.
+
+> **Important**: The `plan_type` metadata field is required and must be one of: "free", "premium", or "enterprise". This field is used to determine the subscription tier in your application.
 
 ## Configure the Customer Portal
 

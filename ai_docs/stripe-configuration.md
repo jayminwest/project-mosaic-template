@@ -140,19 +140,28 @@ If your subscription plans aren't appearing correctly:
 
 1. **Check Product Metadata**
    - Ensure each product has the `plan_type` metadata field
-   - Verify the metadata values are correctly formatted
+   - Verify the metadata values are correctly formatted (must be exactly "free", "premium", or "enterprise")
+   - Make sure features are properly defined either as comma-separated list or as individual feature_1, feature_2, etc.
 
 2. **Verify Default Price**
    - Each product must have a default price assigned
    - The default price should be active
+   - The price must be properly linked to the product
 
 3. **Check Edge Function Logs**
    - Review the logs for the `list-subscription-plans` function in the Supabase dashboard
    - Look for any errors related to fetching or parsing products
+   - Verify the Edge Function has proper authorization headers
 
 4. **Test Webhook Mapping**
    - The `stripe-webhook` function logs should show successful mapping of price IDs to plan types
    - Verify the price-to-plan map is being correctly initialized
+   - Check that both product and price metadata are being properly read
+
+5. **Authorization Issues**
+   - Ensure your Edge Functions accept both `apikey` header and `Authorization: Bearer` token format
+   - Check that your payment service is sending the correct authorization headers
+   - Verify that JWT verification is properly configured for your Edge Functions
 
 ## Updating Plans
 

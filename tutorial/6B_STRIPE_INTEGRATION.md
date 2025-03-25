@@ -24,13 +24,19 @@ This migration:
 - Implements triggers for automatic Stripe customer creation/deletion
 - Sets up security policies for Stripe data access
 
-## Create Stripe Session Edge Function
+## Deploy Edge Functions for Subscription Management
 
-The template includes a `create-stripe-session` edge function that handles subscription management. Deploy it:
+The template includes several Edge Functions that handle subscription management. Deploy them:
 
 ```bash
-# Deploy the function
+# Deploy the functions
 supabase functions deploy create-stripe-session --project-ref your-project-id
+supabase functions deploy list-subscription-plans --project-ref your-project-id
+supabase functions deploy stripe-webhook --project-ref your-project-id
+supabase functions deploy cancel-subscription --project-ref your-project-id
+supabase functions deploy update-subscription --project-ref your-project-id
+supabase functions deploy subscription-status --project-ref your-project-id
+supabase functions deploy list-invoices --project-ref your-project-id
 ```
 
 Review the implementation in `supabase/functions/create-stripe-session/index.ts`:
@@ -134,14 +140,17 @@ serve(async (req) => {
 });
 ```
 
-## Deploy Stripe Webhook Handler
+## Verify Edge Function Authorization
 
-The template includes a `stripe-webhook` edge function that processes Stripe events:
+Make sure your Edge Functions are properly configured for authorization:
 
-```bash
-# Deploy the webhook handler
-supabase functions deploy stripe-webhook --project-ref your-project-id
-```
+1. For the webhook function, disable JWT verification:
+   - Go to your Supabase Dashboard → Edge Functions → stripe-webhook → Details
+   - Disable "Enforce JWT Verification"
+
+2. For all other functions, ensure they handle both authorization methods:
+   - They should accept both `apikey` header and `Authorization: Bearer` token format
+   - The payment service should send both headers for compatibility
 
 Review the implementation in `supabase/functions/stripe-webhook/index.ts`:
 
@@ -272,7 +281,11 @@ Set the required secrets for your edge functions:
 supabase secrets set STRIPE_SECRET_KEY=sk_test_xxx
 supabase secrets set STRIPE_PRICE_ID=price_xxx
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+supabase secrets set SUPABASE_URL=https://your-project-id.supabase.co
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJh...
 ```
+
+> **Note**: The `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for the Edge Functions to interact with your Supabase database.
 
 ## Implement Subscription UI
 
@@ -288,10 +301,13 @@ const fetchPlans = async () => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/list-subscription-plans`,
       {
-        method: "GET",
+        method: "POST", // Note: Use POST method
         headers: {
           "Content-Type": "application/json",
+          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""}`,
         },
+        body: JSON.stringify({}), // Empty body for POST request
       }
     );
     
@@ -312,6 +328,8 @@ const fetchPlans = async () => {
   }
 };
 ```
+
+> **Important**: Note that the Edge Function now requires both `apikey` and `Authorization` headers, and uses the POST method.
 
 Create a subscription management component:
 

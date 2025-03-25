@@ -281,7 +281,8 @@ This document outlines the step-by-step implementation plan for transforming the
     - Debug the list-subscription-plans Edge Function to ensure it correctly fetches and formats Stripe products
     - Verify that product metadata is being properly set during plan creation
     - Add additional logging to trace the flow from Stripe API to response
-  - **Status**: 🔄 In Progress - Need to fix the Edge Function or product configuration
+    - Ensure proper authorization headers are sent with the request
+  - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
 
 ## Testing & Validation
 
