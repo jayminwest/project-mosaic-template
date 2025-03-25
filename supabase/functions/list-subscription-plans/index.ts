@@ -99,6 +99,9 @@ serve(async (req) => {
   // Check for authorization
   const authHeader = req.headers.get("apikey") || req.headers.get("Authorization");
   if (!authHeader) {
+    // Log headers for debugging
+    console.log("Headers received:", Object.fromEntries(req.headers.entries()));
+    
     return new Response(
       JSON.stringify({ error: "Unauthorized - API key required" }),
       {
@@ -110,6 +113,8 @@ serve(async (req) => {
       }
     );
   }
+  
+  console.log("Auth header found:", authHeader.substring(0, 10) + "...");
 
   try {
     // Fetch all active products with their prices
