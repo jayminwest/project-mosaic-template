@@ -2,10 +2,6 @@
 
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
-import { RouteGuard } from "@/components/RouteGuard";
 import { Toaster } from "@/components/ui/toaster";
 import { useConfig } from "@/lib/config/useConfig";
 
@@ -21,21 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.className} bg-gradient-to-br from-primary to-secondary min-h-screen`}
+        className={`${inter.className} min-h-screen bg-background`}
         style={{
           fontFamily: theme?.fonts?.body || 'Inter, sans-serif',
         }}
       >
         <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            <Card className="w-full max-w-2xl mx-auto">
-              <CardContent className="p-6">
-                <RouteGuard>{children}</RouteGuard>
-              </CardContent>
-            </Card>
-          </main>
-          <Footer />
+          {children}
         </div>
         <Toaster />
       </body>
