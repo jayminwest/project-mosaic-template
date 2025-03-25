@@ -11,9 +11,11 @@ import { CTASection } from "@/components/marketing/CTASection";
 import { TestimonialSection } from "@/components/marketing/TestimonialSection";
 import { useConfig } from "@/lib/config/useConfig";
 import LoginForm from "@/components/LoginForm";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LandingPage() {
   const { productConfig } = useConfig();
+  const { user } = useAuth();
   
   // Feature section data
   const features = [
@@ -218,6 +220,28 @@ export default function LandingPage() {
     }
   ];
   
+  // If user is logged in, redirect to dashboard
+  if (user) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 container py-16 flex flex-col items-center justify-center">
+          <h1 className="text-3xl font-bold mb-6">Welcome Back!</h1>
+          <p className="text-xl mb-8">You're already logged in.</p>
+          <div className="flex gap-4">
+            <Link href="/dashboard">
+              <Button size="lg">Go to Dashboard</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" size="lg">View Profile</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -265,7 +289,7 @@ export default function LandingPage() {
         />
         
         {/* Login Form Section */}
-        <section className="py-12 md:py-24">
+        <section className="py-12 md:py-24" id="login">
           <div className="container px-4 md:px-6 max-w-md mx-auto">
             <div className="space-y-6">
               <div className="space-y-2 text-center">
