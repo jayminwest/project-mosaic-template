@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-background">
-      <div className="container px-4 py-8 md:px-6 md:py-12 mx-auto">
+    <footer className="border-t bg-background w-full">
+      <div className="container px-4 py-8 md:px-6 md:py-12 mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Project Mosaic</h3>
