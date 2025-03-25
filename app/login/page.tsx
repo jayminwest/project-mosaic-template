@@ -91,8 +91,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] w-full py-8 px-4">
+      <Card className="w-full max-w-md">
         <div className="w-full">
           <div className="flex w-full mb-4 border-b">
             <button 
