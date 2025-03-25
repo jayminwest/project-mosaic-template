@@ -256,3 +256,86 @@ export default function DashboardPage() {
     </div>
   );
 }
+"use client";
+
+import { useAuth } from "@/hooks/useAuth";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+
+export default function DashboardPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome, {user.name || user.email}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              This is your dashboard. You can customize this page for your specific product.
+            </p>
+            <Button onClick={() => router.push("/profile")}>
+              View Profile
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Usage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Your current usage:
+            </p>
+            <div className="mt-4">
+              <div className="flex justify-between mb-2">
+                <span>Resources:</span>
+                <span>{user.tasks_created || 0} / {user.tasks_limit || 10}</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2.5">
+                <div 
+                  className="bg-primary h-2.5 rounded-full" 
+                  style={{ width: `${Math.min(((user.tasks_created || 0) / (user.tasks_limit || 10)) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/profile")}>
+              Manage Profile
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/settings")}>
+              Settings
+            </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/help")}>
+              Help & Support
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
