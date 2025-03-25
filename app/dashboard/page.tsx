@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useConfig } from "@/lib/config/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { DebugComponentRender } from "@/lib/debug-components";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -17,11 +16,9 @@ export default function DashboardPage() {
   const { currentPlan, isPremiumTier } = useSubscription();
   const [activeTab, setActiveTab] = useState<string>("overview");
   
-  // Add debug component
   if (isLoading) {
     return (
       <>
-        <DebugComponentRender componentName="DashboardPage" />
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-grow container mx-auto px-4 py-8">
@@ -36,7 +33,6 @@ export default function DashboardPage() {
   if (!user) {
     return (
       <>
-        <DebugComponentRender componentName="DashboardPage" />
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-grow container mx-auto px-4 py-8">
@@ -58,7 +54,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      <DebugComponentRender componentName="DashboardPage" />
       <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
