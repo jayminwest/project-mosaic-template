@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConfig } from "@/lib/config/useConfig";
 import { useRouter } from "next/navigation";
 
-export const Header = () => {
+export function Header() {
   const { productConfig } = useConfig();
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();

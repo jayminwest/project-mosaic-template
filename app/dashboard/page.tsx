@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useConfig } from "@/lib/config/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { DebugComponentRender } from "@/lib/debug-components";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -15,6 +16,11 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  
+  // Add debug component
+  return (
+    <>
+      <DebugComponentRender componentName="DashboardPage" />
 
   if (isLoading) {
     return (
@@ -48,8 +54,7 @@ export default function DashboardPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -253,6 +258,7 @@ export default function DashboardPage() {
         </div>
       </main>
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }
