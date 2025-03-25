@@ -16,7 +16,7 @@ import {
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <main className="flex-grow">
+      <div className="flex-grow">
         <HeroSection
           title="Project Mosaic"
           description="A powerful framework for building micro-SaaS products quickly and efficiently. Launch your next product in days, not months."
@@ -155,7 +155,7 @@ export default function LandingPage() {
           secondaryButtonText="View Documentation"
           secondaryButtonLink="/docs"
         />
-      </main>
+      </div>
       
       <Footer />
     </div>
