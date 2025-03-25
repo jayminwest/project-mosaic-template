@@ -18,39 +18,41 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<string>("overview");
   
   // Add debug component
-  return (
-    <>
-      <DebugComponentRender componentName="DashboardPage" />
-
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <LoadingSkeleton count={3} />
-        </main>
-        <Footer />
-      </div>
+      <>
+        <DebugComponentRender componentName="DashboardPage" />
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-8">
+            <LoadingSkeleton count={3} />
+          </main>
+          <Footer />
+        </div>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-            <h1 className="text-2xl font-bold mb-4">Please log in to access your dashboard</h1>
-            <p className="text-muted-foreground mb-6">
-              You need to be logged in to view this page
-            </p>
-            <Button asChild variant="default">
-              <a href="/">Go to Login</a>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <>
+        <DebugComponentRender componentName="DashboardPage" />
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-8">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+              <h1 className="text-2xl font-bold mb-4">Please log in to access your dashboard</h1>
+              <p className="text-muted-foreground mb-6">
+                You need to be logged in to view this page
+              </p>
+              <Button asChild variant="default">
+                <a href="/">Go to Login</a>
+              </Button>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </>
     );
   }
 
