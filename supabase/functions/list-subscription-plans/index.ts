@@ -128,10 +128,22 @@ serve(async (req) => {
   console.log("Auth token found:", authToken.substring(0, 10) + "...");
 
   try {
+    // Log the request for debugging
+    console.log("Processing list-subscription-plans request");
+    
     // Fetch all active products with their prices
+    console.log("Fetching products from Stripe...");
     const products = await stripe.products.list({
       active: true,
       expand: ["data.default_price"],
+    });
+    
+    console.log(`Found ${products.data.length} products in Stripe`);
+    
+    // Log products for debugging
+    products.data.forEach(product => {
+      console.log(`Product: ${product.id}, Name: ${product.name}, Metadata: ${JSON.stringify(product.metadata || {})}`);
+      console.log(`Default price: ${typeof product.default_price === 'object' ? product.default_price.id : product.default_price}`);
     });
 
     // Format the products and prices for the frontend
@@ -140,11 +152,18 @@ serve(async (req) => {
       .map(product => {
         const price = typeof product.default_price === 'object' ? product.default_price : null;
         
-        if (!price) return null;
+        if (!price) {
+          console.log(`Skipping product ${product.id} - no price object`);
+          return null;
+        }
         
         // Parse features and limits from metadata
         const features = parseFeatures(product);
         const limits = parseLimits(product);
+        
+        console.log(`Processing product ${product.id} with plan_type ${product.metadata.plan_type}`);
+        console.log(`Features: ${features.join(', ')}`);
+        console.log(`Limits: ${JSON.stringify(limits || {})}`);
         
         return {
           id: product.id,
@@ -160,6 +179,8 @@ serve(async (req) => {
         };
       })
       .filter(Boolean); // Remove null entries
+    
+    console.log(`Returning ${plans.length} formatted plans`);
 
     return new Response(
       JSON.stringify({ plans }),

@@ -485,13 +485,17 @@ async function setupSubscriptionPlans() {
       console.log(chalk.green(`✓ Created product: ${product.name}`));
       
       // Add individual features as metadata
+      const featureUpdates = {};
       for (let i = 0; i < plan.features.length; i++) {
-        await stripe.products.update(product.id, {
-          metadata: {
-            [`feature_${i + 1}`]: plan.features[i].description,
-          },
-        });
+        featureUpdates[`feature_${i + 1}`] = plan.features[i].description;
       }
+      
+      // Update all features at once to avoid race conditions
+      await stripe.products.update(product.id, {
+        metadata: featureUpdates,
+      });
+      
+      console.log(chalk.green(`✓ Added ${plan.features.length} features to metadata`));
       
       // Create price
       const price = await stripe.prices.create({

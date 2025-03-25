@@ -25,6 +25,10 @@ async function testSubscriptionPlans() {
   try {
     console.log(chalk.gray('Fetching subscription plans...'));
     
+    // Add debugging to see what's happening
+    console.log(chalk.gray(`Using Supabase URL: ${SUPABASE_URL}`));
+    console.log(chalk.gray(`API Key length: ${SUPABASE_ANON_KEY?.length || 0} characters`));
+    
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/list-subscription-plans`,
       {
@@ -32,16 +36,22 @@ async function testSubscriptionPlans() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY, // Add this as well for compatibility
         },
         body: JSON.stringify({}),
       }
     );
     
+    console.log(chalk.gray(`Response status: ${response.status} ${response.statusText}`));
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(chalk.red(`Error response: ${errorText}`));
       throw new Error(`Failed to fetch subscription plans: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log(chalk.gray(`Raw response data: ${JSON.stringify(data, null, 2)}`));
     
     if (!data.plans || data.plans.length === 0) {
       console.log(chalk.yellow('No subscription plans found.'));
