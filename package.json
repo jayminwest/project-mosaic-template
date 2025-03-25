@@ -13,6 +13,8 @@
     "test-email": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-email.ts",
     "init-config": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/init-config.ts",
     "quick-setup": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/quick-setup.ts",
+    "setup-subscription-plans": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/setup-subscription-plans.ts",
+    "test-subscription-plans": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-subscription-plans.ts",
     "supabase:migration:local": "supabase migration up"
   },
   "dependencies": {

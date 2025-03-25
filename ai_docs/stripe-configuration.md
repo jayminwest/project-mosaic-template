@@ -34,6 +34,31 @@ You can also define individual features using numbered keys:
 
 ## Step-by-Step Configuration
 
+### Automatic Setup (Recommended)
+
+The easiest way to configure your subscription plans is to use our interactive setup script:
+
+```bash
+npm run setup-subscription-plans
+```
+
+This script will:
+1. Check if your Stripe API key is configured
+2. Guide you through creating Free, Premium, and Enterprise plans
+3. Configure features and resource limits for each plan
+4. Create the products and prices in Stripe with proper metadata
+5. Set up default prices for each product
+
+After setup, you can verify your configuration with:
+
+```bash
+npm run test-subscription-plans
+```
+
+### Manual Setup
+
+If you prefer to configure plans manually:
+
 1. **Log in to Stripe Dashboard**
    - Go to [https://dashboard.stripe.com/](https://dashboard.stripe.com/)
    - Navigate to Products > Add Product
@@ -84,7 +109,19 @@ You can also define individual features using numbered keys:
 
 After setting up your products, you can verify they're correctly configured by:
 
-1. **Testing the List Subscription Plans Endpoint**
+1. **Using the Test Script (Recommended)**
+
+```bash
+npm run test-subscription-plans
+```
+
+This will:
+- Fetch all subscription plans from your Stripe account
+- Display detailed information about each plan
+- Validate the configuration for common issues
+- Optionally test creating a checkout session
+
+2. **Testing the List Subscription Plans Endpoint Manually**
 
 ```bash
 curl -X POST "https://YOUR_PROJECT_ID.supabase.co/functions/v1/list-subscription-plans" \
@@ -93,7 +130,7 @@ curl -X POST "https://YOUR_PROJECT_ID.supabase.co/functions/v1/list-subscription
   -d "{}"
 ```
 
-2. **Checking the Stripe Webhook**
+3. **Checking the Stripe Webhook**
 
 The Stripe webhook should correctly map price IDs to plan types. You can verify this by checking the logs in the Supabase dashboard for the `stripe-webhook` function.
 

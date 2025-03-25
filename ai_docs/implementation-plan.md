@@ -77,6 +77,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create `/scripts/init-config.ts` for interactive configuration setup with Stripe integration
   - [x] Create `/lib/config/quick-setup.ts` for single-file LLM-friendly configuration
   - [x] Create `/scripts/quick-setup.ts` to process the quick setup configuration
+  - [x] Create `/scripts/setup-subscription-plans.ts` for interactive Stripe plan configuration
 
 - [x] **Email Service Layer**
   - [x] Install required packages (resend, react-email, @react-email/components)
@@ -93,6 +94,14 @@ This document outlines the step-by-step implementation plan for transforming the
     - [x] `/scripts/setup-email.ts` - Interactive email configuration ✅
     - [x] `/scripts/test-email.ts` - Email testing utility ✅
   - [x] Update documentation in ai_docs/ and tutorial/ to include email setup ✅
+
+- [x] **Subscription Plan Configuration**
+  - [x] Create `/scripts/setup-subscription-plans.ts` for interactive Stripe plan setup
+  - [x] Implement plan creation and metadata configuration
+  - [x] Add validation for proper plan metadata
+  - [x] Create testing utility for verifying plan configuration
+  - [x] Update documentation in `ai_docs/stripe-configuration.md` with setup instructions
+  - [x] Add subscription plan configuration to the quick setup process
 
 - [x] **Supabase Email Integration**
   - [x] Enhance `/scripts/setup-email.ts` to guide Supabase SMTP configuration
@@ -232,6 +241,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Add deployment automation script
   - [x] Create customization guide with examples ✅
   - [x] Add email testing and configuration scripts ✅
+  - [x] Add subscription plan configuration script ✅
   - [x] Create dependency resolution script for AI SDK installation
 
 ## Known Issues & Solutions
