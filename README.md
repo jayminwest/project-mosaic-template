@@ -2,229 +2,177 @@
 
 A framework for rapidly developing profitable micro-SaaS products with Next.js, Supabase, and AI integration. Project Mosaic enables you to build and launch niche SaaS products in 1-2 weeks.
 
-![Project Mosaic Banner](ai_docs/images/project-mosaic-banner.png)
-
-## Overview
+## 🚀 Overview
 
 Project Mosaic is designed to accelerate the development of micro-SaaS products by providing:
 
-- **Provider-agnostic AI integration** supporting multiple AI services
+- **Provider-agnostic AI integration** supporting multiple AI services (OpenAI, Anthropic)
 - **Ready-to-use marketing components** for quick landing page creation
-- **Built-in analytics dashboard** for tracking product performance
-- **Flexible subscription system** with Stripe integration
+- **Built-in subscription system** with Stripe integration and usage limits
 - **White-labeling capabilities** for easy customization
-- **Transactional email system** with customizable templates
+- **Transactional email system** with React Email templates
+- **Configuration system** for rapid product setup
 
-## Core Features
+## 🛠️ Core Features
 
 - **AI Service Abstraction Layer**: Switch between AI providers seamlessly
-- **Marketing Component Library**: Build landing pages in hours, not days
-- **Analytics Dashboard**: Track performance across all your products
+- **Email Service Layer**: Send transactional emails with React Email templates
 - **Subscription Management**: Multiple pricing tiers with usage limits
 - **White-Labeling System**: Customize branding and appearance
-- **Email Service Layer**: Send transactional emails with React Email templates
+- **Configuration System**: Centralized product configuration
 
-## Tech Stack
+## 🧰 Tech Stack
 
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **AI Integration**: OpenAI, Anthropic, and more
+- **AI Integration**: OpenAI, Anthropic, with fallback mechanisms
 - **Payments**: Stripe subscription system
-- **Analytics**: Custom dashboard with key metrics
 - **Email**: Resend with React Email templates
 
-## Quick Start
+## 🏁 Quick Start
 
 ### Prerequisites
 
-- Node.js and npm
+- Node.js 18+ and npm
 - Supabase CLI
 - Stripe CLI (optional)
 - Account credentials for:
   - Supabase
-  - OpenAI
-  - Stripe (test mode)
+  - Resend (for email)
+  - OpenAI and/or Anthropic (optional)
+  - Stripe (for subscriptions)
 
-### Local Development Setup
+### Initial Setup
 
 1. Clone and install dependencies:
 
 ```bash
-# From project root.
 npm install
 ```
 
-2. Create environment files - update the values with your keys.
+2. Create environment files:
 ```bash
 cp .env.example .env.local
 cp .env.example .env.test.local
 ```
 
-3. Run development server:
+3. Run the configuration setup:
+```bash
+npm run init-config
+```
+
+4. Set up email service:
+```bash
+npm run setup-email
+```
+
+5. Run development server:
 ```bash
 npm run dev
 # Visit http://localhost:3000
 ```
 
-At this stage, it won't work well yet because we haven't set up the backend.
-
 ### Supabase Setup
 
-1. Create new Supabase project at supabase.com
+1. Create a new Supabase project at [supabase.com](https://supabase.com)
 
-2. Link project:
+2. Link your project:
 ```bash
 supabase init
 supabase link --project-ref your-project-ref
 ```
 
-3. Deploy database and functions:
-
+3. Apply database migrations:
 ```bash
-# Apply DB migrations
 supabase db push
+```
 
-# Or you can use this command if you need to nuke the DB and reset it.
-# supabase db reset --linked
-
-# Deploy edge functions
-supabase functions deploy create-task-with-ai
+4. Deploy edge functions:
+```bash
+supabase functions deploy ai-service
 supabase functions deploy create-stripe-session
+supabase functions deploy list-subscription-plans
 supabase functions deploy stripe-webhook
 ```
 
-4. Disable `Enforce JWT Verification` ( **Edge Functions > stripe-webhook > Details > Enforce JWT Verification**) for your Stripe webhook Edge Function.
+5. Disable JWT verification for the webhook function:
+   - Go to Supabase Dashboard → Edge Functions → stripe-webhook → Details
+   - Disable "Enforce JWT Verification"
 
-5. Disable email confirmation in Supabase Dashboard:
-   - Authentication > Providers > Email
-   - Uncheck "Confirm email"
+### Environment Variables
 
-### OpenAI Setup
+Required environment variables for `.env.local`:
 
-1. Get API key from platform.openai.com
-2. Set as Supabase secret:
-
-```bash
-supabase secrets set OPENAI_API_KEY=your-key
 ```
-
-### Email Setup
-
-1. Create a Resend account at [resend.com](https://resend.com)
-2. Get your API key from the Resend dashboard
-3. Run the setup script:
-
-```bash
-npm run setup-email
-```
-
-4. Test your email configuration:
-
-```bash
-npm run test-email
-```
-
-### Stripe Setup
-
-1. Create Stripe test account and get API keys
-
-2. Create subscription product:
-
-```bash
-stripe prices create \
-  --currency=usd \
-  --unit-amount=1000 \
-  -d "recurring[interval]"=month \
-  -d "recurring[trial_period_days]"=14 \
-  -d "product_data[name]"="TaskMaster Premium"
-```
-
-3. Configure customer portal:
-
-```bash
-stripe billing_portal configurations create \
-  -d "business_profile[privacy_policy_url]=https://your-site.com/privacy" \
-  -d "business_profile[terms_of_service_url]=https://your-site.com/terms" \
-  -d "default_return_url=http://localhost:3000/profile" \
-  -d "features[subscription_cancel][enabled]=true" \
-  -d "features[payment_method_update][enabled]=true"
-```
-
-4. Set up webhook in Stripe Dashboard:
-   - Endpoint: `https://[PROJECT_ID].supabase.co/functions/v1/stripe-webhook`
-   - Events: `checkout.session.completed`, `customer.subscription.deleted`, `customer.subscription.updated`
-
-5. Set up Stripe secret in Supabase PostgresSQL vault. Go into your Supabase dashboard, to go **SQL Editor** then run this command (replacing your secret key):
-
-```sql
-insert into vault.secrets (name, secret)
-select 'stripe', 'sk_test_xxx'
-returning key_id;
-```
-
-### Required Environment Variables
-
-Add to `.env.local` and `.env.test.local`:
-
-```bash
-# Add this to both:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 RESEND_API_KEY=re_...
 EMAIL_FROM=noreply@yourdomain.com
-
-# Only .env.test.local needs these:
-SUPABASE_SERVICE_KEY=your-service-key
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID=price_...
-STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-### Set Supabase Secrets
-
-Your Edge Functions will also need those environment variables. Set them like this:
+Set Supabase secrets for edge functions:
 
 ```bash
 supabase secrets set OPENAI_API_KEY="sk-xxx..."
-supabase secrets set STRIPE_SECRET_KEY=sk_test_xxx
-supabase secrets set STRIPE_PRICE_ID=price_xxx
-supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+supabase secrets set ANTHROPIC_API_KEY="sk-ant-xxx..."
+supabase secrets set STRIPE_SECRET_KEY="sk_test_xxx"
+supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_xxx"
 ```
 
-### Running Tests
+## 📚 Documentation
+
+Comprehensive documentation is available in the repository:
+
+- **Architecture**: [ai_docs/architecture.md](ai_docs/architecture.md)
+- **Customization Guide**: [ai_docs/customization.md](ai_docs/customization.md)
+- **Email Configuration**: [ai_docs/email-configuration.md](ai_docs/email-configuration.md)
+- **Project Overview**: [ai_docs/PROJECT_MOSAIC_OVERVIEW.md](ai_docs/PROJECT_MOSAIC_OVERVIEW.md)
+
+## 📋 Tutorials
+
+Step-by-step tutorials for implementing specific features:
+
+- **Database Setup**: [tutorial/1_CRUD.md](tutorial/1_CRUD.md)
+- **Authentication**: [tutorial/2_AUTH.md](tutorial/2_AUTH.md)
+- **Storage**: [tutorial/3_STORAGE.md](tutorial/3_STORAGE.md)
+- **AI Integration**: [tutorial/4_EDGE_FUNCTION.md](tutorial/4_EDGE_FUNCTION.md)
+- **Usage Limits**: [tutorial/5_USAGE_LIMITS.md](tutorial/5_USAGE_LIMITS.md)
+- **Stripe Setup**: [tutorial/6A_STRIPE_SETUP.md](tutorial/6A_STRIPE_SETUP.md)
+- **Stripe Integration**: [tutorial/6B_STRIPE_INTEGRATION.md](tutorial/6B_STRIPE_INTEGRATION.md)
+- **Email Integration**: [tutorial/7_EMAIL_INTEGRATION.md](tutorial/7_EMAIL_INTEGRATION.md)
+- **Configuration System**: [tutorial/8_CONFIGURATION_SYSTEM.md](tutorial/8_CONFIGURATION_SYSTEM.md)
+
+## 🧪 Testing
 
 ```bash
 # Run all tests
 npm test
 
 # Run specific test file
-npm test tests/integration/2_auth.test.ts
-
-# Run specific test case
-npm test tests/integration/5_task_limits.test.ts -- -t "free user cannot exceed task limit"
+npm test tests/integration/02_auth.test.ts
 ```
 
-### Testing Locally
+## 📁 Project Structure
 
-Start development server and go to the local site for testing.
-
-```bash
-npm run dev
 ```
-
-## Project Structure
-
-```text
-taskapp/
-├── app/               # Next.js pages and layouts
-├── components/        # React components
-├── hooks/             # Application logic
-│   ├── useAuth.ts     # Authentication
-│   ├── useTask.ts     # Task management
-│   └── useUser.ts     # User profile/subscription
+project-mosaic/
+├── ai_docs/           # AI-optimized documentation
+├── app/               # Next.js app router pages
+├── components/        # UI Components
+├── hooks/             # Core service hooks
+├── lib/               # Core libraries and services
+│   ├── ai/            # AI service abstraction
+│   ├── auth/          # Auth service
+│   ├── config/        # Configuration system
+│   ├── email/         # Email service
+│   └── payment/       # Payment service
 ├── supabase/
 │   ├── functions/     # Edge Functions
 │   └── migrations/    # Database migrations
-└── tests/
-    └── integration/   # Integration tests
+├── tests/             # Test suites
+└── tutorial/          # Implementation guides
 ```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
