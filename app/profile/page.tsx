@@ -296,14 +296,9 @@ export default function Profile() {
                 <Button 
                   onClick={() => {
                     if (session?.access_token) {
-                      // Use the premium plan price ID from the current plans
-                      const premiumPlan = plans.find(plan => plan.planType === 'premium');
-                      if (premiumPlan) {
-                        manageSubscription(session.access_token, premiumPlan.priceId);
-                      } else {
-                        // Fallback to just managing the subscription without a specific plan
-                        manageSubscription(session.access_token);
-                      }
+                      // Just manage the subscription without a specific plan ID
+                      // The backend will use the default price ID if available
+                      manageSubscription(session.access_token);
                     } else {
                       console.error("No access token available");
                     }
