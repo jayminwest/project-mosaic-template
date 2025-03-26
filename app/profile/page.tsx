@@ -165,7 +165,7 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Prepare usage data based on user metrics
+  // Prepare usage data based on actual database fields
   const usageData = [
     {
       name: "Tasks",
@@ -183,12 +183,6 @@ export default function Profile() {
       name: "API Calls",
       current: usageMetrics.api_calls || 0,
       limit: currentPlan?.planType === 'premium' ? 1000 : 100,
-      unit: ""
-    },
-    {
-      name: "Projects",
-      current: usageMetrics.projects_created || 0,
-      limit: currentPlan?.planType === 'premium' ? 10 : 3,
       unit: ""
     }
   ];

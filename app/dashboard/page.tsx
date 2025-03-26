@@ -134,12 +134,12 @@ export default function DashboardPage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Active Projects</span>
-                        <span className="font-medium text-lg">3</span>
+                        <span className="text-muted-foreground">Storage Used</span>
+                        <span className="font-medium text-lg">{user?.storage_used?.toFixed(1) || "0.0"} MB</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Team Members</span>
-                        <span className="font-medium text-lg">2</span>
+                        <span className="text-muted-foreground">API Calls</span>
+                        <span className="font-medium text-lg">{user?.api_calls || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Plan</span>
@@ -199,79 +199,17 @@ export default function DashboardPage() {
                 <Button>Create New Project</Button>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Project Card 1 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Marketing Website</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
-                    </div>
-                    <CardDescription>Last updated 2 days ago</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Company website with blog and contact form.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>2 team members</span>
-                      <span>4 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Project Card 2 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>E-commerce Store</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">In Progress</span>
-                    </div>
-                    <CardDescription>Last updated yesterday</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Online store with product catalog and checkout.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>3 team members</span>
-                      <span>6 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Project Card 3 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Mobile App</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Planning</span>
-                    </div>
-                    <CardDescription>Created 1 week ago</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      iOS and Android app for customer engagement.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>1 team member</span>
-                      <span>2 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Projects</CardTitle>
+                  <CardDescription>
+                    You don't have any projects yet. Create your first project to get started.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center py-6">
+                  <Button>Create New Project</Button>
+                </CardContent>
+              </Card>
             </div>
           )}
           
@@ -285,21 +223,21 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
                   <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">Total Resources</h3>
+                    <h3 className="font-medium mb-1">Tasks Created</h3>
                     <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.resources_used || 0}
+                      {user?.tasks_created || 0}
                     </p>
                   </div>
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <h3 className="font-medium mb-1">Storage Used</h3>
                     <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.storage_used?.toFixed(2) || "0.00"} MB
+                      {user?.storage_used?.toFixed(2) || "0.00"} MB
                     </p>
                   </div>
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <h3 className="font-medium mb-1">API Calls</h3>
                     <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.api_calls || 0}
+                      {user?.api_calls || 0}
                     </p>
                   </div>
                 </div>
@@ -338,66 +276,35 @@ export default function DashboardPage() {
                 <Button>Add New Integration</Button>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Integration Card 1 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Stripe</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Connected</span>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integrations</CardTitle>
+                  <CardDescription>
+                    Connect your account with these services to enhance your experience.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">Stripe</h3>
+                        <p className="text-sm text-muted-foreground">Payment processing</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        {currentPlan?.planType === 'premium' ? 'Connected' : 'Connect'}
+                      </Button>
                     </div>
-                    <CardDescription>Payment processing</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Process payments and manage subscriptions.
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">Configure</Button>
-                    <Button variant="ghost" size="sm">Disconnect</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Integration Card 2 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Google Analytics</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Connected</span>
+                    
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">OpenAI</h3>
+                        <p className="text-sm text-muted-foreground">AI capabilities</p>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
                     </div>
-                    <CardDescription>Analytics and tracking</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Track user behavior and website performance.
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">Configure</Button>
-                    <Button variant="ghost" size="sm">Disconnect</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Integration Card 3 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Slack</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">Not Connected</span>
-                    </div>
-                    <CardDescription>Team communication</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Get notifications and updates in your Slack channels.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full" size="sm">Connect</Button>
-                  </CardFooter>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
