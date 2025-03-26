@@ -171,12 +171,20 @@ serve(async (req) => {
         return hasPlanType;
       })
       .map(async (product) => {
+        console.log(`Processing product ${product.id} (${product.name})`);
+        
         // Get the price object
         let price: any = null;
         
         if (typeof product.default_price === 'object') {
           price = product.default_price;
           console.log(`Using object price: ${price.id}`);
+          console.log(`Price details: ${JSON.stringify({
+            unit_amount: price.unit_amount,
+            currency: price.currency,
+            type: price.type,
+            recurring: price.recurring
+          })}`);
         } else if (product.default_price) {
           // If default_price is just an ID, we need to fetch the price
           console.log(`Need to fetch price: ${product.default_price}`);
@@ -185,8 +193,15 @@ serve(async (req) => {
             const fetchedPrice = await stripe.prices.retrieve(product.default_price as string);
             price = fetchedPrice;
             console.log(`Fetched price: ${price.id}`);
+            console.log(`Fetched price details: ${JSON.stringify({
+              unit_amount: price.unit_amount,
+              currency: price.currency,
+              type: price.type,
+              recurring: price.recurring
+            })}`);
           } catch (error) {
             console.error(`Error fetching price ${product.default_price}:`, error);
+            console.error(`Error details: ${JSON.stringify(error)}`);
             // Create a temporary price object with basic info as fallback
             price = {
               id: product.default_price,
@@ -195,7 +210,10 @@ serve(async (req) => {
               type: 'recurring',
               recurring: { interval: 'month' }
             };
+            console.log(`Created fallback price object: ${JSON.stringify(price)}`);
           }
+        } else {
+          console.log(`Product ${product.id} has no default_price`);
         }
         
         if (!price) {
@@ -211,22 +229,39 @@ serve(async (req) => {
         console.log(`Features: ${features.length > 0 ? features.join(', ') : 'none'}`);
         console.log(`Limits: ${JSON.stringify(limits || {})}`);
         
-        // Create the plan object
-        const plan = {
-          id: product.id,
-          name: product.name,
-          description: product.description || product.name,
-          priceId: price.id,
-          price: price.unit_amount ? price.unit_amount / 100 : 0, // Convert from cents to dollars
-          currency: price.currency || 'usd',
-          interval: price.type === 'recurring' && price.recurring ? price.recurring.interval : 'month',
-          planType: product.metadata.plan_type as 'free' | 'premium',
-          features,
-          ...(limits && { limits }),
-        };
-        
-        console.log(`Created plan object: ${JSON.stringify(plan)}`);
-        return plan;
+        try {
+          // Create the plan object with detailed logging
+          console.log("Creating plan object with:");
+          console.log(`- ID: ${product.id}`);
+          console.log(`- Name: ${product.name}`);
+          console.log(`- Description: ${product.description || product.name}`);
+          console.log(`- Price ID: ${price.id}`);
+          console.log(`- Price amount: ${price.unit_amount}`);
+          console.log(`- Currency: ${price.currency}`);
+          console.log(`- Interval: ${price.type === 'recurring' && price.recurring ? price.recurring.interval : 'month'}`);
+          console.log(`- Plan type: ${product.metadata.plan_type}`);
+          
+          const plan = {
+            id: product.id,
+            name: product.name,
+            description: product.description || product.name,
+            priceId: price.id,
+            price: price.unit_amount ? price.unit_amount / 100 : 0, // Convert from cents to dollars
+            currency: price.currency || 'usd',
+            interval: price.type === 'recurring' && price.recurring ? price.recurring.interval : 'month',
+            planType: product.metadata.plan_type as 'free' | 'premium',
+            features,
+            ...(limits && { limits }),
+          };
+          
+          console.log(`Created plan object: ${JSON.stringify(plan)}`);
+          return plan;
+        } catch (error) {
+          console.error(`Error creating plan object for ${product.id}:`, error);
+          console.error(`Error details: ${JSON.stringify(error)}`);
+          // Return an empty object instead of null to help diagnose the issue
+          return {};
+        }
       })
       .filter(Boolean); // Remove null entries
     
