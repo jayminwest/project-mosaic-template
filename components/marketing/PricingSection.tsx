@@ -140,6 +140,11 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
               <div className="mt-4">
                 <span className="text-4xl font-bold">{tier.price}</span>
                 <span className="text-muted-foreground">/{tier.interval}</span>
+                {tier.trialPeriod && (
+                  <div className="mt-1 text-sm text-primary">
+                    {tier.trialPeriod} days free trial
+                  </div>
+                )}
               </div>
               <ul className="mt-6 space-y-2">
                 {tier.features.map((feature, featureIndex) => (
