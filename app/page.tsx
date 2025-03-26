@@ -66,60 +66,6 @@ export default function LandingPage() {
         <PricingSection
           title="Simple, Transparent Pricing"
           description="Choose the plan that's right for your project."
-          tiers={[
-            {
-              name: "Free",
-              description: "For personal projects and experimentation",
-              price: "$0",
-              interval: "forever",
-              features: [
-                { text: "Basic AI capabilities", included: true },
-                { text: "10 resources limit", included: true },
-                { text: "5MB storage", included: true },
-                { text: "Community support", included: true },
-                { text: "Advanced AI features", included: false },
-                { text: "Priority support", included: false }
-              ],
-              buttonText: "Get Started",
-              buttonLink: "/login",
-              buttonVariant: "outline"
-            },
-            {
-              name: "Premium",
-              description: "For professionals and growing businesses",
-              price: "$9.99",
-              interval: "per month",
-              features: [
-                { text: "Advanced AI capabilities", included: true },
-                { text: "100 resources limit", included: true },
-                { text: "50MB storage", included: true },
-                { text: "Priority support", included: true },
-                { text: "Custom domain", included: true },
-                { text: "Team collaboration", included: false }
-              ],
-              buttonText: "Start Free Trial",
-              buttonLink: "/login",
-              buttonVariant: "default",
-              highlighted: true
-            },
-            {
-              name: "Enterprise",
-              description: "For teams and organizations",
-              price: "Contact us",
-              interval: "custom pricing",
-              features: [
-                { text: "Premium AI capabilities", included: true },
-                { text: "Unlimited resources", included: true },
-                { text: "Unlimited storage", included: true },
-                { text: "24/7 dedicated support", included: true },
-                { text: "Custom domain", included: true },
-                { text: "Team collaboration", included: true }
-              ],
-              buttonText: "Contact Sales",
-              buttonLink: "/contact",
-              buttonVariant: "outline"
-            }
-          ]}
         />
         
         <TestimonialSection
