@@ -8,8 +8,9 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept, x-requested-with',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 console.log("🌍 Create Stripe Customer function is running...");
@@ -22,7 +23,10 @@ const stripe = new Stripe(STRIPE_SECRET_KEY, {
 Deno.serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
   
   // Check for authorization
