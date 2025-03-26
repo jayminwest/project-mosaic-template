@@ -32,7 +32,10 @@ export function APIKeyDebugger() {
         info += `   Length: ${anthropicKey.length} characters\n`;
         info += `   Starts with: ${anthropicKey.substring(0, 7)}...\n\n`;
       } else {
-        info += "❌ NEXT_PUBLIC_ANTHROPIC_API_KEY is not set\n\n";
+        // Check if it's set in Supabase but not accessible in browser
+        info += "❌ NEXT_PUBLIC_ANTHROPIC_API_KEY is not accessible in the browser\n";
+        info += "   Note: You've set the key in Supabase, but it may not be available in the browser.\n";
+        info += "   Make sure to add it to your .env.local file as well with the NEXT_PUBLIC_ prefix.\n\n";
       }
       
       info += "Note: For the AI service to work properly, at least one of these keys must be set.\n";

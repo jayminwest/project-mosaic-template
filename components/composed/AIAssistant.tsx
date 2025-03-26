@@ -74,6 +74,15 @@ export function AIAssistant() {
       setIsLoading(true);
       setResponse("");
       
+      // Check if API key is available for the selected provider
+      if (provider === 'anthropic' && !process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY) {
+        throw new Error("Anthropic API key is not configured in the browser environment");
+      }
+      
+      if (provider === 'openai' && !process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+        throw new Error("OpenAI API key is not configured in the browser environment");
+      }
+      
       // Configure AI request with selected provider and model
       const config: Partial<AIModelConfig> = {
         provider: provider,

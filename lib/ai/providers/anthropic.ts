@@ -5,7 +5,11 @@ export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
   
   constructor() {
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
     if (!apiKey) {
       console.warn('Anthropic API key not found. Some features may not work.');
     } else {
@@ -19,7 +23,11 @@ export class AnthropicProvider implements AIProvider {
   }
   
   async complete(options: AICompletionOptions): Promise<string> {
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
     if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
@@ -52,7 +60,11 @@ export class AnthropicProvider implements AIProvider {
     options: AICompletionOptions, 
     callback: (chunk: string) => void
   ): Promise<void> {
-    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
     if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
