@@ -47,12 +47,6 @@ Deno.serve(async (req) => {
       cancelUrl?: string;
     };
 
-    const { priceId, successUrl, cancelUrl } = requestData as {
-      priceId?: string;
-      successUrl?: string;
-      cancelUrl?: string;
-    };
-
     console.log("🔄 Authenticating user...");
     const {
       data: { user },

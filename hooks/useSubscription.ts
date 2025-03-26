@@ -201,23 +201,17 @@ export function useSubscription(): UseSubscriptionReturn {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.functions.invoke('subscription-status', {
-        body: { userId: user.user_id },
-      });
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      setSubscriptionStatus(data);
-      return { success: true, data };
+      // Use the payment service instead of direct Supabase call
+      const status = await paymentService.getSubscriptionStatus(user.user_id);
+      setSubscriptionStatus(status);
+      return { success: true, data: status };
     } catch (error: any) {
       console.error("Error getting subscription status:", error);
       return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
     }
-  }, [user, supabase]);
+  }, [user, paymentService]);
   
   // Helper functions for trial periods
   const isInTrialPeriod = useCallback(() => {
