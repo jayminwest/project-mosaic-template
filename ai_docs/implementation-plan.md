@@ -124,17 +124,19 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create service configuration helpers in `/lib/config/service-config.ts`
   - [x] Create unified service provider in `/lib/services/index.ts`
   
-  - [ ] Update hooks to use new abstraction layers
+  - [x] Update hooks to use service provider pattern for abstraction layers
     ```typescript
     // hooks/useAuth.ts
-    export function useAuth(config: AuthConfig = {}): UseAuthReturn {
-      const authService = createAuthService(config);
+    export function useAuth(): UseAuthReturn {
+      const services = getServiceProvider();
+      const authService = services.getAuthService();
       // Use authService for all auth operations
     }
     
     // hooks/useSubscription.ts
-    export function useSubscription(config: PaymentServiceConfig = {}): UseSubscriptionReturn {
-      const paymentService = createPaymentService(config);
+    export function useSubscription(): UseSubscriptionReturn {
+      const services = getServiceProvider();
+      const paymentService = services.getPaymentService();
       // Use paymentService for all subscription operations
     }
     ```
