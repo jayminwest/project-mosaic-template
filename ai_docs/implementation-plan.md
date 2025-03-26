@@ -332,7 +332,7 @@ This document outlines the step-by-step implementation plan for transforming the
 
 - **Supabase RPC Function Connection**: The profile update functionality using Supabase RPC functions is not working correctly.
   - **Solution**: Debug the connection to the Supabase RPC function, ensure proper permissions are set, and verify the function is correctly deployed.
-  - **Status**: ⚠️ In Progress - UI implemented but backend connection needs fixing
+  - **Status**: ✅ Resolved - Using direct database updates instead of RPC functions
 
 - **Next.js Server Component Error**: The application was showing "Unsupported Server Component type: undefined" errors.
   - **Solution**: 
@@ -366,7 +366,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure Stripe products are created with proper metadata including `plan_type`
     - Add comprehensive logging in Edge Functions to debug issues
     - Enhance the price-to-plan mapping in the webhook handler
-  - **Status**: ⚠️ Partially Resolved - Edge Function returns empty plans array despite products being created in Stripe
+  - **Status**: ✅ Resolved - Database reset fixed the issue with Stripe integration
 
 - **Subscription Plans Test Script Issue**: The test-subscription-plans script shows "No subscription plans found" despite plans being created in Stripe.
   - **Solution**:
