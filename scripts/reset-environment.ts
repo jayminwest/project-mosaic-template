@@ -13,6 +13,28 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// Helper function to check if a column exists in a table
+async function checkColumnExists(table: string, column: string): Promise<boolean> {
+  try {
+    // Query the information schema to check if the column exists
+    const { data, error } = await supabase
+      .from('information_schema.columns')
+      .select('column_name')
+      .eq('table_name', table)
+      .eq('column_name', column);
+    
+    if (error) {
+      console.error(`Error checking if column ${column} exists in ${table}:`, error);
+      return false;
+    }
+    
+    return data && data.length > 0;
+  } catch (error) {
+    console.error(`Error checking column existence:`, error);
+    return false;
+  }
+}
+
 async function resetEnvironment() {
   console.log(chalk.blue('Project Mosaic - Environment Reset Tool'));
   console.log(chalk.yellow('⚠️  WARNING: This will delete data from your development environment'));
@@ -120,8 +142,27 @@ async function resetEnvironment() {
             
             console.log(chalk.green('✓ All users deleted'));
           } else {
-            // For regular tables, truncate them
-            const { error } = await supabase.from(table).delete().neq('id', 'placeholder');
+            // For regular tables, delete all records
+            // Different tables have different primary keys, so we use a more generic approach
+            let error;
+            
+            if (table === 'profiles') {
+              // For profiles, we update rather than delete to maintain user connections
+              const { error: updateError } = await supabase
+                .from(table)
+                .update({
+                  subscription_plan: 'free',
+                  updated_at: new Date().toISOString()
+                });
+              error = updateError;
+            } else {
+              // For other tables, delete all records
+              const { error: deleteError } = await supabase
+                .from(table)
+                .delete()
+                .gte('created_at', '2000-01-01'); // Delete all records
+              error = deleteError;
+            }
             
             if (error) {
               console.error(chalk.red(`Error resetting table ${table}:`), error);
@@ -139,24 +180,18 @@ async function resetEnvironment() {
     if (selectedTables.includes('profiles') && !selectedTables.includes('auth.users')) {
       console.log(chalk.blue('\n3. Resetting subscription data in profiles...'));
       
-      const { error } = await supabase.rpc('reset_subscription_data');
+      // Try direct update instead of RPC function
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          subscription_plan: 'free',
+          // Only include these fields if they exist in the schema
+          ...(await checkColumnExists('profiles', 'subscription_status') ? { subscription_status: null } : {}),
+          ...(await checkColumnExists('profiles', 'subscription_trial_end') ? { subscription_trial_end: null } : {})
+        });
       
-      if (error) {
-        // If RPC fails, try direct update
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            subscription_plan: 'free',
-            subscription_status: null,
-            subscription_trial_end: null,
-          })
-          .neq('user_id', 'placeholder');
-        
-        if (updateError) {
-          console.error(chalk.red('Error resetting subscription data:'), updateError);
-        } else {
-          console.log(chalk.green('✓ Subscription data reset'));
-        }
+      if (updateError) {
+        console.error(chalk.red('Error resetting subscription data:'), updateError);
       } else {
         console.log(chalk.green('✓ Subscription data reset'));
       }
