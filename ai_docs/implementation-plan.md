@@ -300,6 +300,17 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create landing page with marketing components ✅
   - [x] Fix centering issues in marketing components ✅
 
+## Phase 6: A/B Testing Framework
+
+- [ ] **A/B Testing Service Layer**
+  - [ ] Create core types and service interface for A/B testing
+  - [ ] Implement Supabase provider for self-hosted A/B testing
+  - [ ] Create React hook and component for easy integration
+  - [ ] Add Supabase database migrations for A/B testing tables
+  - [ ] Integrate with service provider architecture
+  - [ ] Create admin dashboard for managing tests
+  - [ ] Add documentation and examples
+
 ## Known Issues & Solutions
 
 - **React Version Conflict**: The project uses React 18.3.1, but @react-email/components requires React 18.2.0 specifically. When installing AI SDKs (OpenAI, Anthropic), this causes dependency conflicts.
@@ -347,6 +358,14 @@ This document outlines the step-by-step implementation plan for transforming the
     - Add additional logging to trace the flow from Stripe API to response
     - Ensure proper authorization headers are sent with the request
   - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
+
+- **A/B Testing Implementation**: The A/B testing framework requires database schema changes and new service abstractions.
+  - **Solution**:
+    - Create Supabase migration for A/B testing tables
+    - Implement provider-agnostic A/B testing service
+    - Create React components for easy A/B test integration
+    - Add admin dashboard for test management
+  - **Status**: 🔄 Planned - To be implemented in Phase 6
 
 ## Component Implementation Strategy
 
