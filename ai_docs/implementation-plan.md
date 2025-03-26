@@ -403,14 +403,18 @@ This document outlines the step-by-step implementation plan for transforming the
     - Error handling with toast notifications
     - Loading state management
     - Responsive design for all screen sizes
+    - Provider and model selection dropdowns
+    - Support for different AI models and providers
 
   - [x] Created `components/composed/AIMetrics.tsx` to display usage statistics:
     - Uses DashboardMetric component for key metrics
     - Shows interaction count, tokens used, and average response length
-    - Displays recent interactions with timestamps
+    - Displays recent interactions with timestamps in a scrollable container
     - Handles loading and error states with appropriate UI feedback
     - Implements empty state for new users
     - Responsive layout for all screen sizes
+    - Real-time updates using Supabase subscriptions
+    - Manual refresh button for immediate updates
 
 - [x] **Dashboard Integration**
   - [x] Updated `app/dashboard/page.tsx` to:
@@ -421,16 +425,26 @@ This document outlines the step-by-step implementation plan for transforming the
     - Implement responsive layout for all screen sizes
     - Handle loading and error states appropriately
 
+- [x] **API Key Debugging**
+  - [x] Created `components/composed/APIKeyDebugger.tsx` to:
+    - Check for presence of API keys in environment variables
+    - Display API key status and configuration information
+    - Provide helpful troubleshooting information
+    - Guide users through proper API key setup
+    - Integrated into the AI Assistant tab for easy access
+
 - [x] **Testing & Validation**
   - [x] Applied database migration with `npx supabase migration up`
   - [x] Tested AI interaction flow:
     - Submit prompts and verify responses
     - Checked database for logged interactions
     - Verified metrics update correctly
+    - Tested with different AI providers and models
   - [x] Tested with different user accounts to ensure proper data isolation
   - [x] Verified responsive layout on different screen sizes
   - [x] Tested error handling when AI service is unavailable
   - [x] Verified that RLS policies are working correctly by attempting to access another user's data
+  - [x] Tested real-time updates with Supabase subscriptions
 
 - [x] **AI Provider Implementation**
   - [x] Enhanced OpenAI provider with:
@@ -438,11 +452,13 @@ This document outlines the step-by-step implementation plan for transforming the
     - Proper error handling and fallback mechanisms
     - Streaming support for real-time responses
     - Embedding functionality for vector operations
+    - Support for NEXT_PUBLIC_ environment variables for browser usage
   - [x] Implemented Anthropic provider with:
     - Claude model support
     - Streaming capabilities
     - Proper error handling
     - Message format conversion
+    - Support for NEXT_PUBLIC_ environment variables for browser usage
 
 - [x] **AI Service Hooks**
   - [x] Enhanced useAI hook with:
@@ -450,6 +466,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Template-based prompt generation
     - Error handling and loading state management
     - Configuration options for different AI models
+    - Provider selection capabilities
 
 ## Known Issues & Solutions
 
