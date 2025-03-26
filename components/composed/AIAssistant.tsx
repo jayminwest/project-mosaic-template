@@ -8,11 +8,38 @@ import { useAI } from "@/lib/ai/hooks/useAI";
 import { useAuth } from "@/hooks/useAuth";
 import { createBrowserClient } from "@supabase/ssr";
 import { useToast } from "@/components/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { AIModelConfig } from "@/lib/ai/core/types";
+
+// Define available providers and models
+const AI_PROVIDERS = [
+  { id: "openai", name: "OpenAI" },
+  { id: "anthropic", name: "Anthropic" },
+  { id: "local", name: "Local (Fallback)" },
+];
+
+const AI_MODELS = {
+  openai: [
+    { id: "gpt-4o", name: "GPT-4o" },
+    { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+  ],
+  anthropic: [
+    { id: "claude-3-7-sonnet-latest", name: "Claude 3 Sonnet" },
+    { id: "claude-3-haiku-latest", name: "Claude 3 Haiku" },
+  ],
+  local: [
+    { id: "local-fallback", name: "Local Fallback Model" },
+  ],
+};
 
 export function AIAssistant() {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [provider, setProvider] = useState("openai");
+  const [model, setModel] = useState("gpt-4o");
   const { generateCompletion } = useAI();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -21,6 +48,15 @@ export function AIAssistant() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  
+  // Update model when provider changes
+  const handleProviderChange = (newProvider: string) => {
+    setProvider(newProvider);
+    // Set default model for the selected provider
+    if (AI_MODELS[newProvider as keyof typeof AI_MODELS]) {
+      setModel(AI_MODELS[newProvider as keyof typeof AI_MODELS][0].id);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +74,17 @@ export function AIAssistant() {
       setIsLoading(true);
       setResponse("");
       
+      // Configure AI request with selected provider and model
+      const config: Partial<AIModelConfig> = {
+        provider: provider,
+        model: model,
+      };
+      
       // Get AI response
       const result = await generateCompletion([
         { role: "system", content: "You are a helpful assistant." },
         { role: "user", content: prompt }
-      ]);
+      ], config);
       
       // Check if we got a fallback response
       if (result.includes("fallback") && result.includes("AI service is currently unavailable")) {
@@ -57,7 +99,7 @@ export function AIAssistant() {
           user_id: user.user_id,
           prompt_length: prompt.length,
           response_length: result.length,
-          model_used: "gpt-3.5-turbo" // This would come from your AI service in a real implementation
+          model_used: model // Use the selected model
         });
       }
       
@@ -97,6 +139,46 @@ export function AIAssistant() {
       <CardContent>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="provider">AI Provider</Label>
+                <Select 
+                  value={provider} 
+                  onValueChange={handleProviderChange}
+                >
+                  <SelectTrigger id="provider">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AI_PROVIDERS.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="model">AI Model</Label>
+                <Select 
+                  value={model} 
+                  onValueChange={setModel}
+                >
+                  <SelectTrigger id="model">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AI_MODELS[provider as keyof typeof AI_MODELS]?.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             <Textarea
               placeholder="Enter your prompt here..."
               value={prompt}
@@ -105,7 +187,7 @@ export function AIAssistant() {
             />
             
             {response && (
-              <div className="p-4 bg-muted rounded-md">
+              <div className="p-4 bg-muted rounded-md max-h-[300px] overflow-y-auto">
                 <p className="whitespace-pre-wrap">{response}</p>
               </div>
             )}

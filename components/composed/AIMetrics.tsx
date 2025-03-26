@@ -1,20 +1,62 @@
 "use client";
 
-import { useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { DashboardMetric } from "@/components/composed/DashboardMetric";
 import { useAIMetrics } from "@/hooks/useAIMetrics";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { Button } from "@/components/ui/button";
+import { createBrowserClient } from "@supabase/ssr";
 
 export function AIMetrics() {
   const { metrics, isLoading, error, refreshMetrics } = useAIMetrics();
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
+  // Set up real-time subscription to AI interactions
   useEffect(() => {
-    // Refresh metrics when component mounts
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Initial fetch
     refreshMetrics();
+
+    // Set up auto-refresh every 10 seconds
+    const interval = setInterval(() => {
+      refreshMetrics();
+    }, 10000);
+    setRefreshInterval(interval);
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('ai-metrics-changes')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'ai_interactions' 
+        }, 
+        () => {
+          refreshMetrics();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      // Clean up
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  if (isLoading) {
+  const handleManualRefresh = () => {
+    refreshMetrics();
+  };
+
+  if (isLoading && !metrics) {
     return <LoadingSkeleton count={3} />;
   }
 
@@ -28,6 +70,11 @@ export function AIMetrics() {
         <CardContent>
           <p className="text-destructive">{error}</p>
         </CardContent>
+        <CardFooter>
+          <Button onClick={handleManualRefresh} variant="outline" size="sm">
+            Try Again
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
@@ -68,12 +115,25 @@ export function AIMetrics() {
 
       {metrics.recentInteractions.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Interactions</CardTitle>
-            <CardDescription>Your latest AI conversations</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent Interactions</CardTitle>
+              <CardDescription>Your latest AI conversations</CardDescription>
+            </div>
+            <Button 
+              onClick={handleManualRefresh} 
+              variant="outline" 
+              size="sm"
+              className="h-8 px-2"
+            >
+              Refresh
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div 
+              className="space-y-4 overflow-y-auto pr-2" 
+              style={{ maxHeight: "300px" }}
+            >
               {metrics.recentInteractions.map((interaction) => (
                 <div key={interaction.id} className="border-b pb-3">
                   <div className="flex justify-between items-start">
