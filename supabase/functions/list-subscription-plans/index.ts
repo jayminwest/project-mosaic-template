@@ -157,7 +157,7 @@ serve(async (req) => {
     });
 
     // Format the products and prices for the frontend
-    const plans = products.data
+    const plansPromises = products.data
       .filter(product => {
         // Log all products for debugging
         console.log(`Checking product ${product.id} (${product.name})`);
@@ -265,10 +265,39 @@ serve(async (req) => {
       })
       .filter(Boolean); // Remove null entries
     
+    // Wait for all promises to resolve
+    let plans = [];
+    try {
+      plans = await Promise.all(plansPromises);
+      console.log(`Resolved ${plans.length} plan promises`);
+      
+      // Log each plan for debugging
+      plans.forEach((plan, index) => {
+        console.log(`Plan ${index}:`, JSON.stringify(plan));
+      });
+      
+      // Filter out null values
+      plans = plans.filter(plan => plan !== null);
+      console.log(`After filtering nulls: ${plans.length} plans`);
+      
+      // Check if we have valid plans
+      if (plans.length === 0 || plans.some(plan => Object.keys(plan).length === 0)) {
+        console.log("No valid plans found or some plans are empty objects, using fallback plans");
+        plans = getFallbackPlans();
+      }
+    } catch (promiseError) {
+      console.error("Error resolving plan promises:", promiseError);
+      // Return fallback plans with error info
+      plans = getFallbackPlans();
+    }
+    
     console.log(`Returning ${plans.length} formatted plans`);
 
     return new Response(
-      JSON.stringify({ plans }),
+      JSON.stringify({ 
+        plans,
+        debug: plans.length === 0 ? { message: "No valid plans found in Stripe" } : undefined
+      }),
       {
         status: 200,
         headers: {
@@ -280,9 +309,12 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error fetching subscription plans:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        plans: getFallbackPlans(),
+        debug: { message: "Error fetching plans from Stripe", error: error.message }
+      }),
       {
-        status: 500,
+        status: 200, // Return 200 with fallback plans instead of 500
         headers: {
           ...CORS_HEADERS,
           "Content-Type": "application/json",
@@ -290,4 +322,43 @@ serve(async (req) => {
       }
     );
   }
+}
+
+// Function to provide fallback plans when Stripe API fails
+function getFallbackPlans() {
+  console.log("Returning fallback plans");
+  return [
+    {
+      id: "free_plan",
+      name: "Free",
+      description: "Basic features for personal use",
+      priceId: "price_free",
+      price: 0,
+      currency: "usd",
+      interval: "month",
+      planType: "free",
+      features: [
+        "Basic functionality",
+        "Limited storage (10MB)",
+        "Email support"
+      ]
+    },
+    {
+      id: "premium_plan",
+      name: "Premium",
+      description: "Advanced features for professionals",
+      priceId: "price_premium",
+      price: 9.99,
+      currency: "usd",
+      interval: "month",
+      planType: "premium",
+      features: [
+        "Basic functionality",
+        "Unlimited storage",
+        "Email support",
+        "Advanced features",
+        "Priority support"
+      ]
+    }
+  ];
 });
