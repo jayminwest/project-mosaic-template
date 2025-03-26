@@ -71,10 +71,51 @@ export function useSubscription(): UseSubscriptionReturn {
         throw new Error('User not authenticated');
       }
       
-      // Always create a real checkout session, even in development mode
-      console.log("Creating Stripe checkout session for price:", priceId);
+      // Check if we're in development mode
+      const isDev = process.env.NODE_ENV === 'development';
       
-      // Create checkout session via API
+      if (isDev) {
+        try {
+          // Try to create a real checkout session first
+          console.log("Creating Stripe checkout session for price:", priceId);
+          
+          // Create checkout session via API with a short timeout
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Checkout session creation timed out')), 3000)
+          );
+          
+          const responsePromise = paymentService.createCheckoutSession(accessToken, priceId);
+          const response = await Promise.race([responsePromise, timeoutPromise]) as any;
+          
+          if (response.success && response.url) {
+            window.location.href = response.url;
+            return;
+          }
+        } catch (devError) {
+          console.warn("Failed to create checkout session in development mode:", devError);
+          console.log("Using development fallback for checkout...");
+          
+          // Development fallback - simulate a checkout session
+          // Show a modal or alert explaining the situation
+          alert(
+            "Development Mode: Stripe checkout simulation\n\n" +
+            "In a production environment, you would be redirected to Stripe's checkout page.\n\n" +
+            "Since the Edge Function is not accessible or properly configured in your development environment, " +
+            "this is a simulated checkout experience.\n\n" +
+            "To test with a real checkout flow, deploy your Supabase Edge Functions and ensure CORS is properly configured."
+          );
+          
+          // Wait a moment to simulate network request
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Redirect to success page to simulate successful checkout
+          window.location.href = '/checkout/success?session_id=dev_session_123';
+          return;
+        }
+      }
+      
+      // Production mode or fallback for development
+      console.log("Creating Stripe checkout session for price:", priceId);
       const response = await paymentService.createCheckoutSession(accessToken, priceId);
       
       if (!response.success) {
