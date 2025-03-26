@@ -127,6 +127,18 @@ class StripePaymentProvider implements PaymentProvider {
       );
 
       const data = await response.json();
+      
+      // Check for specific portal configuration error
+      if (data.code === 'portal_not_configured') {
+        return {
+          success: false,
+          error: data.error || "Stripe Customer Portal not configured",
+          code: data.code,
+          message: data.message,
+          fallbackUrl: data.fallbackUrl
+        };
+      }
+      
       if (data.error) return { success: false, error: data.error };
 
       return { success: true, url: data.url };

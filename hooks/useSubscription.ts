@@ -76,7 +76,18 @@ export function useSubscription(): UseSubscriptionReturn {
       const response = await paymentService.createCheckoutSession(accessToken, priceId);
       
       if (!response.success) {
-        throw new Error(response.error || 'Failed to create checkout session');
+        // Handle specific portal configuration error
+        if (response.code === 'portal_not_configured') {
+          setError("Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard.");
+          
+          // Redirect to the fallback URL if provided
+          if (response.fallbackUrl && typeof window !== 'undefined') {
+            window.location.href = response.fallbackUrl;
+            return;
+          }
+        } else {
+          throw new Error(response.error || 'Failed to create checkout session');
+        }
       }
       
       if (response.url) {

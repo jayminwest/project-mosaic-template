@@ -146,13 +146,45 @@ Deno.serve(async (req) => {
 
     // Create Portal session if already subscribed
     if (profile.subscription_plan === "premium") {
-      const session = await stripe.billingPortal.sessions.create({
-        customer: customerId,
-        return_url: successUrl || `${originUrl}/profile`,
-      });
-      return new Response(JSON.stringify({ success: true, url: session.url }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: successUrl || `${originUrl}/profile`,
+        });
+        return new Response(JSON.stringify({ success: true, url: session.url }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (portalError) {
+        console.error("Error creating portal session:", portalError.message);
+        
+        // Check if the error is due to missing portal configuration
+        if (portalError.message.includes("No configuration provided") || 
+            portalError.message.includes("default configuration has not been created")) {
+          // Fallback to checkout session for subscription management
+          console.log("Customer portal not configured, falling back to checkout session");
+          
+          // Return a specific error so the frontend can handle it appropriately
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: "Stripe Customer Portal not configured",
+              code: 'portal_not_configured',
+              message: "Please configure your Stripe Customer Portal at https://dashboard.stripe.com/test/settings/billing/portal",
+              fallbackUrl: `${originUrl}/profile?portal_error=true`
+            }),
+            {
+              status: 400,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+        
+        // For other errors, rethrow to be caught by the main error handler
+        throw portalError;
+      }
     }
 
     // Create a checkout session
