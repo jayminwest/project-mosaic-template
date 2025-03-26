@@ -374,7 +374,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Verify that product metadata is being properly set during plan creation
     - Add additional logging to trace the flow from Stripe API to response
     - Ensure proper authorization headers are sent with the request
-  - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
+  - **Status**: 🔄 In Progress - Still investigating issues with Stripe product retrieval and formatting
 
 - **Email Preferences Data Corruption**: The email preferences data in the database is being stored as a corrupted JSON string.
   - **Solution**:
