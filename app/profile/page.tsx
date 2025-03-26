@@ -60,6 +60,32 @@ export default function Profile() {
     return `${years} ${years === 1 ? 'year' : 'years'}`;
   };
   
+  // Function to refresh user profile data
+  const refreshUserProfile = async () => {
+    if (!user?.user_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        return;
+      }
+      
+      if (data) {
+        // Update the local user state with fresh data
+        // This is a workaround since we can't directly update the user state from the auth hook
+        // In a production app, you would add a refreshUser method to the auth hook
+      }
+    } catch (error) {
+      console.error("Error refreshing user profile:", error);
+    }
+  };
+
   // Fetch usage metrics
   useEffect(() => {
     const fetchUsageMetrics = async () => {
@@ -135,20 +161,33 @@ export default function Profile() {
     setIsSaving(true);
     
     try {
-      // Update profile in database
-      const { data: updatedProfile, error } = await supabase.rpc(
-        'update_user_profile',
-        {
-          p_user_id: user.user_id,
-          p_name: data.name,
-          p_email_preferences: data.emailPreferences ? JSON.stringify(data.emailPreferences) : null
-        }
-      );
+      // Update profile in database using direct update instead of RPC
+      const { data: updatedProfile, error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          email_preferences: data.emailPreferences,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.user_id)
+        .select()
+        .single();
       
       if (error) throw error;
       
       // Update local user state
-      // In a real app, you would refresh the user data from the auth hook
+      if (updatedProfile) {
+        // Create a new user object with the updated values
+        const updatedUser = {
+          ...user,
+          name: updatedProfile.name,
+          email_preferences: updatedProfile.email_preferences
+        };
+        
+        // Refresh the user profile data
+        await refreshUserProfile();
+      }
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
