@@ -9,7 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { SettingsForm } from "@/components/composed/SettingsForm";
 import { UsageStats } from "@/components/composed/UsageStats";
 import { DashboardMetric } from "@/components/composed/DashboardMetric";
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -46,6 +47,50 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
 
+  // State for usage metrics
+  const [usageMetrics, setUsageMetrics] = useState({
+    storage_used: 0,
+    api_calls: 0,
+    resources_used: 0,
+    projects_created: 0
+  });
+  
+  // Fetch usage metrics
+  useEffect(() => {
+    const fetchUsageMetrics = async () => {
+      if (!user?.user_id) return;
+      
+      try {
+        const currentYearMonth = new Date().toISOString().slice(0, 7);
+        
+        const { data, error } = await supabase
+          .from('usage_tracking')
+          .select('*')
+          .eq('user_id', user.user_id)
+          .eq('year_month', currentYearMonth)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching usage metrics:", error);
+          return;
+        }
+        
+        if (data) {
+          setUsageMetrics({
+            storage_used: data.storage_used || 0,
+            api_calls: data.api_calls || 0,
+            resources_used: data.resources_used || 0,
+            projects_created: data.projects_created || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching usage metrics:", error);
+      }
+    };
+    
+    fetchUsageMetrics();
+  }, [user, supabase]);
+  
   // Prepare usage data based on user metrics
   const usageData = [
     {
@@ -56,26 +101,68 @@ export default function Profile() {
     },
     {
       name: "Storage",
-      current: user?.usage_metrics?.storage_used || 0,
+      current: usageMetrics.storage_used || 0,
       limit: currentPlan?.planType === 'premium' ? 50 : 10,
       unit: "MB"
     },
     {
       name: "API Calls",
-      current: user?.usage_metrics?.api_calls || 0,
+      current: usageMetrics.api_calls || 0,
       limit: currentPlan?.planType === 'premium' ? 1000 : 100,
+      unit: ""
+    },
+    {
+      name: "Projects",
+      current: usageMetrics.projects_created || 0,
+      limit: currentPlan?.planType === 'premium' ? 10 : 3,
       unit: ""
     }
   ];
 
-  // Mock function for saving profile - in a real app, this would call an API
-  const handleSaveProfile = async (data: { name: string }) => {
+  // Initialize Supabase client
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+
+  // Function to save profile data
+  const handleSaveProfile = async (data: { name: string; emailPreferences?: Record<string, boolean> }) => {
+    if (!user?.user_id) return;
+    
     setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("Saving profile data:", data);
-    // In a real implementation, you would update the user profile in the database
-    setIsSaving(false);
+    
+    try {
+      // Update profile in database
+      const { data: updatedProfile, error } = await supabase.rpc(
+        'update_user_profile',
+        {
+          p_user_id: user.user_id,
+          p_name: data.name,
+          p_email_preferences: data.emailPreferences ? JSON.stringify(data.emailPreferences) : null
+        }
+      );
+      
+      if (error) throw error;
+      
+      // Update local user state
+      // In a real app, you would refresh the user data from the auth hook
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
+      
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -171,8 +258,17 @@ export default function Profile() {
         
         <DashboardMetric 
           title="Storage Used" 
-          value={`${(user?.usage_metrics?.storage_used || 0).toFixed(1)} MB`}
+          value={`${(usageMetrics.storage_used || 0).toFixed(1)} MB`}
           description={`of ${currentPlan?.planType === 'premium' ? '50' : '10'} MB available`}
+          trend={
+            usageMetrics.storage_used > 0 
+              ? {
+                  value: 5,
+                  label: "from last month",
+                  isPositive: false
+                }
+              : undefined
+          }
         />
         
         <DashboardMetric 
@@ -182,7 +278,16 @@ export default function Profile() {
         />
       </div>
       
-      <div className="flex justify-end mt-8">
+      <div className="flex justify-between mt-8">
+        <Button variant="destructive" onClick={() => {
+          if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+            // In a real implementation, this would call an API to delete the account
+            alert("Account deletion would be implemented here");
+          }
+        }}>
+          Delete Account
+        </Button>
+        
         <Button variant="outline" onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out

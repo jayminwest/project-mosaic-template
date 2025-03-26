@@ -10,6 +10,9 @@ create table public.profiles (
   subscription_plan text check (subscription_plan in ('free', 'premium')) default 'free',
   usage_limit integer default 100,
   stripe_customer_id text,
+  email_preferences jsonb default '{"marketing": false, "product_updates": true, "security": true}'::jsonb,
+  tasks_created integer default 0,
+  tasks_limit integer default 10,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
@@ -91,8 +94,10 @@ create table public.usage_tracking (
   user_id uuid references public.profiles on delete cascade,
   year_month text,
   api_calls integer default 0,
-  storage_used integer default 0,
+  storage_used numeric(10,2) default 0,
   resources_used integer default 0,
+  projects_created integer default 0,
+  last_active timestamp with time zone default timezone('utc'::text, now()),
   primary key (user_id, year_month)
 );
 
@@ -104,6 +109,37 @@ using (auth.uid() = user_id);
 
 -- Enable RLS for usage tracking
 alter table public.usage_tracking enable row level security;
+
+-- Function to update user profile
+create or replace function public.update_user_profile(
+  p_user_id uuid,
+  p_name text,
+  p_email_preferences jsonb default null
+)
+returns public.profiles
+security definer
+set search_path to public
+as $$
+declare
+  updated_profile public.profiles;
+begin
+  update public.profiles
+  set 
+    name = coalesce(p_name, name),
+    email_preferences = coalesce(p_email_preferences, email_preferences),
+    updated_at = timezone('utc'::text, now())
+  where user_id = p_user_id
+  returning * into updated_profile;
+  
+  return updated_profile;
+end;
+$$ language plpgsql;
+
+-- Security policy: Users can update their own profile
+drop policy if exists "Users can update own profile" on public.profiles;
+create policy "Users can update own profile"
+on public.profiles for update
+using (auth.uid() = user_id);
 
 -- Stripe integration
 do $$
@@ -284,3 +320,53 @@ create policy "Users can read own Stripe data"
   on public.profiles
   for select
   using (auth.uid() = user_id);
+
+-- Function to track user activity and update usage metrics
+create or replace function public.track_user_activity(
+  p_user_id uuid,
+  p_storage_delta numeric(10,2) default 0,
+  p_api_calls_delta integer default 1,
+  p_resources_delta integer default 0,
+  p_projects_delta integer default 0
+)
+returns void
+security definer
+set search_path to public
+as $$
+declare
+  current_year_month text := to_char(now(), 'YYYY-MM');
+begin
+  -- Update or insert usage tracking record
+  insert into public.usage_tracking (
+    user_id, 
+    year_month, 
+    api_calls, 
+    storage_used, 
+    resources_used,
+    projects_created,
+    last_active
+  )
+  values (
+    p_user_id, 
+    current_year_month, 
+    p_api_calls_delta, 
+    p_storage_delta, 
+    p_resources_delta,
+    p_projects_delta,
+    now()
+  )
+  on conflict (user_id, year_month) do update
+  set 
+    api_calls = usage_tracking.api_calls + p_api_calls_delta,
+    storage_used = usage_tracking.storage_used + p_storage_delta,
+    resources_used = usage_tracking.resources_used + p_resources_delta,
+    projects_created = usage_tracking.projects_created + p_projects_delta,
+    last_active = now();
+end;
+$$ language plpgsql;
+
+-- Security policy: Users can update their own usage tracking
+drop policy if exists "Users can update own usage tracking" on public.usage_tracking;
+create policy "Users can update own usage tracking"
+on public.usage_tracking for update
+using (auth.uid() = user_id);
