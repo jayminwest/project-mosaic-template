@@ -31,11 +31,11 @@ This document outlines the step-by-step implementation plan for transforming the
 - [x] **Core Project Structure**
   - [x] Create core directories for the new architecture:
     - `/lib/ai` - AI service abstraction ✅
-    - `/lib/config` - Configuration system
+    - `/lib/config` - Configuration system ✅
     - `/lib/email` - Email service system ✅
-    - `/components/marketing` - Marketing components
+    - `/components/marketing` - Marketing components ✅
     - `/components/analytics` - Analytics components
-  - [ ] Set up configuration system for project customization
+  - [x] Set up configuration system for project customization ✅
   - The configuration system will be implemented with the following structure:
     ```
     /lib/config/
@@ -223,6 +223,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Implement TestimonialSection component ✅
   - [x] Implement CTASection component ✅
   - [x] Create responsive landing page with all marketing components ✅
+  - [x] Update PricingSection to dynamically fetch pricing tiers ✅
 
 - [x] **Component Implementation Status**
   - **Core UI Components**: 14 out of 24 components implemented (58%)
@@ -235,10 +236,9 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Implement theme provider context
   - [ ] Add configuration for logo and brand assets
 
-- [ ] **Legal & Configuration**
-  - [ ] Create basic legal document templates:
-    - `/templates/legal/PrivacyPolicy.md`
-    - `/templates/legal/TermsOfService.md`
+- [x] **Legal & Configuration**
+  - [x] Create basic legal document templates:
+    - `/app/legal/page.tsx` with Privacy Policy and Terms of Service ✅
   - [ ] Add feature flag system for enabling/disabling features
 
 ## Phase 5: Component Reduction & Developer Experience
@@ -296,7 +296,9 @@ This document outlines the step-by-step implementation plan for transforming the
 - [x] **UI Components**
   - [x] Update LoadingSkeleton component to support different types (card, list, table, form) ✅
   - [x] Make Header component fully responsive with mobile menu ✅
+  - [x] Update Header navigation links to point to existing pages ✅
   - [x] Make Footer component responsive ✅
+  - [x] Update Footer links to point to existing pages ✅
   - [x] Update dashboard page with responsive layout and tabs ✅
   - [x] Create landing page with marketing components ✅
   - [x] Fix centering issues in marketing components ✅
@@ -326,6 +328,9 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Fix infinite refresh issue on pricing page by adding fetch attempt tracking
   - [x] Resolve Supabase client initialization issues in usePricingTiers hook
   - [x] Add hydration mismatch prevention with isMounted state
+  - [x] Update PricingSection component to use the same data source as pricing page ✅
+  - [x] Simplify pricing page to use the updated PricingSection component ✅
+  - [x] Remove static pricing tiers from landing page ✅
 
 - [ ] **Checkout Session Implementation**
   - [ ] Update the checkout session creation to use real Stripe product IDs
