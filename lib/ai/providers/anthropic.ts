@@ -5,36 +5,52 @@ export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
   
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
     if (!apiKey) {
       console.warn('Anthropic API key not found. Some features may not work.');
+    } else {
+      console.log('Anthropic API key found, initializing client');
     }
     
     this.client = new Anthropic({
       apiKey: apiKey || 'dummy-key',
+      dangerouslyAllowBrowser: true, // Enable browser usage - ensure your API key is properly secured
     });
   }
   
   async complete(options: AICompletionOptions): Promise<string> {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
+    if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
     
     const { messages, config } = options;
     
-    // Convert to Anthropic format
-    const anthropicMessages = messages.map(msg => {
-      if (msg.role === 'system') {
-        return { role: 'system', content: msg.content };
-      } else if (msg.role === 'user') {
-        return { role: 'user', content: msg.content };
-      } else {
-        return { role: 'assistant', content: msg.content };
-      }
-    });
+    // Extract system message if present
+    const systemMessage = messages.find(msg => msg.role === 'system')?.content || '';
+    
+    // Filter out system messages and convert to Anthropic format
+    const anthropicMessages = messages
+      .filter(msg => msg.role !== 'system')
+      .map(msg => {
+        if (msg.role === 'user') {
+          return { role: 'user', content: msg.content };
+        } else {
+          return { role: 'assistant', content: msg.content };
+        }
+      });
     
     const response = await this.client.messages.create({
       model: config?.model || 'claude-3-7-sonnet-latest',
+      system: systemMessage, // Pass system message as a top-level parameter
       messages: anthropicMessages,
       max_tokens: config?.maxTokens || 1000,
       temperature: config?.temperature || 0.7,
@@ -48,25 +64,34 @@ export class AnthropicProvider implements AIProvider {
     options: AICompletionOptions, 
     callback: (chunk: string) => void
   ): Promise<void> {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    // Check for API key in both browser and server environments
+    const apiKey = typeof window !== 'undefined' 
+      ? process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY 
+      : process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
+    if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
     
     const { messages, config } = options;
     
-    // Convert to Anthropic format
-    const anthropicMessages = messages.map(msg => {
-      if (msg.role === 'system') {
-        return { role: 'system', content: msg.content };
-      } else if (msg.role === 'user') {
-        return { role: 'user', content: msg.content };
-      } else {
-        return { role: 'assistant', content: msg.content };
-      }
-    });
+    // Extract system message if present
+    const systemMessage = messages.find(msg => msg.role === 'system')?.content || '';
+    
+    // Filter out system messages and convert to Anthropic format
+    const anthropicMessages = messages
+      .filter(msg => msg.role !== 'system')
+      .map(msg => {
+        if (msg.role === 'user') {
+          return { role: 'user', content: msg.content };
+        } else {
+          return { role: 'assistant', content: msg.content };
+        }
+      });
     
     const stream = await this.client.messages.create({
       model: config?.model || 'claude-3-7-sonnet-latest',
+      system: systemMessage, // Pass system message as a top-level parameter
       messages: anthropicMessages,
       max_tokens: config?.maxTokens || 1000,
       temperature: config?.temperature || 0.7,
