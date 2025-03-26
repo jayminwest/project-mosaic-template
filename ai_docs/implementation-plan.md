@@ -374,6 +374,106 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create admin dashboard for managing tests
   - [ ] Add documentation and examples
 
+## Phase 7: AI Dashboard Integration
+
+- [ ] **AI Usage Tracking Database Schema**
+  - [ ] Create migration file `supabase/migrations/30_ai_usage_metrics.sql` with:
+    - Table for tracking AI interactions with user_id, prompt_length, response_length, model_used
+    - RLS policies for secure access
+    - Add AI metrics columns to profiles table (ai_interactions_count, ai_tokens_used)
+    - Create trigger function to update metrics on new interactions
+    - Example SQL:
+      ```sql
+      CREATE TABLE public.ai_interactions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+        prompt_length INTEGER NOT NULL,
+        response_length INTEGER NOT NULL,
+        model_used TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+      );
+      
+      -- Add AI usage metrics to profiles
+      ALTER TABLE public.profiles 
+      ADD COLUMN IF NOT EXISTS ai_interactions_count INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS ai_tokens_used INTEGER DEFAULT 0;
+      
+      -- Create trigger to update metrics on new AI interaction
+      CREATE TRIGGER update_ai_usage_metrics_trigger
+      AFTER INSERT ON public.ai_interactions
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_ai_usage_metrics();
+      ```
+
+- [ ] **AI Metrics Hook**
+  - [ ] Create `hooks/useAIMetrics.ts` to fetch AI usage data:
+    - Retrieve interaction count and tokens used from profiles
+    - Fetch recent interactions with timestamps
+    - Handle loading and error states
+    - Return formatted metrics for display
+
+- [ ] **AI Components Integration**
+  - [ ] Create `components/composed/AIAssistant.tsx` with:
+    - Simple text input for user prompts
+    - Submit button to send requests to AI service
+    - Display area for AI responses
+    - Integration with useAI hook for AI service access
+    - Database logging of interactions
+    - Example usage pattern:
+      ```tsx
+      // In a component
+      const { prompt, setPrompt, response, isLoading, handleSubmit } = useAIAssistant();
+      
+      return (
+        <form onSubmit={handleSubmit}>
+          <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+          <Button type="submit" disabled={isLoading}>Submit</Button>
+          {response && <div>{response}</div>}
+        </form>
+      );
+      ```
+
+  - [ ] Create `components/composed/AIMetrics.tsx` to display usage statistics:
+    - Use DashboardMetric component for key metrics
+    - Show interaction count, tokens used, and average response length
+    - Display recent interactions with timestamps
+    - Handle loading and error states
+
+- [ ] **Dashboard Integration**
+  - [ ] Update `app/dashboard/page.tsx` to:
+    - Add "AI Assistant" tab to the existing tab structure
+    - Include AIAssistant component in the AI tab
+    - Add AIMetrics component to both AI tab and Analytics tab
+    - Add AI usage button to Quick Actions card
+    - Example tab structure:
+      ```tsx
+      <Button 
+        variant={activeTab === "ai" ? "default" : "outline"}
+        onClick={() => setActiveTab("ai")}
+      >
+        AI Assistant
+      </Button>
+      
+      {/* AI Assistant Tab */}
+      {activeTab === "ai" && (
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            <AIAssistant />
+            <AIMetrics />
+          </div>
+        </div>
+      )}
+      ```
+
+- [ ] **Testing & Validation**
+  - [ ] Apply database migration with `npx supabase migration up`
+  - [ ] Test AI interaction flow:
+    - Submit prompts and verify responses
+    - Check database for logged interactions
+    - Verify metrics update correctly
+  - [ ] Test with different user accounts to ensure proper data isolation
+  - [ ] Verify responsive layout on different screen sizes
+
 ## Known Issues & Solutions
 
 - **React Version Conflict**: The project uses React 18.3.1, but @react-email/components requires React 18.2.0 specifically. When installing AI SDKs (OpenAI, Anthropic), this causes dependency conflicts.
