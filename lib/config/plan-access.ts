@@ -1,4 +1,5 @@
 import { subscriptionPlans } from './subscription';
+import { productConfig } from './default-config';
 
 // Default resource limits by plan type
 const defaultLimits = {
@@ -38,6 +39,13 @@ export function getResourceLimit(planType: string, resourceName: string): number
   const planFromStripe = subscriptionPlans.find(p => p.planType === plan);
   if (planFromStripe?.limits && planFromStripe.limits[resourceName]) {
     return planFromStripe.limits[resourceName];
+  }
+  
+  // Check if the limit is defined in the product config
+  if (productConfig.limits && 
+      productConfig.limits[plan as keyof typeof productConfig.limits] && 
+      resourceName in productConfig.limits[plan as keyof typeof productConfig.limits]) {
+    return productConfig.limits[plan as keyof typeof productConfig.limits][resourceName as keyof typeof productConfig.limits.free];
   }
   
   // Fallback to default limits
