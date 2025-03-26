@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { usePricingTiers } from "@/hooks/usePricingTiers";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClientComponentClient } from "@supabase/supabase-js";
 
 interface PricingSectionProps {
   title: string;
@@ -31,9 +31,9 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
   
   const handleSubscribeClick = async (priceId: string) => {
     // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data } = await supabase.auth.getSession();
     
-    if (!session) {
+    if (!data.session) {
       // User is not authenticated, redirect to login with return URL
       router.push(`/login?returnTo=/profile?subscribe=${priceId}`);
       return;

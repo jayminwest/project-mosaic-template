@@ -31,10 +31,12 @@ const LoginForm = () => {
   
   // Extract returnTo parameter from URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const returnToParam = params.get('returnTo');
-    if (returnToParam) {
-      setReturnTo(returnToParam);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const returnToParam = params.get('returnTo');
+      if (returnToParam) {
+        setReturnTo(returnToParam);
+      }
     }
   }, []);
   
