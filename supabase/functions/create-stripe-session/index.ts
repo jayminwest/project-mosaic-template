@@ -132,17 +132,12 @@ Deno.serve(async (req) => {
 });
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.0.0";
+import { corsHeaders } from "../_shared/cors.ts";
 
 // Load environment variables
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") as string;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-// Define CORS headers according to Supabase docs
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 console.log("🌍 Create Stripe Session function is running...");
 
@@ -154,8 +149,7 @@ const stripe = new Stripe(STRIPE_SECRET_KEY, {
 Deno.serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204, 
+    return new Response('ok', { 
       headers: corsHeaders 
     });
   }
