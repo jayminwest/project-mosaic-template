@@ -471,6 +471,7 @@ page ✅
     - [ ] Ensure graceful degradation works as expected
     - [ ] Verify upgrade prompts appear at appropriate times
     - [ ] Test fallback to default values when Stripe is unavailable
+    - [x] Fix test-plan-features script to properly import from lib/config
                                                                     
 
 - [x] **Stripe Customer Portal Configuration**
