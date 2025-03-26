@@ -43,7 +43,7 @@ const promptTemplates: Record<string, PromptTemplate> = {
     category: 'support',
     systemPrompt: 'You are a helpful, friendly customer support representative.',
     userPrompt: 'The customer has the following issue: {{issue}}. Our product is {{product}}. Provide a helpful response.',
-    exampleResponse: 'I understand how frustrating it can be when [issue happens]. Here's how we can resolve this...',
+    exampleResponse: 'I understand how frustrating it can be when [issue happens]. Here\'s how we can resolve this...',
   },
   
   'data-analysis': {
