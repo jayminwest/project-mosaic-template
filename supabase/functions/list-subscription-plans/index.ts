@@ -20,7 +20,12 @@ function parseFeatures(product: Stripe.Product): string[] {
   
   // Check for features in metadata
   if (product.metadata) {
-    // Look for feature_1, feature_2, etc.
+    // First check if there's a comma-separated features list
+    if (product.metadata.features) {
+      return product.metadata.features.split(',').map(f => f.trim());
+    }
+    
+    // If not, look for feature_1, feature_2, etc.
     for (let i = 1; i <= 10; i++) {
       const featureKey = `feature_${i}`;
       if (product.metadata[featureKey]) {
