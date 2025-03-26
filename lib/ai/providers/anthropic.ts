@@ -12,6 +12,7 @@ export class AnthropicProvider implements AIProvider {
     
     this.client = new Anthropic({
       apiKey: apiKey || 'dummy-key',
+      dangerouslyAllowBrowser: true, // Enable browser usage - ensure your API key is properly secured
     });
   }
   
