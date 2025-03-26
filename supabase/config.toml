@@ -257,11 +257,7 @@ inspector_port = 8083
 
 # Add CORS configuration for Edge Functions
 [functions]
-  [functions.cors]
-    enabled = true
-    allowed_origins = ["*"]
-    allowed_headers = ["authorization", "x-client-info", "apikey", "content-type", "accept"]
-    allowed_methods = ["GET", "POST", "OPTIONS"]
+cors = { enabled = true, allowed_origins = ["*"], allowed_headers = ["authorization", "x-client-info", "apikey", "content-type", "accept"], allowed_methods = ["GET", "POST", "OPTIONS"] }
 
 # Use these configurations to customize your Edge Function.
 # [functions.MY_FUNCTION_NAME]
