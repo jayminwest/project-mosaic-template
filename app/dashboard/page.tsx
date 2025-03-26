@@ -10,7 +10,6 @@ import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { Footer } from "@/components/Footer";
 import { AIAssistant } from "@/components/composed/AIAssistant";
 import { AIMetrics } from "@/components/composed/AIMetrics";
-import { APIKeyDebugger } from "@/components/composed/APIKeyDebugger";
 
 export default function DashboardPage() {
   const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
@@ -262,7 +261,6 @@ export default function DashboardPage() {
                 <AIAssistant />
                 <div className="space-y-6">
                   <AIMetrics />
-                  <APIKeyDebugger />
                 </div>
               </div>
             </div>
