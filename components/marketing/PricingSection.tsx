@@ -1,30 +1,113 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface PricingFeature {
-  text: string;
-  included: boolean;
-}
-
-interface PricingTier {
-  name: string;
-  description: string;
-  price: string;
-  interval: string;
-  features: PricingFeature[];
-  buttonText: string;
-  buttonLink: string;
-  buttonVariant?: "default" | "outline";
-  highlighted?: boolean;
-}
+import { usePricingTiers } from "@/hooks/usePricingTiers";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 interface PricingSectionProps {
   title: string;
   description: string;
-  tiers: PricingTier[];
+  tiers?: any[]; // Optional prop for static tiers
 }
 
-export function PricingSection({ title, description, tiers }: PricingSectionProps) {
+export function PricingSection({ title, description, tiers: staticTiers }: PricingSectionProps) {
+  // Use a state to prevent hydration mismatch
+  const [isMounted, setIsMounted] = useState(false);
+  const { pricingTiers, isLoading, error } = usePricingTiers();
+  
+  // Use either the fetched tiers or static tiers passed as props
+  const tiers = staticTiers || pricingTiers;
+
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Show nothing during SSR to prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <section className="py-12 md:py-24 w-full">
+        <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">{title}</h2>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                {description}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+            <LoadingSkeleton type="card" count={3} />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show loading state
+  if (isLoading && !staticTiers) {
+    return (
+      <section className="py-12 md:py-24 w-full">
+        <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">{title}</h2>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                {description}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+            <LoadingSkeleton type="card" count={3} />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show error state
+  if (error && !staticTiers) {
+    return (
+      <section className="py-12 md:py-24 w-full">
+        <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">{title}</h2>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                {description}
+              </p>
+            </div>
+          </div>
+          <div className="p-4 bg-red-50 text-red-700 rounded-md mt-8 text-center">
+            Error loading pricing plans: {error}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  // If we have no tiers to display, show a message
+  if (!tiers || tiers.length === 0) {
+    return (
+      <section className="py-12 md:py-24 w-full">
+        <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">{title}</h2>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                {description}
+              </p>
+            </div>
+          </div>
+          <div className="p-4 bg-yellow-50 text-yellow-700 rounded-md mt-8 text-center">
+            No pricing plans are currently available. Please check back later.
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-12 md:py-24 w-full">
       <div className="container px-4 md:px-6 mx-auto max-w-7xl">
