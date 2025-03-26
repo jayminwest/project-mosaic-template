@@ -166,8 +166,7 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Get resource limits from subscription plan
-  const { currentPlan } = useSubscription();
+  // Get resource limits from config
   const { getResourceLimit } = useConfig();
   
   // Helper function to get limits based on plan
