@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useConfig } from "@/lib/config/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { createBrowserClient } from '@supabase/ssr';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -16,6 +17,55 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [usageMetrics, setUsageMetrics] = useState({
+    storage_used: 0,
+    api_calls: 0,
+    resources_used: 0
+  });
+  
+  // Initialize Supabase client
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+  
+  // Fetch usage metrics
+  useEffect(() => {
+    const fetchUsageMetrics = async () => {
+      if (!user?.user_id) return;
+      
+      try {
+        const currentYearMonth = new Date().toISOString().slice(0, 7);
+        
+        // First check if the record exists
+        const { data, error } = await supabase
+          .from('usage_tracking')
+          .select('*')
+          .eq('user_id', user.user_id)
+          .eq('year_month', currentYearMonth);
+        
+        if (error) {
+          console.error("Error fetching usage metrics:", error);
+          return;
+        }
+        
+        // If data exists, use it
+        if (data && data.length > 0) {
+          setUsageMetrics({
+            storage_used: data[0].storage_used || 0,
+            api_calls: data[0].api_calls || 0,
+            resources_used: data[0].resources_used || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching usage metrics:", error);
+      }
+    };
+    
+    fetchUsageMetrics();
+  }, [user, supabase]);
   
   if (isLoading) {
     return (
