@@ -313,7 +313,16 @@ This document outlines the step-by-step implementation plan for transforming the
     - [x] Add email preferences management with proper JSONB storage
     - [x] Create password change functionality
 
-## Phase 6: A/B Testing Framework
+## Phase 6: Pricing Page Fix & A/B Testing Framework
+
+- [x] **Pricing Page Fix**
+  - [x] Update the `usePricingTiers` hook to properly handle Stripe product data
+  - [x] Fix the Edge Function to correctly parse product metadata
+  - [x] Enhance error handling in the pricing component to show fallback plans
+  - [x] Add better logging for debugging pricing issues
+  - [x] Create a troubleshooting guide for common pricing page issues
+  - [x] Update the Stripe configuration documentation with clearer metadata requirements
+  - [x] Implement a more robust fallback mechanism for when Stripe data is unavailable
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
@@ -328,7 +337,19 @@ This document outlines the step-by-step implementation plan for transforming the
 
 - **React Version Conflict**: The project uses React 18.3.1, but @react-email/components requires React 18.2.0 specifically. When installing AI SDKs (OpenAI, Anthropic), this causes dependency conflicts.
   - **Solution**: Use `--legacy-peer-deps` flag when installing AI SDKs or downgrade React to 18.2.0 if email components are critical.
-  - **Status**: Resolved by using `--legacy-peer-deps` flag when installing AI SDKs.
+  - **Status**: ✅ Resolved by using `--legacy-peer-deps` flag when installing AI SDKs.
+
+- **Pricing Page Not Showing Plans**: The pricing page was not displaying subscription plans from Stripe.
+  - **Solution**:
+    - Fix the `usePricingTiers` hook to properly handle API responses
+    - Update the Edge Function to correctly parse Stripe product metadata
+    - Enhance error handling to show fallback plans when API fails
+    - Add more detailed logging for troubleshooting
+    - Ensure Stripe products have the required metadata fields:
+      - `plan_type`: Must be exactly "free", "premium", or "enterprise"
+      - `features`: Comma-separated list of features or individual feature_1, feature_2, etc.
+      - `limit_xxx`: Resource limits for the plan (optional)
+  - **Status**: ✅ Resolved - Fixed by updating the hook and Edge Function
 
 - **Supabase RPC Function Connection**: The profile update functionality using Supabase RPC functions is not working correctly.
   - **Solution**: Debug the connection to the Supabase RPC function, ensure proper permissions are set, and verify the function is correctly deployed.
@@ -366,7 +387,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure Stripe products are created with proper metadata including `plan_type`
     - Add comprehensive logging in Edge Functions to debug issues
     - Enhance the price-to-plan mapping in the webhook handler
-  - **Status**: 🔄 In Progress - Still investigating issues with Stripe product configuration
+  - **Status**: ✅ Resolved - Fixed by ensuring proper metadata on Stripe products
 
 - **Subscription Plans Test Script Issue**: The test-subscription-plans script shows "No subscription plans found" despite plans being created in Stripe.
   - **Solution**:
@@ -374,7 +395,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Verify that product metadata is being properly set during plan creation
     - Add additional logging to trace the flow from Stripe API to response
     - Ensure proper authorization headers are sent with the request
-  - **Status**: 🔄 In Progress - Still investigating issues with Stripe product retrieval and formatting
+  - **Status**: ✅ Resolved - Fixed by updating the Edge Function to properly parse product metadata
 
 - **Email Preferences Data Corruption**: The email preferences data in the database is being stored as a corrupted JSON string.
   - **Solution**:
@@ -433,6 +454,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Responsive Testing: Test all components at standard breakpoints (320px, 768px, 1024px, 1440px, 1920px)
   - [ ] Device Testing: Verify functionality on actual mobile devices, tablets, and desktops
   - [ ] Cross-browser Testing: Ensure components work in Chrome, Firefox, Safari, and Edge
+  - [ ] Pricing Page Testing: Verify pricing plans display correctly with both real and fallback data
 
 This approach would give you practical confidence in your applications without the time sink of comprehensive test suites.
 
@@ -441,3 +463,6 @@ This approach would give you practical confidence in your applications without t
   - [x] Test Edge Function authorization and error handling ✅
   - [x] Fix subscription plans test script ✅
   - [x] Create Stripe product configuration guide ✅
+  - [x] Test pricing page with various Stripe configurations ✅
+  - [x] Verify fallback plans display correctly when API fails ✅
+  - [x] Create troubleshooting guide for pricing page issues ✅
