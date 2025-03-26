@@ -428,364 +428,43 @@ page ✅
   - [x] Fix profile page to handle subscription query parameters                 
   - [x] Implement proper error handling for subscription flow                    
          
-- [ ] **User Plan Correspondence**
-  - [ ] Create a centralized feature access system:
-    - [ ] Create `lib/config/plan-features.ts` to define feature access by plan type:
-      ```typescript
-      // Define features available in each plan
-      export const planFeatures = {
-        free: {
-          maxStorage: 10, // MB
-          maxResources: 10,
-          maxAIInteractions: 20,
-          maxAPICalls: 100,
-          features: ['basic_ai', 'basic_storage', 'basic_analytics']
-        },
-        premium: {
-          maxStorage: 50, // MB
-          maxResources: 100,
-          maxAIInteractions: 100,
-          maxAPICalls: 1000,
-          features: ['advanced_ai', 'advanced_storage', 'advanced_analytics', 'priority_support']
-        },
-        enterprise: {
-          maxStorage: 500, // MB
-          maxResources: 1000,
-          maxAIInteractions: 500,
-          maxAPICalls: 10000,
-          features: ['premium_ai', 'unlimited_storage', 'advanced_analytics', 'priority_support', 'team_collaboration']
-        }
-      };
-      ```
-    - [ ] Create `lib/config/plan-access.ts` with helper functions:
-      ```typescript
-      import { planFeatures } from './plan-features';
+- [x] **User Plan Correspondence**
+  - [x] Create a centralized feature access system:
+    - [x] Created `lib/config/plan-features.ts` to define feature access by plan type
+    - [x] Created `lib/config/plan-access.ts` with helper functions for resource limits and feature access
+    - [x] Updated `lib/config/useConfig.ts` to expose plan feature helpers
       
-      // Get resource limit for a specific plan type
-      export function getResourceLimit(planType: string, resourceName: string): number {
-        const plan = planType && planFeatures[planType] ? planType : 'free';
-        const limitKey = `max${resourceName.charAt(0).toUpperCase() + resourceName.slice(1)}`;
-        return planFeatures[plan][limitKey] || planFeatures.free[limitKey];
-      }
+  - [x] Update dashboard to show features based on user's subscription plan:
+    - [x] Modified `app/dashboard/page.tsx` to use feature access helpers
+    - [x] Created `components/composed/UpgradePrompt.tsx` component for premium feature prompts
       
-      // Check if a feature is available in a plan
-      export function hasFeatureAccess(planType: string, featureName: string): boolean {
-        const plan = planType && planFeatures[planType] ? planType : 'free';
-        return planFeatures[plan].features.includes(featureName);
-      }
+  - [x] Modify profile page to display correct resource limits based on plan:
+    - [x] Updated `app/profile/page.tsx` to use the plan-based resource limits
       
-      // Get all features available for a plan
-      export function getPlanFeatures(planType: string): string[] {
-        const plan = planType && planFeatures[planType] ? planType : 'free';
-        return planFeatures[plan].features || [];
-      }
-      ```
-    - [ ] Update `lib/config/useConfig.ts` to expose plan feature helpers:
-      ```typescript
-      import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from './plan-access';
+  - [x] Implement AI usage limits that correspond to the user's plan:
+    - [x] Updated `components/composed/AIAssistant.tsx` to enforce limits based on subscription tier
+    - [x] Added usage counter and upgrade prompts when approaching limits
       
-      export function useConfig() {
-        // Existing code...
-        
-        return {
-          // Existing properties...
-          getResourceLimit,
-          hasFeatureAccess,
-          getPlanFeatures,
-        };
-      }
-      ```
+  - [x] Add visual indicators for premium features:
+    - [x] Created `components/ui/premium-badge.tsx` component with locked/premium states
+    - [x] Added badges to premium features in the dashboard
       
-  - [ ] Update dashboard to show features based on user's subscription plan:
-    - [ ] Modify `app/dashboard/page.tsx` to use feature access helpers:
-      ```typescript
-      // In the AI Assistant tab
-      {activeTab === "ai" && (
-        <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-            {hasFeatureAccess(currentPlan?.planType || 'free', 'basic_ai') ? (
-              <AIAssistant maxInteractions={getResourceLimit(currentPlan?.planType || 'free', 'AIInteractions')} />
-            ) : (
-              <UpgradePrompt feature="AI Assistant" />
-            )}
-            <div className="space-y-6">
-              <AIMetrics />
-            </div>
-          </div>
-        </div>
-      )}
-      ```
-    - [ ] Create a new `components/composed/UpgradePrompt.tsx` component:
-      ```typescript
-      interface UpgradePromptProps {
-        feature: string;
-        description?: string;
-      }
+  - [x] Implement graceful degradation for features not available in user's plan:
+    - [x] Created `hooks/useFeatureAccess.ts` hook for centralized feature access control
+    - [x] Implemented conditional rendering based on subscription tier
       
-      export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>{feature} - Premium Feature</CardTitle>
-              <CardDescription>
-                {description || `Access to ${feature} requires a premium subscription.`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <Button asChild>
-                <a href="/pricing">Upgrade Now</a>
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      }
-      ```
+  - [x] Add upgrade prompts for free users when accessing premium features:
+    - [x] Created `components/composed/FeatureLimit.tsx` component to display usage limits
+    - [x] Added visual indicators when approaching resource limits
+    - [x] Implemented upgrade prompts throughout the application
       
-  - [ ] Modify profile page to display correct resource limits based on plan:
-    - [ ] Update `app/profile/page.tsx` to use the plan-based resource limits:
-      ```typescript
-      // Prepare usage data based on the user's plan
-      const usageData = [
-        {
-          name: "Storage",
-          current: usageMetrics.storage_used || 0,
-          limit: getResourceLimit(currentPlan?.planType || 'free', 'Storage'),
-          unit: "MB"
-        },
-        {
-          name: "API Calls",
-          current: usageMetrics.api_calls || 0,
-          limit: getResourceLimit(currentPlan?.planType || 'free', 'APICalls'),
-          unit: ""
-        },
-        {
-          name: "AI Interactions",
-          current: user.ai_interactions_count || 0,
-          limit: getResourceLimit(currentPlan?.planType || 'free', 'AIInteractions'),
-          unit: ""
-        }
-      ];
-      ```
-      
-  - [ ] Implement AI usage limits that correspond to the user's plan:
-    - [ ] Update `components/composed/AIAssistant.tsx` to enforce limits:
-      ```typescript
-      // Add a prop for maximum interactions
-      interface AIAssistantProps {
-        maxInteractions?: number;
-      }
-      
-      export function AIAssistant({ maxInteractions = 20 }: AIAssistantProps) {
-        // Existing code...
-        
-        // Add check before sending request
-        const handleSubmit = async () => {
-          if (user && user.ai_interactions_count >= maxInteractions) {
-            toast({
-              title: "Usage limit reached",
-              description: `You've reached your plan's limit of ${maxInteractions} AI interactions. Please upgrade to continue.`,
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          // Existing submission code...
-        };
-        
-        // Render usage counter
-        return (
-          <Card>
-            {/* Existing card content */}
-            <CardFooter className="flex justify-between">
-              <p className="text-sm text-muted-foreground">
-                {user ? `${user.ai_interactions_count || 0}/${maxInteractions} interactions used` : ''}
-              </p>
-              {user && user.ai_interactions_count >= maxInteractions * 0.8 && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/pricing">Upgrade Plan</a>
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        );
-      }
-      ```
-      
-  - [ ] Add visual indicators for premium features:
-    - [ ] Create a `components/ui/premium-badge.tsx` component:
-      ```typescript
-      import { Badge } from "./badge";
-      import { LockIcon, StarIcon } from "lucide-react";
-      
-      interface PremiumBadgeProps {
-        type?: 'premium' | 'locked';
-        className?: string;
-      }
-      
-      export function PremiumBadge({ type = 'premium', className = '' }: PremiumBadgeProps) {
-        if (type === 'locked') {
-          return (
-            <Badge variant="outline" className={`bg-muted/50 text-muted-foreground ${className}`}>
-              <LockIcon className="h-3 w-3 mr-1" />
-              Premium
-            </Badge>
-          );
-        }
-        
-        return (
-          <Badge variant="outline" className={`bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 ${className}`}>
-            <StarIcon className="h-3 w-3 mr-1 fill-amber-500" />
-            Premium
-          </Badge>
-        );
-      }
-      ```
-    - [ ] Add the badge to premium features in the dashboard:
-      ```typescript
-      // Example usage in a feature card
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Advanced Analytics</CardTitle>
-            <CardDescription>Detailed insights into your data</CardDescription>
-          </div>
-          {!isPremiumTier() && <PremiumBadge type="locked" />}
-        </CardHeader>
-        <CardContent>
-          {isPremiumTier() ? (
-            <AdvancedAnalyticsContent />
-          ) : (
-            <UpgradePrompt feature="Advanced Analytics" />
-          )}
-        </CardContent>
-      </Card>
-      ```
-      
-  - [ ] Implement graceful degradation for features not available in user's plan:
-    - [ ] Create a `hooks/useFeatureAccess.ts` hook:
-      ```typescript
-      import { useAuth } from './useAuth';
-      import { useSubscription } from './useSubscription';
-      import { useConfig } from '@/lib/config/useConfig';
-      
-      export function useFeatureAccess() {
-        const { user } = useAuth();
-        const { currentPlan, isPremiumTier } = useSubscription();
-        const { hasFeatureAccess, getResourceLimit } = useConfig();
-        
-        const planType = currentPlan?.planType || user?.subscription_plan || 'free';
-        
-        const canAccessFeature = (featureName: string): boolean => {
-          return hasFeatureAccess(planType, featureName);
-        };
-        
-        const getLimit = (resourceName: string): number => {
-          return getResourceLimit(planType, resourceName);
-        };
-        
-        const isAtLimit = (resourceName: string, currentUsage: number): boolean => {
-          const limit = getLimit(resourceName);
-          return currentUsage >= limit;
-        };
-        
-        const isNearLimit = (resourceName: string, currentUsage: number, threshold = 0.8): boolean => {
-          const limit = getLimit(resourceName);
-          return currentUsage >= limit * threshold;
-        };
-        
-        return {
-          canAccessFeature,
-          getLimit,
-          isAtLimit,
-          isNearLimit,
-          isPremium: isPremiumTier(),
-          planType
-        };
-      }
-      ```
-    - [ ] Use the hook in components to gracefully handle feature access:
-      ```typescript
-      // Example usage in a component
-      const { canAccessFeature, isAtLimit, isPremium } = useFeatureAccess();
-      
-      // Conditionally render based on access
-      if (!canAccessFeature('advanced_analytics')) {
-        return <UpgradePrompt feature="Advanced Analytics" />;
-      }
-      
-      // Or show limited functionality
-      return (
-        <div>
-          <h2>Analytics Dashboard</h2>
-          <BasicAnalytics />
-          {isPremium ? <AdvancedAnalytics /> : <AdvancedAnalyticsPreview />}
-        </div>
-      );
-      ```
-      
-  - [ ] Add upgrade prompts for free users when accessing premium features:
-    - [ ] Create a `components/composed/FeatureLimit.tsx` component:
-      ```typescript
-      interface FeatureLimitProps {
-        title: string;
-        description: string;
-        current: number;
-        limit: number;
-        unit?: string;
-        showUpgradeLink?: boolean;
-      }
-      
-      export function FeatureLimit({
-        title,
-        description,
-        current,
-        limit,
-        unit = '',
-        showUpgradeLink = true
-      }: FeatureLimitProps) {
-        const percentage = (current / limit) * 100;
-        const isNearLimit = percentage >= 80;
-        const isAtLimit = percentage >= 100;
-        
-        return (
-          <div className="rounded-lg border p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium">{title}</h3>
-              <span className={`text-sm ${isAtLimit ? 'text-red-500' : isNearLimit ? 'text-amber-500' : ''}`}>
-                {current}/{limit} {unit}
-              </span>
-            </div>
-            
-            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-              <div
-                className={`h-full ${isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary'}`}
-                style={{ width: `${Math.min(100, percentage)}%` }}
-              />
-            </div>
-            
-            <p className="text-sm text-muted-foreground">{description}</p>
-            
-            {(isNearLimit || isAtLimit) && showUpgradeLink && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/pricing">Upgrade Plan</a>
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      }
-      ```
-    - [ ] Use this component throughout the application to show limits and upgrade prompts
-      
-  - [ ] Test all features with both free and premium accounts:
-    - [ ] Create test accounts with different subscription levels
-    - [ ] Verify feature access control works correctly
-    - [ ] Test upgrade flows from free to premium features
-    - [ ] Verify resource limits are enforced correctly
-    - [ ] Test visual indicators for premium features
-    - [ ] Ensure graceful degradation works as expected
-    - [ ] Verify upgrade prompts appear at appropriate times
+  - [x] Tested all features with both free and premium accounts:
+    - [x] Verified feature access control works correctly
+    - [x] Tested upgrade flows from free to premium features
+    - [x] Verified resource limits are enforced correctly
+    - [x] Tested visual indicators for premium features
+    - [x] Ensured graceful degradation works as expected
+    - [x] Verified upgrade prompts appear at appropriate times
                                                                     
 
 - [ ] **Stripe Customer Portal Configuration**
