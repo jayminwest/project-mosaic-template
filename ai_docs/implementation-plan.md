@@ -306,11 +306,11 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Enhance profile page with responsive layout and real data ✅
   - [x] Improve dashboard with project and integration tabs ✅
   - [x] **Profile Page Functionality**:
-    - [x] Implement real profile data saving functionality (Note: Supabase connection needs fixing)
+    - [x] Implement real profile data saving functionality
     - [x] Connect usage metrics to actual database values
     - [x] Add API endpoint for updating user profile via RPC function
     - [x] Implement account deletion UI (backend implementation pending)
-    - [x] Add email preferences management
+    - [x] Add email preferences management with proper JSONB storage
     - [x] Create password change functionality
 
 ## Phase 6: A/B Testing Framework
