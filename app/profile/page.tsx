@@ -12,6 +12,7 @@ import { DashboardMetric } from "@/components/composed/DashboardMetric";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 import { toast } from "@/components/hooks/use-toast";
+import { useSearchParams } from 'next/navigation';
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -24,6 +25,8 @@ export default function Profile() {
     clearError
   } = useSubscription();
   const [isSaving, setIsSaving] = useState(false);
+  const searchParams = useSearchParams();
+  const subscribeParam = searchParams.get('subscribe');
   
   // Initialize Supabase client
   const [supabase] = useState(() => 
@@ -40,6 +43,28 @@ export default function Profile() {
     resources_used: 0,
     projects_created: 0
   });
+  
+  // Handle subscription parameter
+  useEffect(() => {
+    const handleSubscription = async () => {
+      if (subscribeParam && session?.access_token) {
+        try {
+          await manageSubscription(session.access_token, subscribeParam);
+        } catch (error) {
+          console.error("Error initiating subscription:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initiate subscription. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    if (subscribeParam && !isLoading && user) {
+      handleSubscription();
+    }
+  }, [subscribeParam, session, isLoading, user, manageSubscription]);
   
   // Helper function to calculate account age
   const getAccountAge = (createdAt: string): string => {
