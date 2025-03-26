@@ -14,6 +14,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { toast } from "@/components/hooks/use-toast";
 import { useSearchParams } from 'next/navigation';
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { useConfig } from "@/lib/config/useConfig";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
