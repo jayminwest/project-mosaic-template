@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { createClientComponentClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -16,7 +16,10 @@ export function cn(...inputs: ClassValue[]) {
  */
 export const withAuthCheck = (callback: Function, redirectPath = '/login') => {
   return async (...args: any[]) => {
-    const supabase = createClientComponentClient();
+    // Create Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     const { data } = await supabase.auth.getSession();
     if (!data.session) {

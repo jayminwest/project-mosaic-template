@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { usePricingTiers } from "@/hooks/usePricingTiers";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
-import { createClientComponentClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 interface PricingSectionProps {
   title: string;
@@ -22,7 +22,6 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
   const tiers = staticTiers || pricingTiers;
 
   const router = useRouter();
-  const supabase = createClientComponentClient();
   
   // Set mounted state after component mounts
   useEffect(() => {
@@ -30,6 +29,11 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
   }, []);
   
   const handleSubscribeClick = async (priceId: string) => {
+    // Create Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     // Check if user is authenticated
     const { data } = await supabase.auth.getSession();
     
