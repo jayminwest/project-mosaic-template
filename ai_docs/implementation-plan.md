@@ -369,6 +369,26 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Fix profile page to handle subscription query parameters
   - [x] Implement proper error handling for subscription flow
 
+- [ ] **User Plan Correspondence**
+  - [ ] Update dashboard to show features based on user's subscription plan
+  - [ ] Modify profile page to display correct resource limits based on plan
+  - [ ] Implement AI usage limits that correspond to the user's plan
+  - [ ] Add visual indicators for premium features
+  - [ ] Create helper functions to check feature access based on plan
+  - [ ] Implement graceful degradation for features not available in user's plan
+  - [ ] Add upgrade prompts for free users when accessing premium features
+  - [ ] Test all features with both free and premium accounts
+
+- [ ] **Stripe Customer Portal Configuration**
+  - [ ] Add documentation on setting up Stripe Customer Portal in test mode
+  - [ ] Create step-by-step guide for configuring portal settings at https://dashboard.stripe.com/test/settings/billing/portal
+  - [ ] Update create-stripe-session function to handle missing portal configuration
+  - [ ] Add fallback mechanism when portal is not configured
+  - [ ] Implement better error handling for portal-related errors
+  - [ ] Add configuration check in setup-subscription-plans script
+  - [ ] Create troubleshooting guide for common Stripe portal issues
+  - [ ] Test portal functionality with various configuration settings
+
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
   - [ ] Implement Supabase provider for self-hosted A/B testing
