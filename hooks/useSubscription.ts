@@ -59,6 +59,18 @@ export function useSubscription(): UseSubscriptionReturn {
       setIsLoading(true);
       setError(null);
       
+      // Check if user is authenticated
+      if (!session) {
+        // If not authenticated and we're in a browser environment
+        if (typeof window !== 'undefined') {
+          // Store the price ID to use after login
+          const returnUrl = `/profile?subscribe=${priceId}`;
+          window.location.href = `/login?returnTo=${encodeURIComponent(returnUrl)}`;
+          return;
+        }
+        throw new Error('User not authenticated');
+      }
+      
       // Check if we're in development mode
       const isDev = process.env.NODE_ENV === 'development';
       
