@@ -166,27 +166,34 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Get resource limits from feature access hook
-  const { getLimit } = useFeatureAccess();
+  // Get resource limits from subscription plan
+  const { currentPlan } = useSubscription();
+  const { getResourceLimit } = useConfig();
+  
+  // Helper function to get limits based on plan
+  const getLimitForResource = (resourceName: string): number => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return getResourceLimit(planType, resourceName);
+  };
 
   // Prepare usage data based on the user's plan
   const usageData = [
     {
       name: "Storage",
       current: usageMetrics.storage_used || 0,
-      limit: getLimit('Storage'),
+      limit: getLimitForResource('Storage'),
       unit: "MB"
     },
     {
       name: "API Calls",
       current: usageMetrics.api_calls || 0,
-      limit: getLimit('APICalls'),
+      limit: getLimitForResource('APICalls'),
       unit: ""
     },
     {
       name: "AI Interactions",
       current: user.ai_interactions_count || 0,
-      limit: getLimit('AIInteractions'),
+      limit: getLimitForResource('AIInteractions'),
       unit: ""
     }
   ];

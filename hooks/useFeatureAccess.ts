@@ -1,15 +1,14 @@
 "use client";
 
 import { useConfig } from '@/lib/config/useConfig';
-import { useAuth } from './useAuth';
 import { useSubscription } from './useSubscription';
 
 export function useFeatureAccess() {
   const { hasFeatureAccess, getResourceLimit } = useConfig();
-  const { user } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
   
-  const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+  // Get the plan type from subscription only, not from user
+  const planType = currentPlan?.planType || 'free';
   
   const canAccessFeature = (featureName: string): boolean => {
     return hasFeatureAccess(planType, featureName);

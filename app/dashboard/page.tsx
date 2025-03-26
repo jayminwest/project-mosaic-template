@@ -19,7 +19,18 @@ export default function DashboardPage() {
   const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
   const { user, isLoading } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
-  const { canAccessFeature, getLimit } = useFeatureAccess();
+  const { hasFeatureAccess, getResourceLimit } = useConfig();
+  
+  // Helper functions to check feature access and get limits
+  const canAccessFeature = (featureName: string): boolean => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return hasFeatureAccess(planType, featureName);
+  };
+  
+  const getLimit = (resourceName: string): number => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return getResourceLimit(planType, resourceName);
+  };
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [usageMetrics, setUsageMetrics] = useState({
     storage_used: 0,
