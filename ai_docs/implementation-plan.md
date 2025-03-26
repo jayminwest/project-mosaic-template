@@ -389,6 +389,18 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Create troubleshooting guide for common Stripe portal issues
   - [ ] Test portal functionality with various configuration settings
 
+- [ ] **Subscription Cancellation Handling**
+  - [ ] Implement proper UI feedback when a user cancels their subscription
+  - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations
+  - [ ] Create webhook handler for subscription cancellation events
+  - [ ] Update user profile with correct subscription status after cancellation
+  - [ ] Implement grace period for accessing premium features after cancellation
+  - [ ] Add re-subscribe option for recently cancelled subscriptions
+  - [ ] Create email notification for subscription cancellation
+  - [ ] Add analytics tracking for cancellation reasons
+  - [ ] Implement subscription retention offers for cancelling users
+  - [ ] Test full cancellation flow from UI to database updates
+
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
   - [ ] Implement Supabase provider for self-hosted A/B testing
