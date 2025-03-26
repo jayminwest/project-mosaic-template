@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 interface PricingFeature {
   text: string;
@@ -25,7 +25,10 @@ export function usePricingTiers() {
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
 
   useEffect(() => {
     async function fetchPricingTiers() {
