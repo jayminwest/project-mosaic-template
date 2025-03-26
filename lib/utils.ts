@@ -1,7 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { createClientComponentClient } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,12 +17,14 @@ export function cn(...inputs: ClassValue[]) {
 export const withAuthCheck = (callback: Function, redirectPath = '/login') => {
   return async (...args: any[]) => {
     const supabase = createClientComponentClient();
-    const router = useRouter();
     
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
-      const returnPath = encodeURIComponent(window.location.pathname + window.location.search);
-      router.push(`${redirectPath}?returnTo=${returnPath}`);
+      // In a browser environment, redirect to login
+      if (typeof window !== 'undefined') {
+        const returnPath = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `${redirectPath}?returnTo=${returnPath}`;
+      }
       return;
     }
     
