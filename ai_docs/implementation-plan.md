@@ -358,12 +358,524 @@ This document outlines the step-by-step implementation plan for transforming the
 
 - [ ] **Checkout Session Implementation**
   - [ ] Update the checkout session creation to use real Stripe product IDs
+    - Modify `supabase/functions/create-stripe-session/index.ts` to accept priceId parameter:
+      ```typescript
+      // Parse request body
+      const { priceId, successUrl, cancelUrl } = requestData as {
+        priceId?: string;
+        successUrl?: string;
+        cancelUrl?: string;
+      };
+      
+      // Create Checkout session with the provided priceId
+      const session = await stripe.checkout.sessions.create({
+        customer: profile.stripe_customer_id,
+        line_items: [
+          {
+            price: priceId || STRIPE_PRICE_ID,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: successUrl || defaultSuccessUrl,
+        cancel_url: cancelUrl || defaultCancelUrl,
+      });
+      ```
+    - Update `lib/payment/payment-service.ts` to pass priceId to the Edge Function:
+      ```typescript
+      async createCheckoutSession(accessToken: string, priceId?: string): Promise<PaymentResponse> {
+        return this.withRetry(async () => {
+          const response = await fetch(
+            `${this.config.apiUrl}/functions/v1/create-stripe-session`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                priceId,
+                successUrl: this.config.successUrl,
+                cancelUrl: this.config.cancelUrl,
+              }),
+            }
+          );
+          // Process response...
+        }, "createCheckoutSession");
+      }
+      ```
   - [ ] Implement proper error handling for checkout session creation
+    - Add detailed error handling in `supabase/functions/create-stripe-session/index.ts`:
+      ```typescript
+      try {
+        // Existing code...
+      } catch (error) {
+        console.error("Error in create-stripe-session:", error.message);
+        return new Response(JSON.stringify({ 
+          error: error.message,
+          code: error.code || 'unknown_error',
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      ```
+    - Enhance error handling in `lib/payment/payment-service.ts`:
+      ```typescript
+      private async withRetry<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
+        let lastError: any;
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+          try {
+            return await operation();
+          } catch (error: any) {
+            console.warn(`Attempt ${attempt}/${this.maxRetries} failed for ${operationName}: ${error.message}`);
+            lastError = error;
+            
+            if (attempt < this.maxRetries) {
+              // Exponential backoff with jitter
+              const delay = Math.min(Math.pow(2, attempt) * 100 + Math.random() * 100, 3000);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
+        }
+        return this.handleError(lastError, operationName);
+      }
+      ```
   - [ ] Add success and cancel URL configuration
+    - Update `supabase/functions/create-stripe-session/index.ts` to use custom URLs:
+      ```typescript
+      const originUrl = req.headers.get("origin") ?? "http://localhost:3000";
+      const defaultSuccessUrl = `${originUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+      const defaultCancelUrl = `${originUrl}/checkout/cancel`;
+      
+      // Create Checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: profile.stripe_customer_id,
+        line_items: [
+          {
+            price: priceId || STRIPE_PRICE_ID,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: successUrl || defaultSuccessUrl,
+        cancel_url: cancelUrl || defaultCancelUrl,
+      });
+      ```
+    - Add configuration options in `lib/payment/payment-service.ts`:
+      ```typescript
+      export interface PaymentServiceConfig {
+        apiUrl?: string;
+        successUrl?: string;
+        cancelUrl?: string;
+        maxRetries?: number;
+      }
+      
+      constructor(config: PaymentServiceConfig = {}) {
+        this.config = {
+          apiUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          successUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}` : '',
+          cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/cancel` : '',
+          ...config
+        };
+        this.maxRetries = config.maxRetries || 3;
+      }
+      ```
   - [ ] Create checkout success and cancel pages
+    - Create `app/checkout/success/page.tsx`:
+      ```tsx
+      'use client';
+      
+      import { useEffect, useState } from 'react';
+      import { useRouter, useSearchParams } from 'next/navigation';
+      import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+      import { Button } from '@/components/ui/button';
+      import { CheckCircle } from 'lucide-react';
+      import { useSubscription } from '@/hooks/useSubscription';
+      import { useConfig } from '@/lib/config/useConfig';
+      
+      export default function CheckoutSuccessPage() {
+        const router = useRouter();
+        const searchParams = useSearchParams();
+        const sessionId = searchParams.get('session_id');
+        const { productConfig } = useConfig();
+        const { getSubscriptionStatus } = useSubscription();
+        const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+        const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null);
+        
+        useEffect(() => {
+          async function verifyCheckout() {
+            if (!sessionId) {
+              setStatus('error');
+              return;
+            }
+            
+            try {
+              // Wait a moment to allow webhook processing
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Get updated subscription status
+              const result = await getSubscriptionStatus();
+              if (result.success) {
+                setSubscriptionDetails(result.data);
+                setStatus('success');
+              } else {
+                setStatus('error');
+              }
+            } catch (error) {
+              console.error('Error verifying checkout:', error);
+              setStatus('error');
+            }
+          }
+          
+          verifyCheckout();
+        }, [sessionId, getSubscriptionStatus]);
+        
+        return (
+          <div className="container max-w-md mx-auto py-12">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-center mb-4">
+                  <CheckCircle className="h-16 w-16 text-green-500" />
+                </div>
+                <CardTitle className="text-center text-2xl">Thank You!</CardTitle>
+                <CardDescription className="text-center">
+                  {status === 'loading' ? 'Verifying your subscription...' : 
+                   status === 'success' ? 'Your subscription has been activated.' : 
+                   'We received your payment.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {status === 'loading' && (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                )}
+                
+                {status === 'success' && subscriptionDetails && (
+                  <div className="space-y-4">
+                    <p className="text-center">
+                      Welcome to {productConfig.name} {subscriptionDetails.planName}!
+                    </p>
+                    
+                    {subscriptionDetails.trialEnd && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <p className="text-sm text-center">
+                          Your free trial ends on {new Date(subscriptionDetails.trialEnd * 1000).toLocaleDateString()}.
+                          You won't be charged until then.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {status === 'error' && (
+                  <p className="text-center text-amber-600 dark:text-amber-400">
+                    We're still processing your subscription. You'll receive an email confirmation shortly.
+                  </p>
+                )}
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button onClick={() => router.push('/dashboard')}>
+                  Go to Dashboard
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        );
+      }
+      ```
+    - Create `app/checkout/cancel/page.tsx`:
+      ```tsx
+      'use client';
+      
+      import { useRouter } from 'next/navigation';
+      import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+      import { Button } from '@/components/ui/button';
+      import { XCircle } from 'lucide-react';
+      import { useConfig } from '@/lib/config/useConfig';
+      
+      export default function CheckoutCancelPage() {
+        const router = useRouter();
+        const { productConfig } = useConfig();
+        
+        return (
+          <div className="container max-w-md mx-auto py-12">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-center mb-4">
+                  <XCircle className="h-16 w-16 text-amber-500" />
+                </div>
+                <CardTitle className="text-center text-2xl">Checkout Cancelled</CardTitle>
+                <CardDescription className="text-center">
+                  Your subscription has not been processed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center">
+                  You can try again whenever you're ready to upgrade to {productConfig.name} premium features.
+                </p>
+              </CardContent>
+              <CardFooter className="flex justify-center gap-4">
+                <Button variant="outline" onClick={() => router.push('/')}>
+                  Back to Home
+                </Button>
+                <Button onClick={() => router.push('/pricing')}>
+                  View Plans
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        );
+      }
+      ```
   - [ ] Implement webhook handling for checkout session completion
+    - Update `supabase/functions/stripe-webhook/index.ts` to handle trial periods:
+      ```typescript
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        
+        // Get the line items to find the price ID
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        if (lineItems.data.length > 0) {
+          const priceId = lineItems.data[0].price?.id;
+          
+          // Get the plan type from the price ID, default to "premium" if not found
+          const planType = priceId && priceToPlanMap.has(priceId) 
+            ? priceToPlanMap.get(priceId) 
+            : "premium";
+          
+          // Get subscription details to check for trial period
+          const subscriptions = await stripe.subscriptions.list({
+            customer: session.customer,
+            limit: 1,
+          });
+          
+          const subscription = subscriptions.data[0];
+          const isTrialing = subscription?.status === 'trialing';
+          
+          await supabase
+            .from("profiles")
+            .update({
+              subscription_plan: planType,
+              subscription_status: subscription?.status || 'active',
+              subscription_trial_end: subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_customer_id", session.customer);
+          
+          console.log(`Updated user to plan: ${planType} for customer: ${session.customer}, trial: ${isTrialing}`);
+        }
+        break;
+      }
+      ```
   - [ ] Add subscription status checking after checkout
+    - Update `hooks/useSubscription.ts` to include trial information:
+      ```typescript
+      const getSubscriptionStatus = useCallback(async () => {
+        if (!user?.user_id) return { success: false, error: 'User not authenticated' };
+        
+        try {
+          setIsLoading(true);
+          
+          const { data, error } = await supabase.functions.invoke('subscription-status', {
+            body: { userId: user.user_id },
+          });
+          
+          if (error) {
+            throw new Error(error.message);
+          }
+          
+          setSubscriptionStatus(data);
+          return { success: true, data };
+        } catch (error: any) {
+          console.error("Error getting subscription status:", error);
+          return { success: false, error: error.message };
+        } finally {
+          setIsLoading(false);
+        }
+      }, [user, supabase]);
+      
+      // Helper functions for trial periods
+      const isInTrialPeriod = useCallback(() => {
+        return subscriptionStatus?.status === 'trialing';
+      }, [subscriptionStatus]);
+      
+      const getTrialEndDate = useCallback(() => {
+        if (!subscriptionStatus?.trialEnd) return null;
+        return new Date(subscriptionStatus.trialEnd * 1000);
+      }, [subscriptionStatus]);
+      ```
+    - Update `types/subscription.ts` to include trial information:
+      ```typescript
+      export interface SubscriptionStatus {
+        active: boolean;
+        status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
+        planType: string;
+        planName: string;
+        currentPeriodEnd: number;
+        cancelAtPeriodEnd: boolean;
+        trialEnd: number | null;
+        isTrialing: boolean;
+        priceId: string;
+        interval: string;
+        currency: string;
+        amount: number;
+      }
+      ```
   - [ ] Test checkout flow with real Stripe products
+    - Create `scripts/test-checkout-flow.ts`:
+      ```typescript
+      import chalk from 'chalk';
+      import { createClient } from '@supabase/supabase-js';
+      import Stripe from 'stripe';
+      import dotenv from 'dotenv';
+      import path from 'path';
+      
+      // Load environment variables
+      dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+      
+      const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+      
+      const stripe = new Stripe(STRIPE_SECRET_KEY, {
+        apiVersion: '2023-10-16',
+      });
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      async function testCheckoutFlow() {
+        console.log(chalk.blue('Project Mosaic - Test Checkout Flow'));
+        console.log(chalk.gray('This tool will test your checkout flow with trial periods'));
+        
+        // Check if required environment variables are set
+        if (!STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+          console.log(chalk.red('Missing required environment variables'));
+          console.log(chalk.gray('Please ensure STRIPE_SECRET_KEY, NEXT_PUBLIC_SUPABASE_URL, and NEXT_PUBLIC_SUPABASE_ANON_KEY are set'));
+          return;
+        }
+        
+        try {
+          // 1. Check if Stripe products are configured with trial periods
+          console.log(chalk.blue('\n1. Checking Stripe products configuration...'));
+          
+          const products = await stripe.products.list({
+            active: true,
+            expand: ['data.default_price'],
+          });
+          
+          if (products.data.length === 0) {
+            console.log(chalk.red('No active products found in your Stripe account'));
+            console.log(chalk.gray('Please run npm run setup-subscription-plans to create products'));
+            return;
+          }
+          
+          console.log(chalk.green(`Found ${products.data.length} active products`));
+          
+          for (const product of products.data) {
+            const price = product.default_price as Stripe.Price;
+            const trialDays = product.metadata?.trial_period_days;
+            
+            console.log(chalk.white(`\nProduct: ${product.name}`));
+            console.log(chalk.gray(`ID: ${product.id}`));
+            console.log(chalk.gray(`Price ID: ${price?.id || 'No default price'}`));
+            console.log(chalk.gray(`Plan Type: ${product.metadata?.plan_type || 'Not set'}`));
+            
+            if (trialDays) {
+              console.log(chalk.green(`Trial Period: ${trialDays} days`));
+            } else {
+              console.log(chalk.yellow('Trial Period: Not configured'));
+            }
+          }
+          
+          // 2. Test Edge Functions
+          console.log(chalk.blue('\n2. Testing Edge Functions...'));
+          
+          // Test list-subscription-plans
+          console.log(chalk.gray('\nTesting list-subscription-plans function...'));
+          const { data: plansData, error: plansError } = await supabase.functions.invoke('list-subscription-plans');
+          
+          if (plansError) {
+            console.log(chalk.red(`Error: ${plansError.message}`));
+          } else {
+            console.log(chalk.green(`Success! Found ${plansData.plans.length} subscription plans`));
+          }
+          
+          // 3. Provide checkout test instructions
+          console.log(chalk.blue('\n3. Testing Checkout Flow'));
+          console.log(chalk.gray('To test the complete checkout flow:'));
+          console.log(chalk.white('1. Sign up for an account or log in'));
+          console.log(chalk.white('2. Visit the pricing page'));
+          console.log(chalk.white('3. Click on a subscription plan'));
+          console.log(chalk.white('4. Complete the checkout process with test card details:'));
+          console.log(chalk.gray('   - Card number: 4242 4242 4242 4242'));
+          console.log(chalk.gray('   - Expiry: Any future date'));
+          console.log(chalk.gray('   - CVC: Any 3 digits'));
+          
+        } catch (error) {
+          console.error(chalk.red('Error testing checkout flow:'), error);
+        }
+      }
+      
+      testCheckoutFlow();
+      ```
+    - Add to `package.json`:
+      ```json
+      "scripts": {
+        "test-checkout": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-checkout-flow.ts"
+      }
+      ```
+    - Create database migration for subscription status in `supabase/migrations/40_subscription_status.sql`:
+      ```sql
+      -- Add subscription status fields to profiles table
+      ALTER TABLE public.profiles
+      ADD COLUMN IF NOT EXISTS subscription_status TEXT,
+      ADD COLUMN IF NOT EXISTS subscription_trial_end TIMESTAMP WITH TIME ZONE;
+      
+      -- Create index for faster subscription queries
+      CREATE INDEX IF NOT EXISTS idx_profiles_subscription_status
+      ON public.profiles(subscription_status);
+      ```
+    - Update `scripts/setup-subscription-plans.ts` to include trial period configuration:
+      ```typescript
+      // Ask about trial period
+      const { addTrialPeriod } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'addTrialPeriod',
+          message: 'Would you like to add a free trial period?',
+          default: true,
+        }
+      ]);
+      
+      let trialPeriodDays = 0;
+      if (addTrialPeriod) {
+        const { trialDays } = await inquirer.prompt([
+          {
+            type: 'number',
+            name: 'trialDays',
+            message: 'How many days for the trial period?',
+            default: 7,
+            validate: (input) => input > 0 ? true : 'Trial period must be at least 1 day'
+          }
+        ]);
+        
+        trialPeriodDays = trialDays;
+      }
+      
+      // When creating the product, add trial_period_days to metadata
+      const productMetadata = {
+        plan_type: plan.planType,
+        features: plan.features.map(f => f.description).join(', '),
+        ...plan.limits.reduce((acc, limit) => ({
+          ...acc,
+          [`limit_${limit.name}`]: limit.value.toString(),
+        }), {}),
+        ...(trialPeriodDays > 0 ? { trial_period_days: trialPeriodDays.toString() } : {})
+      };
+      ```
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
