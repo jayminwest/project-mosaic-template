@@ -343,11 +343,8 @@ export default function DashboardPage() {
           {activeTab === "ai" && (
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                {canAccessFeature('basic_ai') ? (
-                  <AIAssistant maxInteractions={getLimit('AIInteractions')} />
-                ) : (
-                  <UpgradePrompt feature="AI Assistant" />
-                )}
+                {/* Always show AI Assistant for both free and premium users */}
+                <AIAssistant maxInteractions={getLimit('AIInteractions')} />
                 <div className="space-y-6">
                   <AIMetrics />
                 </div>
