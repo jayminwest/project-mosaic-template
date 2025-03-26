@@ -184,6 +184,12 @@ export default function Profile() {
       current: usageMetrics.api_calls || 0,
       limit: currentPlan?.planType === 'premium' ? 1000 : 100,
       unit: ""
+    },
+    {
+      name: "AI Interactions",
+      current: user.ai_interactions_count || 0,
+      limit: currentPlan?.planType === 'premium' ? 100 : 20,
+      unit: ""
     }
   ];
 
