@@ -12,6 +12,7 @@ export class OpenAIProvider implements AIProvider {
     
     this.client = new OpenAI({
       apiKey: apiKey || 'dummy-key',
+      dangerouslyAllowBrowser: true, // Enable browser usage - ensure your API key is properly secured
     });
   }
   
