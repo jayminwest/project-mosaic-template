@@ -398,6 +398,21 @@ This document outlines the step-by-step implementation plan for transforming the
       ADD COLUMN IF NOT EXISTS ai_interactions_count INTEGER DEFAULT 0,
       ADD COLUMN IF NOT EXISTS ai_tokens_used INTEGER DEFAULT 0;
       
+      -- Create function to update AI usage metrics
+      CREATE OR REPLACE FUNCTION public.update_ai_usage_metrics()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        -- Update the user's AI usage metrics
+        UPDATE public.profiles
+        SET 
+          ai_interactions_count = ai_interactions_count + 1,
+          ai_tokens_used = ai_tokens_used + (NEW.prompt_length + NEW.response_length)
+        WHERE user_id = NEW.user_id;
+        
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql SECURITY DEFINER;
+      
       -- Create trigger to update metrics on new AI interaction
       CREATE TRIGGER update_ai_usage_metrics_trigger
       AFTER INSERT ON public.ai_interactions
@@ -411,26 +426,135 @@ This document outlines the step-by-step implementation plan for transforming the
     - Fetch recent interactions with timestamps
     - Handle loading and error states
     - Return formatted metrics for display
+    - Use the same Supabase client initialization pattern as in auth-service.ts:
+      ```typescript
+      import { createBrowserClient } from "@supabase/ssr";
+      
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      ```
 
 - [ ] **AI Components Integration**
   - [ ] Create `components/composed/AIAssistant.tsx` with:
     - Simple text input for user prompts
     - Submit button to send requests to AI service
     - Display area for AI responses
-    - Integration with useAI hook for AI service access
-    - Database logging of interactions
-    - Example usage pattern:
+    - Integration with existing useAI hook for AI service access
+    - Database logging of interactions using Supabase client
+    - Use the existing DashboardMetric component for displaying stats
+    - Example implementation:
       ```tsx
-      // In a component
-      const { prompt, setPrompt, response, isLoading, handleSubmit } = useAIAssistant();
+      "use client";
       
-      return (
-        <form onSubmit={handleSubmit}>
-          <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-          <Button type="submit" disabled={isLoading}>Submit</Button>
-          {response && <div>{response}</div>}
-        </form>
-      );
+      import { useState } from "react";
+      import { Button } from "@/components/ui/button";
+      import { Textarea } from "@/components/ui/textarea";
+      import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+      import { useAI } from "@/lib/ai/hooks/useAI";
+      import { useToast } from "@/components/hooks/use-toast";
+      import { useAuth } from "@/hooks/useAuth";
+      import { createBrowserClient } from "@supabase/ssr";
+      
+      export function AIAssistant() {
+        const [prompt, setPrompt] = useState("");
+        const [response, setResponse] = useState("");
+        const [isLoading, setIsLoading] = useState(false);
+        const { generateCompletion } = useAI();
+        const { toast } = useToast();
+        const { user } = useAuth();
+        
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
+        const handleSubmit = async (e: React.FormEvent) => {
+          e.preventDefault();
+          
+          if (!prompt.trim()) {
+            toast({
+              title: "Empty prompt",
+              description: "Please enter a prompt to continue.",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          try {
+            setIsLoading(true);
+            setResponse("");
+            
+            // Get AI response
+            const result = await generateCompletion([
+              { role: "system", content: "You are a helpful assistant." },
+              { role: "user", content: prompt }
+            ]);
+            
+            setResponse(result);
+            
+            // Log the interaction to the database
+            if (user) {
+              await supabase.from("ai_interactions").insert({
+                user_id: user.id,
+                prompt_length: prompt.length,
+                response_length: result.length,
+                model_used: "gpt-3.5-turbo" // This would come from your AI service in a real implementation
+              });
+            }
+            
+          } catch (error) {
+            console.error("Error getting AI response:", error);
+            toast({
+              title: "Error",
+              description: "Failed to get a response. Please try again.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        
+        return (
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>AI Assistant</CardTitle>
+              <CardDescription>
+                Ask a question or request information from the AI assistant
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4">
+                  <Textarea
+                    placeholder="Enter your prompt here..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  
+                  {response && (
+                    <div className="p-4 bg-muted rounded-md">
+                      <p className="whitespace-pre-wrap">{response}</p>
+                    </div>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                type="submit" 
+                onClick={handleSubmit} 
+                disabled={isLoading || !prompt.trim()}
+                className="w-full"
+              >
+                {isLoading ? "Processing..." : "Submit"}
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      }
       ```
 
   - [ ] Create `components/composed/AIMetrics.tsx` to display usage statistics:
@@ -438,6 +562,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Show interaction count, tokens used, and average response length
     - Display recent interactions with timestamps
     - Handle loading and error states
+    - Use the same Supabase client initialization pattern
 
 - [ ] **Dashboard Integration**
   - [ ] Update `app/dashboard/page.tsx` to:
@@ -464,6 +589,20 @@ This document outlines the step-by-step implementation plan for transforming the
         </div>
       )}
       ```
+    - Update Quick Actions card:
+      ```tsx
+      <Button variant="outline" className="w-full" onClick={() => setActiveTab("ai")}>
+        Use AI Assistant
+      </Button>
+      ```
+    - Add AI metrics to Analytics tab:
+      ```tsx
+      {/* Add AI Metrics to Analytics Tab */}
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
+        <AIMetrics />
+      </div>
+      ```
 
 - [ ] **Testing & Validation**
   - [ ] Apply database migration with `npx supabase migration up`
@@ -473,6 +612,8 @@ This document outlines the step-by-step implementation plan for transforming the
     - Verify metrics update correctly
   - [ ] Test with different user accounts to ensure proper data isolation
   - [ ] Verify responsive layout on different screen sizes
+  - [ ] Test error handling when AI service is unavailable
+  - [ ] Verify that RLS policies are working correctly by attempting to access another user's data
 
 ## Known Issues & Solutions
 
