@@ -71,21 +71,10 @@ export function useSubscription(): UseSubscriptionReturn {
         throw new Error('User not authenticated');
       }
       
-      // Check if we're in development mode
-      const isDev = process.env.NODE_ENV === 'development';
+      // Always create a real checkout session, even in development mode
+      console.log("Creating Stripe checkout session for price:", priceId);
       
-      if (isDev) {
-        // In development, simulate a successful response
-        console.log("Development mode: Simulating Stripe checkout");
-        // Wait a moment to simulate network request
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Open a mock checkout page
-        window.open('https://stripe.com/docs/testing', '_blank');
-        return;
-      }
-      
-      // Production mode - actual API call
+      // Create checkout session via API
       const response = await paymentService.createCheckoutSession(accessToken, priceId);
       
       if (!response.success) {
