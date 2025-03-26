@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 import { toast } from "@/components/hooks/use-toast";
 import { useSearchParams } from 'next/navigation';
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -165,24 +166,27 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Prepare usage data based only on fields that exist in the database
+  // Get resource limits from feature access hook
+  const { getLimit } = useFeatureAccess();
+
+  // Prepare usage data based on the user's plan
   const usageData = [
     {
       name: "Storage",
       current: usageMetrics.storage_used || 0,
-      limit: currentPlan?.planType === 'premium' ? 50 : 10,
+      limit: getLimit('Storage'),
       unit: "MB"
     },
     {
       name: "API Calls",
       current: usageMetrics.api_calls || 0,
-      limit: currentPlan?.planType === 'premium' ? 1000 : 100,
+      limit: getLimit('APICalls'),
       unit: ""
     },
     {
       name: "AI Interactions",
       current: user.ai_interactions_count || 0,
-      limit: currentPlan?.planType === 'premium' ? 100 : 20,
+      limit: getLimit('AIInteractions'),
       unit: ""
     }
   ];

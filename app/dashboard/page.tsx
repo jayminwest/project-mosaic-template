@@ -11,11 +11,15 @@ import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { Footer } from "@/components/Footer";
 import { AIAssistant } from "@/components/composed/AIAssistant";
 import { AIMetrics } from "@/components/composed/AIMetrics";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { UpgradePrompt } from "@/components/composed/UpgradePrompt";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 export default function DashboardPage() {
   const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
   const { user, isLoading } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
+  const { canAccessFeature, getLimit } = useFeatureAccess();
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [usageMetrics, setUsageMetrics] = useState({
     storage_used: 0,
@@ -264,45 +268,75 @@ export default function DashboardPage() {
           
           {/* Analytics Tab */}
           {activeTab === "analytics" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics</CardTitle>
-                <CardDescription>Your usage statistics and metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-6">
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">Storage Used</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.storage_used?.toFixed(2) || "0.00"} MB
-                    </p>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Analytics</CardTitle>
+                  <CardDescription>Your usage statistics and metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-6">
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h3 className="font-medium mb-1">Storage Used</h3>
+                      <p className="text-2xl font-bold">
+                        {user?.storage_used?.toFixed(2) || "0.00"} MB
+                      </p>
+                    </div>
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h3 className="font-medium mb-1">API Calls</h3>
+                      <p className="text-2xl font-bold">
+                        {user?.api_calls || 0}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">API Calls</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.api_calls || 0}
-                    </p>
+                  
+                  {/* Add AI Metrics to Analytics Tab */}
+                  <div className="mt-8">
+                    <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
+                    <AIMetrics />
                   </div>
-                </div>
-                
-                {/* Add AI Metrics to Analytics Tab */}
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
-                  <AIMetrics />
-                </div>
-                
-                <p className="text-center py-4 text-muted-foreground mt-6">
-                  Detailed analytics dashboard will be available soon.
-                </p>
-              </CardContent>
-            </Card>
+                  
+                  {/* Add Advanced Analytics section with premium badge */}
+                  <div className="mt-8">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Advanced Analytics</CardTitle>
+                          <CardDescription>Detailed insights into your data</CardDescription>
+                        </div>
+                        {!isPremiumTier() && <PremiumBadge type="locked" />}
+                      </CardHeader>
+                      <CardContent>
+                        {isPremiumTier() ? (
+                          <div className="p-4 bg-muted/30 rounded-lg">
+                            <h3 className="font-medium mb-2">Advanced metrics coming soon</h3>
+                            <p className="text-muted-foreground">
+                              As a premium user, you'll have access to advanced analytics features as they're released.
+                            </p>
+                          </div>
+                        ) : (
+                          <UpgradePrompt 
+                            feature="Advanced Analytics" 
+                            description="Unlock detailed insights, custom reports, and data visualization with a premium subscription."
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* AI Assistant Tab */}
           {activeTab === "ai" && (
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                <AIAssistant />
+                {canAccessFeature('basic_ai') ? (
+                  <AIAssistant maxInteractions={getLimit('AIInteractions')} />
+                ) : (
+                  <UpgradePrompt feature="AI Assistant" />
+                )}
                 <div className="space-y-6">
                   <AIMetrics />
                 </div>

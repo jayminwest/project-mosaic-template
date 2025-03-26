@@ -34,7 +34,11 @@ const AI_MODELS = {
   ],
 };
 
-export function AIAssistant() {
+interface AIAssistantProps {
+  maxInteractions?: number;
+}
+
+export function AIAssistant({ maxInteractions = 20 }: AIAssistantProps) {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +69,16 @@ export function AIAssistant() {
       toast({
         title: "Empty prompt",
         description: "Please enter a prompt to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Add check for usage limits
+    if (user && user.ai_interactions_count >= maxInteractions) {
+      toast({
+        title: "Usage limit reached",
+        description: `You've reached your plan's limit of ${maxInteractions} AI interactions. Please upgrade to continue.`,
         variant: "destructive",
       });
       return;
@@ -203,15 +217,24 @@ export function AIAssistant() {
           </div>
         </form>
       </CardContent>
-      <CardFooter>
-        <Button 
-          type="submit" 
-          onClick={handleSubmit} 
-          disabled={isLoading || !prompt.trim()}
-          className="w-full"
-        >
-          {isLoading ? "Processing..." : "Submit"}
-        </Button>
+      <CardFooter className="flex justify-between">
+        <p className="text-sm text-muted-foreground">
+          {user ? `${user.ai_interactions_count || 0}/${maxInteractions} interactions used` : ''}
+        </p>
+        <div>
+          {user && user.ai_interactions_count >= maxInteractions * 0.8 && (
+            <Button variant="outline" size="sm" asChild className="mr-2">
+              <a href="/pricing">Upgrade Plan</a>
+            </Button>
+          )}
+          <Button 
+            type="submit" 
+            onClick={handleSubmit} 
+            disabled={isLoading || !prompt.trim()}
+          >
+            {isLoading ? "Processing..." : "Submit"}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { productConfig, themeConfig, subscriptionPlans, featureFlags } from './index';
 import { SubscriptionPlan } from './types';
+import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from './plan-access';
 
 export function useConfig() {
   const getSubscriptionPlan = useCallback((planId: string): SubscriptionPlan | undefined => {
@@ -17,5 +18,8 @@ export function useConfig() {
     subscriptionPlans,
     getSubscriptionPlan,
     isFeatureEnabled,
+    getResourceLimit,
+    hasFeatureAccess,
+    getPlanFeatures,
   };
 }
