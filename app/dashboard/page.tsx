@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { Footer } from "@/components/Footer";
+import { AIAssistant } from "@/components/composed/AIAssistant";
+import { AIMetrics } from "@/components/composed/AIMetrics";
 
 export default function DashboardPage() {
   const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
@@ -90,6 +92,12 @@ export default function DashboardPage() {
               Analytics
             </Button>
             <Button 
+              variant={activeTab === "ai" ? "default" : "outline"}
+              onClick={() => setActiveTab("ai")}
+            >
+              AI Assistant
+            </Button>
+            <Button 
               variant={activeTab === "integrations" ? "default" : "outline"}
               onClick={() => setActiveTab("integrations")}
             >
@@ -149,7 +157,9 @@ export default function DashboardPage() {
                   <CardContent className="space-y-4">
                     <Button className="w-full">Create New Project</Button>
                     <Button variant="outline" className="w-full">Invite Team Member</Button>
-                    <Button variant="outline" className="w-full">View Analytics</Button>
+                    <Button variant="outline" className="w-full" onClick={() => setActiveTab("ai")}>
+                      Use AI Assistant
+                    </Button>
                   </CardContent>
                 </Card>
                 
@@ -292,11 +302,28 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <p className="text-center py-4 text-muted-foreground">
+                
+                {/* Add AI Metrics to Analytics Tab */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
+                  <AIMetrics />
+                </div>
+                
+                <p className="text-center py-4 text-muted-foreground mt-6">
                   Detailed analytics dashboard will be available soon.
                 </p>
               </CardContent>
             </Card>
+          )}
+
+          {/* AI Assistant Tab */}
+          {activeTab === "ai" && (
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <AIAssistant />
+                <AIMetrics />
+              </div>
+            </div>
           )}
 
           {/* Integrations Tab */}
