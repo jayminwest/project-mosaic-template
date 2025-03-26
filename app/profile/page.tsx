@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SettingsForm } from "@/components/composed/SettingsForm";
 import { UsageStats } from "@/components/composed/UsageStats";
 import { DashboardMetric } from "@/components/composed/DashboardMetric";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -22,12 +22,31 @@ export default function Profile() {
     clearError
   } = useSubscription();
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Helper function to calculate account age
+  const getAccountAge = (createdAt: string): string => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - created.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 1) return "Today";
+    if (diffDays === 1) return "1 day";
+    if (diffDays < 30) return `${diffDays} days`;
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} ${months === 1 ? 'month' : 'months'}`;
+    }
+    
+    const years = Math.floor(diffDays / 365);
+    return `${years} ${years === 1 ? 'year' : 'years'}`;
+  };
 
   if (isLoading || !user) {
     return <LoadingSkeleton type="form" count={3} />;
   }
 
-  // Prepare usage data
+  // Prepare usage data based on user metrics
   const usageData = [
     {
       name: "Tasks",
@@ -37,9 +56,15 @@ export default function Profile() {
     },
     {
       name: "Storage",
-      current: 2.5, // This would come from actual storage usage
+      current: user?.usage_metrics?.storage_used || 0,
       limit: currentPlan?.planType === 'premium' ? 50 : 10,
       unit: "MB"
+    },
+    {
+      name: "API Calls",
+      current: user?.usage_metrics?.api_calls || 0,
+      limit: currentPlan?.planType === 'premium' ? 1000 : 100,
+      unit: ""
     }
   ];
 
@@ -54,8 +79,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold mb-6">User Profile</h1>
+    <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+      <h1 className="text-3xl font-bold mb-2">Account Settings</h1>
+      <p className="text-muted-foreground mb-6">Manage your personal information, subscription, and usage metrics</p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left column - Settings */}
@@ -145,14 +171,14 @@ export default function Profile() {
         
         <DashboardMetric 
           title="Storage Used" 
-          value="2.5 MB" 
+          value={`${(user?.usage_metrics?.storage_used || 0).toFixed(1)} MB`}
           description={`of ${currentPlan?.planType === 'premium' ? '50' : '10'} MB available`}
         />
         
         <DashboardMetric 
           title="Account Age" 
-          value="28 days" 
-          description="Member since last month"
+          value={user.created_at ? getAccountAge(user.created_at) : "New"}
+          description={user.created_at ? `Member since ${new Date(user.created_at).toLocaleDateString()}` : "Just joined"}
         />
       </div>
       
