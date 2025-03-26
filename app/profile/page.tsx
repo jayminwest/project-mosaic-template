@@ -166,7 +166,7 @@ export default function Profile() {
         .from('profiles')
         .update({
           name: data.name,
-          email_preferences: data.emailPreferences,
+          email_preferences: data.emailPreferences ? JSON.stringify(data.emailPreferences) : null,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.user_id)
