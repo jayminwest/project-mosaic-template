@@ -5,9 +5,11 @@ export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
   
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       console.warn('Anthropic API key not found. Some features may not work.');
+    } else {
+      console.log('Anthropic API key found, initializing client');
     }
     
     this.client = new Anthropic({
@@ -17,7 +19,8 @@ export class AnthropicProvider implements AIProvider {
   }
   
   async complete(options: AICompletionOptions): Promise<string> {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
     
@@ -49,7 +52,8 @@ export class AnthropicProvider implements AIProvider {
     options: AICompletionOptions, 
     callback: (chunk: string) => void
   ): Promise<void> {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
       throw new Error('Anthropic API key not configured');
     }
     

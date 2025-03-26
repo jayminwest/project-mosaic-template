@@ -44,6 +44,11 @@ export function AIAssistant() {
         { role: "user", content: prompt }
       ]);
       
+      // Check if we got a fallback response
+      if (result.includes("fallback") && result.includes("AI service is currently unavailable")) {
+        throw new Error("API key issue: The AI service returned a fallback response");
+      }
+      
       setResponse(result);
       
       // Log the interaction to the database
@@ -56,13 +61,26 @@ export function AIAssistant() {
         });
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error getting AI response:", error);
+      
+      // Provide more specific error message
+      let errorMessage = "Failed to get a response. Please try again.";
+      
+      if (error.message && error.message.includes("API key")) {
+        errorMessage = "API key issue: Please check that your OpenAI or Anthropic API key is correctly configured.";
+      } else if (error.message && error.message.includes("network")) {
+        errorMessage = "Network error: Please check your internet connection.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to get a response. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // Set a user-friendly error message in the response area
+      setResponse("Error: " + errorMessage + "\n\nPlease make sure your API keys are correctly set in both .env.local and Supabase environment variables.");
     } finally {
       setIsLoading(false);
     }
