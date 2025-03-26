@@ -119,25 +119,42 @@ export default function Profile() {
       try {
         const currentYearMonth = new Date().toISOString().slice(0, 7);
         
+        // First check if the record exists
         const { data, error } = await supabase
           .from('usage_tracking')
           .select('*')
           .eq('user_id', user.user_id)
-          .eq('year_month', currentYearMonth)
-          .single();
+          .eq('year_month', currentYearMonth);
         
         if (error) {
           console.error("Error fetching usage metrics:", error);
           return;
         }
         
-        if (data) {
+        // If data exists, use it
+        if (data && data.length > 0) {
           setUsageMetrics({
-            storage_used: data.storage_used || 0,
-            api_calls: data.api_calls || 0,
-            resources_used: data.resources_used || 0,
-            projects_created: data.projects_created || 0
+            storage_used: data[0].storage_used || 0,
+            api_calls: data[0].api_calls || 0,
+            resources_used: data[0].resources_used || 0,
+            projects_created: data[0].projects_created || 0
           });
+        } else {
+          // If no data exists, create a new record
+          const { error: insertError } = await supabase
+            .from('usage_tracking')
+            .insert({
+              user_id: user.user_id,
+              year_month: currentYearMonth,
+              storage_used: 0,
+              api_calls: 0,
+              resources_used: 0,
+              projects_created: 0
+            });
+            
+          if (insertError) {
+            console.error("Error creating usage metrics record:", insertError);
+          }
         }
       } catch (error) {
         console.error("Error fetching usage metrics:", error);
