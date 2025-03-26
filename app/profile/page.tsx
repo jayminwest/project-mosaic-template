@@ -165,14 +165,8 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Prepare usage data based on actual database fields
+  // Prepare usage data based only on fields that exist in the database
   const usageData = [
-    {
-      name: "Tasks",
-      current: user.tasks_created || 0,
-      limit: user.tasks_limit || 10,
-      unit: ""
-    },
     {
       name: "Storage",
       current: usageMetrics.storage_used || 0,
@@ -327,19 +321,13 @@ export default function Profile() {
       </div>
       
       {/* Metrics row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 mt-8">
         <DashboardMetric 
           title="Account Status" 
           value={currentPlan?.name || user.subscription_plan || 'Free'} 
           description={currentPlan?.planType === 'premium' ? 'Full access to all features' : 'Limited features'}
         />
-    
-        <DashboardMetric 
-          title="Tasks Created" 
-          value={user.tasks_created || 0} 
-          description={`of ${user.tasks_limit || 10} available`}
-        />
-    
+
         <DashboardMetric 
           title="Storage Used" 
           value={`${(usageMetrics.storage_used || 0).toFixed(1)} MB`}
@@ -354,7 +342,7 @@ export default function Profile() {
               : undefined
           }
         />
-    
+
         <DashboardMetric 
           title="Account Age" 
           value={user.created_at ? getAccountAge(user.created_at) : "New"}

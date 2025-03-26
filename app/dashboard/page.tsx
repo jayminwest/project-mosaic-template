@@ -134,11 +134,11 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Storage Used</span>
-                        <span className="font-medium text-lg">{user?.storage_used?.toFixed(1) || "0.0"} MB</span>
+                        <span className="font-medium text-lg">{usageMetrics?.storage_used?.toFixed(1) || "0.0"} MB</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">API Calls</span>
-                        <span className="font-medium text-lg">{user?.api_calls || 0}</span>
+                        <span className="font-medium text-lg">{usageMetrics?.api_calls || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Plan</span>
@@ -220,13 +220,7 @@ export default function DashboardPage() {
                 <CardDescription>Your usage statistics and metrics</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">Tasks Created</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.tasks_created || 0}
-                    </p>
-                  </div>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-6">
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <h3 className="font-medium mb-1">Storage Used</h3>
                     <p className="text-2xl font-bold">
