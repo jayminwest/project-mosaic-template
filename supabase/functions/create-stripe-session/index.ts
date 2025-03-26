@@ -156,6 +156,10 @@ Deno.serve(async (req) => {
     }
 
     // Create a checkout session
+    if (!priceId && !STRIPE_PRICE_ID) {
+      throw new Error("You must provide a price ID for the checkout session");
+    }
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [

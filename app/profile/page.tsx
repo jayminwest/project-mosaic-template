@@ -140,21 +140,18 @@ export default function Profile() {
             projects_created: data[0].projects_created || 0
           });
         } else {
-          // If no data exists, create a new record
-          const { error: insertError } = await supabase
-            .from('usage_tracking')
-            .insert({
-              user_id: user.user_id,
-              year_month: currentYearMonth,
-              storage_used: 0,
-              api_calls: 0,
-              resources_used: 0,
-              projects_created: 0
-            });
-            
-          if (insertError) {
-            console.error("Error creating usage metrics record:", insertError);
-          }
+          // Instead of trying to insert directly (which might fail due to RLS),
+          // just use default values for display
+          setUsageMetrics({
+            storage_used: 0,
+            api_calls: 0,
+            resources_used: 0,
+            projects_created: 0
+          });
+          
+          // Note: In a production app, you would use a server-side function
+          // with proper permissions to create the initial usage record
+          console.log("No usage metrics found for current month, using defaults");
         }
       } catch (error) {
         console.error("Error fetching usage metrics:", error);
@@ -299,7 +296,14 @@ export default function Profile() {
                 <Button 
                   onClick={() => {
                     if (session?.access_token) {
-                      manageSubscription(session.access_token);
+                      // Use the premium plan price ID from the current plans
+                      const premiumPlan = plans.find(plan => plan.planType === 'premium');
+                      if (premiumPlan) {
+                        manageSubscription(session.access_token, premiumPlan.priceId);
+                      } else {
+                        // Fallback to just managing the subscription without a specific plan
+                        manageSubscription(session.access_token);
+                      }
                     } else {
                       console.error("No access token available");
                     }
