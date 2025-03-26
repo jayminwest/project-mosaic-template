@@ -16,19 +16,18 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 // Helper function to check if a column exists in a table
 async function checkColumnExists(supabaseClient: any, table: string, column: string): Promise<boolean> {
   try {
-    // Query the information schema to check if the column exists
-    const { data, error } = await supabaseClient
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_name', table)
-      .eq('column_name', column);
+    // Use a direct SQL query instead of the information_schema approach
+    const { data, error } = await supabaseClient.rpc('column_exists', {
+      table_name: table,
+      column_name: column
+    });
     
     if (error) {
       console.error(`Error checking if column ${column} exists in ${table}:`, error);
       return false;
     }
     
-    return data && data.length > 0;
+    return data || false;
   } catch (error) {
     console.error(`Error checking column existence:`, error);
     return false;
@@ -157,11 +156,11 @@ async function resetEnvironment() {
                 .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all real users
               error = updateError;
             } else if (table === 'usage_tracking') {
-              // For usage_tracking, just delete all records
+              // For usage_tracking, delete all records using a different approach
               const { error: deleteError } = await supabase
                 .from(table)
                 .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+                .gte('year_month', '2000-01'); // Delete all records with a valid year_month
               error = deleteError;
             } else {
               // For other tables with created_at column
