@@ -29,21 +29,8 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
   }, []);
   
   const handleSubscribeClick = async (priceId: string) => {
-    // Create Supabase client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Check if user is authenticated
-    const { data } = await supabase.auth.getSession();
-    
-    if (!data.session) {
-      // User is not authenticated, redirect to login with return URL
-      router.push(`/login?returnTo=/profile?subscribe=${priceId}`);
-      return;
-    }
-    
-    // User is authenticated, proceed with subscription flow
+    // Skip authentication check and directly proceed to subscription flow
+    // The profile page will handle authentication if needed
     router.push(`/profile?subscribe=${priceId}`);
   };
 
