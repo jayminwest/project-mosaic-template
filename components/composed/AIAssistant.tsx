@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAI } from "@/lib/ai/hooks/useAI";
 import { useAuth } from "@/hooks/useAuth";
 import { createBrowserClient } from "@supabase/ssr";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 
 export function AIAssistant() {
   const [prompt, setPrompt] = useState("");
