@@ -34,19 +34,23 @@ export class AnthropicProvider implements AIProvider {
     
     const { messages, config } = options;
     
-    // Convert to Anthropic format
-    const anthropicMessages = messages.map(msg => {
-      if (msg.role === 'system') {
-        return { role: 'system', content: msg.content };
-      } else if (msg.role === 'user') {
-        return { role: 'user', content: msg.content };
-      } else {
-        return { role: 'assistant', content: msg.content };
-      }
-    });
+    // Extract system message if present
+    const systemMessage = messages.find(msg => msg.role === 'system')?.content || '';
+    
+    // Filter out system messages and convert to Anthropic format
+    const anthropicMessages = messages
+      .filter(msg => msg.role !== 'system')
+      .map(msg => {
+        if (msg.role === 'user') {
+          return { role: 'user', content: msg.content };
+        } else {
+          return { role: 'assistant', content: msg.content };
+        }
+      });
     
     const response = await this.client.messages.create({
       model: config?.model || 'claude-3-7-sonnet-latest',
+      system: systemMessage, // Pass system message as a top-level parameter
       messages: anthropicMessages,
       max_tokens: config?.maxTokens || 1000,
       temperature: config?.temperature || 0.7,
@@ -71,19 +75,23 @@ export class AnthropicProvider implements AIProvider {
     
     const { messages, config } = options;
     
-    // Convert to Anthropic format
-    const anthropicMessages = messages.map(msg => {
-      if (msg.role === 'system') {
-        return { role: 'system', content: msg.content };
-      } else if (msg.role === 'user') {
-        return { role: 'user', content: msg.content };
-      } else {
-        return { role: 'assistant', content: msg.content };
-      }
-    });
+    // Extract system message if present
+    const systemMessage = messages.find(msg => msg.role === 'system')?.content || '';
+    
+    // Filter out system messages and convert to Anthropic format
+    const anthropicMessages = messages
+      .filter(msg => msg.role !== 'system')
+      .map(msg => {
+        if (msg.role === 'user') {
+          return { role: 'user', content: msg.content };
+        } else {
+          return { role: 'assistant', content: msg.content };
+        }
+      });
     
     const stream = await this.client.messages.create({
       model: config?.model || 'claude-3-7-sonnet-latest',
+      system: systemMessage, // Pass system message as a top-level parameter
       messages: anthropicMessages,
       max_tokens: config?.maxTokens || 1000,
       temperature: config?.temperature || 0.7,
