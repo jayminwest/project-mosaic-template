@@ -25,16 +25,6 @@ export default function CheckoutSuccessPage() {
       }
       
       try {
-        // For development mode simulation
-        if (sessionId === 'dev_session_123') {
-          setSubscriptionDetails({
-            planName: 'Premium',
-            isActive: true,
-            status: 'active'
-          });
-          setStatus('success');
-          return;
-        }
         
         // Wait a moment to allow webhook processing
         await new Promise(resolve => setTimeout(resolve, 2000));

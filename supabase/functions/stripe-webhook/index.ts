@@ -151,14 +151,26 @@ Deno.serve(async (req) => {
             if (session.client_reference_id) {
               console.log(`Updating profile with user_id: ${session.client_reference_id}`);
               
-              // First update the stripe_customer_id
-              const { error: userIdUpdateError } = await supabase
+              // First check if the user exists
+              const { data: userProfile, error: userProfileError } = await supabase
                 .from("profiles")
-                .update({
-                  stripe_customer_id: session.customer,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("user_id", session.client_reference_id);
+                .select("*")
+                .eq("user_id", session.client_reference_id)
+                .single();
+                
+              if (userProfileError) {
+                console.error(`Error finding user profile for ${session.client_reference_id}:`, userProfileError);
+              } else if (userProfile) {
+                console.log(`Found user profile for ${session.client_reference_id}`);
+                
+                // Update the stripe_customer_id
+                const { error: userIdUpdateError } = await supabase
+                  .from("profiles")
+                  .update({
+                    stripe_customer_id: session.customer,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("user_id", session.client_reference_id);
                 
               if (userIdUpdateError) {
                 console.error(`Error updating stripe_customer_id for user ${session.client_reference_id}:`, userIdUpdateError);
