@@ -166,7 +166,7 @@ export default function Profile() {
         .from('profiles')
         .update({
           name: data.name,
-          email_preferences: data.emailPreferences ? JSON.stringify(data.emailPreferences) : null,
+          email_preferences: data.emailPreferences,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.user_id)
@@ -183,6 +183,9 @@ export default function Profile() {
           name: updatedProfile.name,
           email_preferences: updatedProfile.email_preferences
         };
+        
+        // Update the local state to reflect changes immediately
+        setUsageMetrics(prev => ({...prev})); // Force a re-render
         
         // Refresh the user profile data
         await refreshUserProfile();

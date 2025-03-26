@@ -28,7 +28,7 @@ export function SettingsForm({ user, onSave, isLoading: externalLoading }: Setti
     if (user?.email_preferences) {
       setEmailPreferences(user.email_preferences);
     }
-  }, [user]);
+  }, [user?.email_preferences]);
   
   const loading = externalLoading || isLoading;
 
