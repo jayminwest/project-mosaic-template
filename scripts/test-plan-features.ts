@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { planFeatures } from '../lib/config/plan-features';
+import { planFeatures } from '../lib/config/plan-features.js';
 import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from '../lib/config/plan-access';
 
 async function testPlanFeatures() {

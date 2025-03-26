@@ -9,8 +9,14 @@ export function getResourceLimit(planType: string, resourceName: string): number
 
 // Check if a feature is available in a plan
 export function hasFeatureAccess(planType: string, featureName: string): boolean {
+  // Default to free plan if the plan type is invalid
   const plan = planType && planFeatures[planType as keyof typeof planFeatures] ? planType : 'free';
-  return planFeatures[plan as keyof typeof planFeatures].features.includes(featureName);
+  
+  // Get the features for this plan
+  const features = planFeatures[plan as keyof typeof planFeatures].features;
+  
+  // Check if the feature is included in the plan's features
+  return features.includes(featureName);
 }
 
 // Get all features available for a plan

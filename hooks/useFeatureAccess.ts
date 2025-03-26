@@ -11,7 +11,9 @@ export function useFeatureAccess() {
   const planType = currentPlan?.planType || 'free';
   
   const canAccessFeature = (featureName: string): boolean => {
-    return hasFeatureAccess(planType, featureName);
+    // Make sure we're using the correct plan type
+    const actualPlanType = currentPlan?.planType || planType;
+    return hasFeatureAccess(actualPlanType, featureName);
   };
   
   const getLimit = (resourceName: string): number => {
