@@ -1,13 +1,13 @@
 "use client";
 
+import { useConfig } from '@/lib/config/useConfig';
 import { useAuth } from './useAuth';
 import { useSubscription } from './useSubscription';
-import { useConfig } from '@/lib/config/useConfig';
 
 export function useFeatureAccess() {
+  const { hasFeatureAccess, getResourceLimit } = useConfig();
   const { user } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
-  const { hasFeatureAccess, getResourceLimit } = useConfig();
   
   const planType = currentPlan?.planType || user?.subscription_plan || 'free';
   
