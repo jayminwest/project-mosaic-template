@@ -468,6 +468,31 @@ async function setupSubscriptionPlans() {
   
   for (const plan of plans) {
     try {
+      // Ask about trial period
+      const { addTrialPeriod } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'addTrialPeriod',
+          message: 'Would you like to add a free trial period?',
+          default: true,
+        }
+      ]);
+      
+      let trialPeriodDays = 0;
+      if (addTrialPeriod) {
+        const { trialDays } = await inquirer.prompt([
+          {
+            type: 'number',
+            name: 'trialDays',
+            message: 'How many days for the trial period?',
+            default: 7,
+            validate: (input) => input > 0 ? true : 'Trial period must be at least 1 day'
+          }
+        ]);
+        
+        trialPeriodDays = trialDays;
+      }
+      
       // Create product with all metadata at once to avoid race conditions
       const productMetadata = {
         plan_type: plan.planType,
@@ -475,7 +500,8 @@ async function setupSubscriptionPlans() {
         ...plan.limits.reduce((acc, limit) => ({
           ...acc,
           [`limit_${limit.name}`]: limit.value.toString(),
-        }), {})
+        }), {}),
+        ...(trialPeriodDays > 0 ? { trial_period_days: trialPeriodDays.toString() } : {})
       };
       
       // Add individual features to metadata
