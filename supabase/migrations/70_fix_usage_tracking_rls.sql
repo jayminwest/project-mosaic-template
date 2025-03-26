@@ -24,10 +24,16 @@ BEGIN
       ON public.usage_tracking FOR UPDATE
       USING (auth.uid() = user_id)
       WITH CHECK (auth.uid() = user_id);
-      
-    -- Create a function to initialize usage tracking for new users
+  END IF;
+END
+$$;
+
+-- Create a function to initialize usage tracking for new users
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'usage_tracking') THEN
     CREATE OR REPLACE FUNCTION public.initialize_usage_tracking()
-    RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $func$
     DECLARE
       current_year_month TEXT;
     BEGIN
@@ -52,7 +58,7 @@ BEGIN
       
       RETURN NEW;
     END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
+    $func$ LANGUAGE plpgsql SECURITY DEFINER;
     
     -- Create a trigger to initialize usage tracking when a new profile is created
     DROP TRIGGER IF EXISTS on_profile_created ON public.profiles;
