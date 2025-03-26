@@ -16,13 +16,14 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 // Helper function to check if a column exists in a table
 async function checkColumnExists(supabaseClient: any, table: string, column: string): Promise<boolean> {
   try {
-    // Use a direct SQL query instead of the information_schema approach
+    // Use a direct SQL query with the correct parameter order
     const { data, error } = await supabaseClient.rpc('column_exists', {
       table_name: table,
       column_name: column
     });
     
     if (error) {
+      // If RPC fails, assume the column doesn't exist
       console.error(`Error checking if column ${column} exists in ${table}:`, error);
       return false;
     }
