@@ -52,8 +52,8 @@ class StripePaymentProvider implements PaymentProvider {
   constructor(config: PaymentServiceConfig = {}) {
     this.config = {
       apiUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?success=true` : '',
-      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?canceled=true` : '',
+      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}` : '',
+      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/cancel` : '',
       ...config
     };
     this.maxRetries = config.maxRetries || 3;

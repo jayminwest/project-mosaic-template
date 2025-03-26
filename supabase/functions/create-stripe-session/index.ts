@@ -47,6 +47,12 @@ Deno.serve(async (req) => {
       cancelUrl?: string;
     };
 
+    const { priceId, successUrl, cancelUrl } = requestData as {
+      priceId?: string;
+      successUrl?: string;
+      cancelUrl?: string;
+    };
+
     console.log("🔄 Authenticating user...");
     const {
       data: { user },
@@ -87,8 +93,8 @@ Deno.serve(async (req) => {
     }
 
     const originUrl = req.headers.get("origin") ?? "http://localhost:3000";
-    const defaultSuccessUrl = `${originUrl}/profile?success=true`;
-    const defaultCancelUrl = `${originUrl}/profile?canceled=true`;
+    const defaultSuccessUrl = `${originUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const defaultCancelUrl = `${originUrl}/checkout/cancel`;
 
     // Create Portal session if already subscribed
     if (profile.subscription_plan === "premium") {
@@ -120,7 +126,11 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in create-stripe-session:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      code: error.code || 'unknown_error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

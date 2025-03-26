@@ -194,6 +194,41 @@ export function useSubscription(): UseSubscriptionReturn {
     setError(null);
   };
 
+  // Get subscription status
+  const getSubscriptionStatus = useCallback(async () => {
+    if (!user?.user_id) return { success: false, error: 'User not authenticated' };
+    
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke('subscription-status', {
+        body: { userId: user.user_id },
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      setSubscriptionStatus(data);
+      return { success: true, data };
+    } catch (error: any) {
+      console.error("Error getting subscription status:", error);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, supabase]);
+  
+  // Helper functions for trial periods
+  const isInTrialPeriod = useCallback(() => {
+    return subscriptionStatus?.status === 'trialing';
+  }, [subscriptionStatus]);
+  
+  const getTrialEndDate = useCallback(() => {
+    if (!subscriptionStatus?.trialEnd) return null;
+    return new Date(subscriptionStatus.trialEnd * 1000);
+  }, [subscriptionStatus]);
+
   // Status helper methods
   const isSubscriptionActive = useCallback((): boolean => {
     return subscriptionStatus?.isActive || false;
@@ -219,6 +254,9 @@ export function useSubscription(): UseSubscriptionReturn {
     getInvoices,
     hasFeatureAccess,
     clearError,
+    getSubscriptionStatus,
+    isInTrialPeriod,
+    getTrialEndDate,
     isSubscriptionActive,
     willSubscriptionRenew,
     getSubscriptionEndDate,

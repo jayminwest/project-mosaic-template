@@ -101,15 +101,26 @@ Deno.serve(async (req) => {
             ? priceToPlanMap.get(priceId) 
             : "premium";
           
+          // Get subscription details to check for trial period
+          const subscriptions = await stripe.subscriptions.list({
+            customer: session.customer,
+            limit: 1,
+          });
+          
+          const subscription = subscriptions.data[0];
+          const isTrialing = subscription?.status === 'trialing';
+          
           await supabase
             .from("profiles")
             .update({
               subscription_plan: planType,
+              subscription_status: subscription?.status || 'active',
+              subscription_trial_end: subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_customer_id", session.customer);
           
-          console.log(`Updated user to plan: ${planType} for customer: ${session.customer}`);
+          console.log(`Updated user to plan: ${planType} for customer: ${session.customer}, trial: ${isTrialing}`);
         }
         break;
       }
