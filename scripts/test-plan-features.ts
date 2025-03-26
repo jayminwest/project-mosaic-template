@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import { planFeatures } from '../lib/config/plan-features';
 import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from '../lib/config/plan-access';
 
 async function testPlanFeatures() {
@@ -9,22 +8,59 @@ async function testPlanFeatures() {
   // Test plan features
   console.log('\n' + chalk.yellow('Testing Plan Features:'));
   
+  // Attempt to fetch plans from Stripe
+  console.log(chalk.gray('Checking for Stripe subscription plans...'));
+  
+  try {
+    // Import the payment service to get real plans from Stripe
+    const { createPaymentService } = await import('../lib/payment/payment-service.js');
+    const paymentService = createPaymentService();
+    
+    try {
+      const stripePlans = await paymentService.getSubscriptionPlans();
+      if (stripePlans && stripePlans.length > 0) {
+        console.log(chalk.green(`✓ Found ${stripePlans.length} plans from Stripe`));
+        
+        // Display plans from Stripe
+        for (const plan of stripePlans) {
+          console.log('\n' + chalk.cyan(`${plan.name} Plan (${plan.planType}):`));
+          console.log('Price:', `${plan.price} ${plan.currency}/${plan.interval}`);
+          console.log('Features:', plan.features.join(', '));
+          
+          if (plan.limits) {
+            console.log('Limits:');
+            for (const [key, value] of Object.entries(plan.limits)) {
+              console.log(`  - ${key}: ${value}`);
+            }
+          }
+        }
+      } else {
+        console.log(chalk.yellow('No plans found from Stripe, using default values'));
+      }
+    } catch (error) {
+      console.log(chalk.yellow('Could not fetch plans from Stripe, using default values'));
+      console.error(chalk.gray('Error details:'), error);
+    }
+  } catch (error) {
+    console.log(chalk.yellow('Payment service not available, using default values'));
+  }
+  
   // Test free plan
-  console.log('\n' + chalk.cyan('Free Plan:'));
+  console.log('\n' + chalk.cyan('Free Plan (Default Values):'));
   console.log('Storage Limit:', getResourceLimit('free', 'Storage'), 'MB');
   console.log('AI Interactions Limit:', getResourceLimit('free', 'AIInteractions'));
   console.log('API Calls Limit:', getResourceLimit('free', 'APICalls'));
   console.log('Features:', getPlanFeatures('free').join(', '));
   
   // Test premium plan
-  console.log('\n' + chalk.cyan('Premium Plan:'));
+  console.log('\n' + chalk.cyan('Premium Plan (Default Values):'));
   console.log('Storage Limit:', getResourceLimit('premium', 'Storage'), 'MB');
   console.log('AI Interactions Limit:', getResourceLimit('premium', 'AIInteractions'));
   console.log('API Calls Limit:', getResourceLimit('premium', 'APICalls'));
   console.log('Features:', getPlanFeatures('premium').join(', '));
   
   // Test enterprise plan
-  console.log('\n' + chalk.cyan('Enterprise Plan:'));
+  console.log('\n' + chalk.cyan('Enterprise Plan (Default Values):'));
   console.log('Storage Limit:', getResourceLimit('enterprise', 'Storage'), 'MB');
   console.log('AI Interactions Limit:', getResourceLimit('enterprise', 'AIInteractions'));
   console.log('API Calls Limit:', getResourceLimit('enterprise', 'APICalls'));
