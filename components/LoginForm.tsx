@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfig } from "@/lib/config/useConfig";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 const LoginForm = () => {
   const {
@@ -22,10 +23,12 @@ const LoginForm = () => {
     isLoading,
   } = useAuth();
   
+  const [verificationSent, setVerificationSent] = useState(false);
   const { productConfig } = useConfig();
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);
+    setVerificationSent(false);
     clearError();
   };
 
@@ -38,86 +41,126 @@ const LoginForm = () => {
           </Badge>
         </div>
         <h2 className="text-2xl font-bold mb-6 text-center">
-          {isSignUpMode ? "Create Account" : "Welcome Back"}
+          {verificationSent ? "Check Your Email" : (isSignUpMode ? "Create Account" : "Welcome Back")}
         </h2>
         <div className="space-y-4">
-          <Button className="w-full" onClick={handleGoogleLogin}>
-            <LogIn className="mr-2 h-4 w-4" />
-            Login with Google
-          </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+          {!verificationSent && (
+            <>
+              <Button className="w-full" onClick={handleGoogleLogin}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Login with Google
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {verificationSent ? (
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <CheckCircle className="h-16 w-16 text-green-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Verification Email Sent!</h3>
+                <p className="text-muted-foreground">
+                  We've sent a verification link to <span className="font-medium">{email}</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Please check your inbox and click the link to activate your account.
+                </p>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Don't see the email? Check your spam folder or try again.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setVerificationSent(false);
+                    setIsSignUpMode(false);
+                  }}
+                >
+                  Return to Sign In
+                </Button>
+              </div>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-          <form
-            onSubmit={
-              isSignUpMode
-                ? (e) => {
-                    e.preventDefault();
-                    handleSignup();
-                  }
-                : handleLogin
-            }
-            className="space-y-4"
-          >
-            <div className="relative">
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                autoComplete="username email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Mail className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-            </div>
-            <div className="relative">
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                autoComplete="current-password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Lock className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-            </div>
-            {error && (
-              <div className="text-destructive text-sm text-center">{error}</div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                <>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  {isSignUpMode ? "Sign Up" : "Login"}
-                </>
+          ) : (
+            <form
+              onSubmit={
+                isSignUpMode
+                  ? async (e) => {
+                      e.preventDefault();
+                      await handleSignup();
+                      // If no error was set during signup, we can assume it was successful
+                      if (!error) {
+                        setVerificationSent(true);
+                      }
+                    }
+                  : handleLogin
+              }
+              className="space-y-4"
+            >
+              <div className="relative">
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  autoComplete="username email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Mail className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+              </div>
+              <div className="relative">
+                <Input
+                  type="password"
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Lock className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+              </div>
+              {error && (
+                <div className="p-3 bg-destructive/15 rounded-md text-destructive text-sm">
+                  {error}
+                </div>
               )}
-            </Button>
-          </form>
-          <p className="text-center text-sm">
-            {isSignUpMode ? "Already have an account?" : "New account?"}{" "}
-            <Link href="#" className="underline" onClick={toggleMode}>
-              {isSignUpMode ? "Login" : "Sign up"}
-            </Link>
-          </p>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <Loader2 className="animate-spin -ml-1 mr-3 h-4 w-4" />
+                    {isSignUpMode ? "Creating Account..." : "Signing In..."}
+                  </span>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    {isSignUpMode ? "Sign Up" : "Login"}
+                  </>
+                )}
+              </Button>
+              <p className="text-center text-sm">
+                {isSignUpMode ? "Already have an account?" : "New account?"}{" "}
+                <Link href="#" className="underline" onClick={toggleMode}>
+                  {isSignUpMode ? "Login" : "Sign up"}
+                </Link>
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </section>
