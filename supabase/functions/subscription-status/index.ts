@@ -88,13 +88,16 @@ Deno.serve(async (req) => {
 
     console.log(`Profile data for user ${userId}:`, profiles);
 
-    // If no Stripe customer ID, user is on free plan
+    // If no Stripe customer ID, use the plan from the profile or default to free
     if (!profiles?.stripe_customer_id) {
       console.log(`No Stripe customer ID found for user ${userId}, using plan: ${profiles?.subscription_plan || 'free'}`);
       return new Response(
         JSON.stringify({ 
           subscription: null,
-          plan_type: profiles?.subscription_plan || 'free'
+          plan_type: profiles?.subscription_plan || 'free',
+          isActive: true, // Consider the subscription active if it's in the profile
+          willRenew: false, // Free plans don't renew
+          status: 'active'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

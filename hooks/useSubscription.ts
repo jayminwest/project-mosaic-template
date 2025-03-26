@@ -246,6 +246,18 @@ export function useSubscription(): UseSubscriptionReturn {
       // Use the payment service instead of direct Supabase call
       const status = await paymentService.getSubscriptionStatus(user.user_id);
       setSubscriptionStatus(status);
+      
+      // If we have a current plan but no subscription status, update the status
+      if (currentPlan && !status.subscription) {
+        // For users with a plan in their profile but no Stripe subscription
+        setSubscriptionStatus({
+          ...status,
+          isActive: true,
+          willRenew: false,
+          status: 'active'
+        });
+      }
+      
       return { success: true, data: status };
     } catch (error: any) {
       console.error("Error getting subscription status:", error);
@@ -253,7 +265,7 @@ export function useSubscription(): UseSubscriptionReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user, paymentService]);
+  }, [user, paymentService, currentPlan]);
   
   // Helper functions for trial periods
   const isInTrialPeriod = useCallback(() => {

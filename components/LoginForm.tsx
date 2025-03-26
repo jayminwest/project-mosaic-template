@@ -54,6 +54,14 @@ const LoginForm = () => {
     if (returnTo) {
       // Store returnTo in localStorage for OAuth callback
       localStorage.setItem('authReturnTo', returnTo);
+      
+      // If the returnTo contains a subscribe parameter, also store that
+      if (returnTo.includes('subscribe=')) {
+        const subscribeParam = new URLSearchParams(returnTo.split('?')[1]).get('subscribe');
+        if (subscribeParam) {
+          localStorage.setItem('pendingSubscription', subscribeParam);
+        }
+      }
     }
     await authGoogleLogin();
   };
