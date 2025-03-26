@@ -14,10 +14,10 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Helper function to check if a column exists in a table
-async function checkColumnExists(table: string, column: string): Promise<boolean> {
+async function checkColumnExists(supabaseClient: any, table: string, column: string): Promise<boolean> {
   try {
     // Query the information schema to check if the column exists
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('information_schema.columns')
       .select('column_name')
       .eq('table_name', table)
@@ -153,14 +153,22 @@ async function resetEnvironment() {
                 .update({
                   subscription_plan: 'free',
                   updated_at: new Date().toISOString()
-                });
+                })
+                .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all real users
               error = updateError;
-            } else {
-              // For other tables, delete all records
+            } else if (table === 'usage_tracking') {
+              // For usage_tracking, just delete all records
               const { error: deleteError } = await supabase
                 .from(table)
                 .delete()
-                .gte('created_at', '2000-01-01'); // Delete all records
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+              error = deleteError;
+            } else {
+              // For other tables with created_at column
+              const { error: deleteError } = await supabase
+                .from(table)
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
               error = deleteError;
             }
             
@@ -186,9 +194,10 @@ async function resetEnvironment() {
         .update({
           subscription_plan: 'free',
           // Only include these fields if they exist in the schema
-          ...(await checkColumnExists('profiles', 'subscription_status') ? { subscription_status: null } : {}),
-          ...(await checkColumnExists('profiles', 'subscription_trial_end') ? { subscription_trial_end: null } : {})
-        });
+          ...(await checkColumnExists(supabase, 'profiles', 'subscription_status') ? { subscription_status: null } : {}),
+          ...(await checkColumnExists(supabase, 'profiles', 'subscription_trial_end') ? { subscription_trial_end: null } : {})
+        })
+        .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all real users
       
       if (updateError) {
         console.error(chalk.red('Error resetting subscription data:'), updateError);
