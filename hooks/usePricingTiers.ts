@@ -21,16 +21,22 @@ export interface PricingTier {
   priceId?: string;
 }
 
+// Create a stable Supabase client instance
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
 export function usePricingTiers() {
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  );
+  const [fetchAttempted, setFetchAttempted] = useState(false);
 
   useEffect(() => {
+    // Only fetch once
+    if (fetchAttempted) return;
+    
     async function fetchPricingTiers() {
       try {
         setIsLoading(true);
@@ -43,14 +49,13 @@ export function usePricingTiers() {
         if (error) {
           console.error('Error fetching subscription plans:', error);
           setError(error.message || 'Failed to fetch subscription plans');
+          setPricingTiers(createFallbackPlans());
           return;
         }
         
-        if (!data.plans || data.plans.length === 0) {
+        if (!data || !data.plans || data.plans.length === 0) {
           console.log('No subscription plans found:', data);
-          // Create fallback plans if none are found
-          const fallbackPlans = createFallbackPlans();
-          setPricingTiers(fallbackPlans);
+          setPricingTiers(createFallbackPlans());
           return;
         }
         
@@ -102,13 +107,15 @@ export function usePricingTiers() {
       } catch (err: any) {
         console.error('Error in usePricingTiers:', err);
         setError(err.message || 'An unexpected error occurred');
+        setPricingTiers(createFallbackPlans());
       } finally {
         setIsLoading(false);
+        setFetchAttempted(true);
       }
     }
     
     fetchPricingTiers();
-  }, [supabase]);
+  }, [fetchAttempted]); // Only depend on fetchAttempted, not supabase
   
   // Create fallback plans if API fails or returns empty
   function createFallbackPlans(): PricingTier[] {
