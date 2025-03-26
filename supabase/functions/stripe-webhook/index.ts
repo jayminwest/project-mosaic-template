@@ -142,6 +142,48 @@ Deno.serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_customer_id", session.customer);
+            
+          // If no rows were updated, the customer ID might not exist in profiles
+          // Try to find the user by the client_reference_id (which should be the user_id)
+          if (updateError || (existingProfiles && existingProfiles.length === 0)) {
+            console.log(`No profile found with stripe_customer_id: ${session.customer}, trying client_reference_id`);
+            
+            if (session.client_reference_id) {
+              console.log(`Updating profile with user_id: ${session.client_reference_id}`);
+              
+              // First update the stripe_customer_id
+              const { error: userIdUpdateError } = await supabase
+                .from("profiles")
+                .update({
+                  stripe_customer_id: session.customer,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("user_id", session.client_reference_id);
+                
+              if (userIdUpdateError) {
+                console.error(`Error updating stripe_customer_id for user ${session.client_reference_id}:`, userIdUpdateError);
+              } else {
+                console.log(`Updated stripe_customer_id for user ${session.client_reference_id}`);
+                
+                // Now update the subscription details
+                const { error: planUpdateError } = await supabase
+                  .from("profiles")
+                  .update({
+                    subscription_plan: planType,
+                    subscription_status: subscription?.status || 'active',
+                    subscription_trial_end: subscription?.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("user_id", session.client_reference_id);
+                  
+                if (planUpdateError) {
+                  console.error(`Error updating subscription plan for user ${session.client_reference_id}:`, planUpdateError);
+                } else {
+                  console.log(`Updated subscription plan to ${planType} for user ${session.client_reference_id}`);
+                }
+              }
+            }
+          }
           
           if (updateError) {
             console.error(`Error updating profile for customer ${session.customer}:`, updateError);

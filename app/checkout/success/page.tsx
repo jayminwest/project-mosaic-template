@@ -41,9 +41,20 @@ export default function CheckoutSuccessPage() {
         
         // Get updated subscription status
         const result = await getSubscriptionStatus();
+        
+        // Always show success to the user after payment
+        setStatus('success');
+        
         if (result.success) {
-          setSubscriptionDetails(result.data);
-          setStatus('success');
+          const data = result.data;
+          setSubscriptionDetails({
+            planName: data.plan_type === 'premium' ? 'Premium' : 
+                     data.plan_type === 'enterprise' ? 'Enterprise' : 'Free',
+            isActive: data.isActive,
+            status: data.status,
+            trialEnd: data.currentPeriodEnd || null
+          });
+          console.log("Subscription details set from API response:", data);
         } else {
           // Even if we get an error, show success to the user
           // The webhook might still be processing
@@ -52,8 +63,7 @@ export default function CheckoutSuccessPage() {
             isActive: true,
             status: 'active'
           });
-          setStatus('success');
-          console.warn('Could not verify subscription status, showing success anyway');
+          console.warn('Could not verify subscription status, showing success anyway:', result.error);
         }
       } catch (error) {
         console.error('Error verifying checkout:', error);

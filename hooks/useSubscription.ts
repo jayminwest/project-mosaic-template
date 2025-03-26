@@ -245,23 +245,34 @@ export function useSubscription(): UseSubscriptionReturn {
       
       // Use the payment service instead of direct Supabase call
       const status = await paymentService.getSubscriptionStatus(user.user_id);
-      setSubscriptionStatus(status);
       
-      // If we have a current plan but no subscription status, update the status
-      if (currentPlan && !status.subscription) {
-        // For users with a plan in their profile but no Stripe subscription
-        setSubscriptionStatus({
-          ...status,
-          isActive: true,
-          willRenew: false,
-          status: 'active'
-        });
-      }
+      // Ensure we have a properly formatted status object
+      const formattedStatus = {
+        ...status,
+        // If plan_type exists but no subscription object, this is a free or manually assigned plan
+        isActive: status.isActive !== undefined ? status.isActive : true,
+        willRenew: status.willRenew !== undefined ? status.willRenew : false,
+        status: status.status || 'active',
+        plan_type: status.plan_type || currentPlan?.planType || 'free'
+      };
       
-      return { success: true, data: status };
+      console.log("Subscription status response:", formattedStatus);
+      setSubscriptionStatus(formattedStatus);
+      
+      return { success: true, data: formattedStatus };
     } catch (error: any) {
       console.error("Error getting subscription status:", error);
-      return { success: false, error: error.message };
+      
+      // Even on error, ensure we have a valid status object with defaults
+      const fallbackStatus = {
+        isActive: true,
+        willRenew: false,
+        status: 'active',
+        plan_type: currentPlan?.planType || 'free'
+      };
+      
+      setSubscriptionStatus(fallbackStatus);
+      return { success: false, error: error.message, data: fallbackStatus };
     } finally {
       setIsLoading(false);
     }
