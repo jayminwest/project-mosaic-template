@@ -103,6 +103,28 @@ export function useAuth(): UseAuthReturn {
     clearError();
     setIsLoading(true);
     try {
+      // Validate input
+      if (!email || !password) {
+        setError("Email and password are required");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate password strength
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long");
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await authService.signUp(email, password);
       
       if (!response.success) {
@@ -110,7 +132,7 @@ export function useAuth(): UseAuthReturn {
       } else {
         // Note: At this point, Supabase will send a confirmation email via SMTP
         // We don't need to send our own verification email
-        setError("Please check your email to confirm your account");
+        clearError(); // Clear any previous errors
         
         // Log for debugging
         console.log("✅ Signup initiated for:", email);

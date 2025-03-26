@@ -29,6 +29,7 @@ async function testSubscriptionPlans() {
     console.log(chalk.gray(`Using Supabase URL: ${SUPABASE_URL}`));
     console.log(chalk.gray(`API Key length: ${SUPABASE_ANON_KEY?.length || 0} characters`));
     
+    // Add debug flag to request
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/list-subscription-plans`,
       {
@@ -38,7 +39,7 @@ async function testSubscriptionPlans() {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'apikey': SUPABASE_ANON_KEY, // Add this as well for compatibility
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ debug: true }),
       }
     );
     
@@ -52,6 +53,12 @@ async function testSubscriptionPlans() {
     
     const data = await response.json();
     console.log(chalk.gray(`Raw response data: ${JSON.stringify(data, null, 2)}`));
+    
+    // Check for debug info
+    if (data.debug) {
+      console.log(chalk.yellow('\nDebug Information:'));
+      console.log(chalk.gray(JSON.stringify(data.debug, null, 2)));
+    }
     
     if (!data.plans || data.plans.length === 0) {
       console.log(chalk.yellow('No subscription plans found.'));

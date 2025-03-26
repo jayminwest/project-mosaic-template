@@ -31,11 +31,11 @@ This document outlines the step-by-step implementation plan for transforming the
 - [x] **Core Project Structure**
   - [x] Create core directories for the new architecture:
     - `/lib/ai` - AI service abstraction ✅
-    - `/lib/config` - Configuration system
+    - `/lib/config` - Configuration system ✅
     - `/lib/email` - Email service system ✅
-    - `/components/marketing` - Marketing components
+    - `/components/marketing` - Marketing components ✅
     - `/components/analytics` - Analytics components
-  - [ ] Set up configuration system for project customization
+  - [x] Set up configuration system for project customization ✅
   - The configuration system will be implemented with the following structure:
     ```
     /lib/config/
@@ -48,7 +48,7 @@ This document outlines the step-by-step implementation plan for transforming the
     ├── environment.ts     # Environment variable validation
     └── useConfig.ts       # React hook for accessing configuration
     ```
-  - [ ] Update environment variable structure with better documentation
+  - [x] Update environment variable structure with better documentation
   - [x] Create placeholder dashboard page
 
 ## Phase 2: Essential Service Layers
@@ -65,19 +65,42 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create example usage in `/examples/ai-service-usage.ts`
   - [x] Fix dependency conflicts between React versions and AI SDKs
 
-- [x] **Configuration System**
-  - [x] Create `/lib/config/types.ts` with configuration interfaces
-  - [x] Create `/lib/config/index.ts` with main configuration exports
-  - [x] Implement `/lib/config/default-config.ts` with default product settings
-  - [x] Create `/lib/config/theme.ts` for theme customization
-  - [x] Implement `/lib/config/subscription.ts` for subscription plans
-  - [x] Create `/lib/config/features.ts` for feature flags
-  - [x] Implement `/lib/config/environment.ts` for environment variables
-  - [x] Create `/lib/config/useConfig.ts` React hook for accessing configuration
-  - [x] Create `/scripts/init-config.ts` for interactive configuration setup with Stripe integration
-  - [x] Create `/lib/config/quick-setup.ts` for single-file LLM-friendly configuration
-  - [x] Create `/scripts/quick-setup.ts` to process the quick setup configuration
-  - [x] Create `/scripts/setup-subscription-plans.ts` for interactive Stripe plan configuration
+- [x] **Configuration System** ✅
+  - [x] Create `/lib/config/types.ts` with configuration interfaces ✅
+    - Implemented interfaces for ProductConfig, ResourceLimits, FeatureFlags, ThemeConfig, and SubscriptionPlan
+    - Added proper typing for all configuration components
+  - [x] Create `/lib/config/index.ts` with main configuration exports ✅
+    - Exports all configuration components
+    - Provides helper functions like isFeatureEnabled and getResourceLimits
+    - Validates environment variables on startup
+  - [x] Implement `/lib/config/default-config.ts` with default product settings ✅
+    - Defines product name, description, resource limits, and feature flags
+    - Includes routes configuration for public and authenticated paths
+    - Adds storage configuration for bucket names
+  - [x] Create `/lib/config/theme.ts` for theme customization ✅
+    - Implements comprehensive color scheme with light/dark mode support
+    - Defines typography settings with font families
+    - Includes UI element styling like border radius
+  - [x] Implement `/lib/config/subscription.ts` for subscription plans ✅
+    - Defines free and premium subscription tiers
+    - Includes pricing, features, and plan types
+  - [x] Create `/lib/config/features.ts` for feature flags ✅
+    - Controls which features are enabled in the application
+    - Supports AI, storage, sharing, analytics, and marketing features
+  - [x] Implement `/lib/config/environment.ts` for environment variables ✅
+    - Validates required and optional environment variables
+    - Provides detailed reporting of missing variables
+    - Checks feature-specific variables
+  - [x] Create `/lib/config/service-config.ts` for service configuration ✅
+    - Provides configuration for auth and payment services
+    - Includes default settings with override capability
+  - [x] Create `/lib/config/useConfig.ts` React hook for accessing configuration ✅
+    - Provides easy access to all configuration in React components
+    - Includes helper methods for subscription plans and feature flags
+  - [x] Create `/scripts/init-config.ts` for interactive configuration setup ✅
+  - [x] Create `/lib/config/quick-setup.ts` for single-file LLM-friendly configuration ✅
+  - [x] Create `/scripts/quick-setup.ts` to process the quick setup configuration ✅
+  - [x] Create `/scripts/setup-subscription-plans.ts` for interactive Stripe plan configuration ✅
 
 - [x] **Email Service Layer**
   - [x] Install required packages (resend, react-email, @react-email/components)
@@ -124,17 +147,19 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create service configuration helpers in `/lib/config/service-config.ts`
   - [x] Create unified service provider in `/lib/services/index.ts`
   
-  - [ ] Update hooks to use new abstraction layers
+  - [x] Update hooks to use service provider pattern for abstraction layers
     ```typescript
     // hooks/useAuth.ts
-    export function useAuth(config: AuthConfig = {}): UseAuthReturn {
-      const authService = createAuthService(config);
+    export function useAuth(): UseAuthReturn {
+      const services = getServiceProvider();
+      const authService = services.getAuthService();
       // Use authService for all auth operations
     }
     
     // hooks/useSubscription.ts
-    export function useSubscription(config: PaymentServiceConfig = {}): UseSubscriptionReturn {
-      const paymentService = createPaymentService(config);
+    export function useSubscription(): UseSubscriptionReturn {
+      const services = getServiceProvider();
+      const paymentService = services.getPaymentService();
       // Use paymentService for all subscription operations
     }
     ```
@@ -223,22 +248,22 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Implement TestimonialSection component ✅
   - [x] Implement CTASection component ✅
   - [x] Create responsive landing page with all marketing components ✅
+  - [x] Update PricingSection to dynamically fetch pricing tiers ✅
 
 - [x] **Component Implementation Status**
   - **Core UI Components**: 14 out of 24 components implemented (58%)
-  - **SaaS-Specific Composed Components**: 3 out of 15 components implemented (20%)
+  - **SaaS-Specific Composed Components**: 6 out of 15 components implemented (40%)
   - **Marketing Components**: All 5 components implemented (100%)
+  - **Database Schema**: Enhanced with email preferences and usage tracking
 
 - [x] **Theme & Branding**
   - [x] Implement theme configuration system
   - [x] Implement theme provider context
   - [ ] Add configuration for logo and brand assets
 
-- [ ] **Legal & Configuration**
-  - [ ] Create basic legal document templates:
-    - `/templates/legal/PrivacyPolicy.md`
-    - `/templates/legal/TermsOfService.md`
-  - [ ] Add feature flag system for enabling/disabling features
+- [x] **Legal & Configuration**
+  - [x] Create basic legal document templates:
+    - `/app/legal/page.tsx` with Privacy Policy and Terms of Service ✅
 
 ## Phase 5: Component Reduction & Developer Experience
 
@@ -254,15 +279,15 @@ This document outlines the step-by-step implementation plan for transforming the
       - AuthForm ✅ - Login/signup forms with social providers - responsive on all screen sizes
       - PricingTable ✅ - Subscription options display - responsive on all screen sizes
       - FeatureComparison ❌ - Plan feature comparison - responsive on all screen sizes
-      - DashboardMetric ❌ - KPI display cards - responsive on all screen sizes
+      - DashboardMetric ✅ - KPI display cards - responsive on all screen sizes
       - EmptyState ❌ - Empty data handling - responsive on all screen sizes
       - PageHeader ❌ - Consistent page headers - responsive on all screen sizes
-      - SettingsForm ❌ - User/account settings - responsive on all screen sizes
+      - SettingsForm ✅ - User/account settings - responsive on all screen sizes
       - ConfirmationDialog ❌ - Action confirmation - responsive on all screen sizes
       - OnboardingSteps ❌ - User onboarding flow - responsive on all screen sizes
       - NotificationCenter ❌ - User notifications - responsive on all screen sizes
       - APIKeyManager ❌ - For developer-focused products - responsive on all screen sizes
-      - UsageStats ❌ - Resource usage display - responsive on all screen sizes
+      - UsageStats ✅ - Resource usage display - responsive on all screen sizes
       - InviteUsers ❌ - Team member invitation - responsive on all screen sizes
       - FilterBar ❌ - Data filtering interface - responsive on all screen sizes
       - LandingHero ✅ - Marketing landing page hero section - responsive on all screen sizes
@@ -295,16 +320,187 @@ This document outlines the step-by-step implementation plan for transforming the
 - [x] **UI Components**
   - [x] Update LoadingSkeleton component to support different types (card, list, table, form) ✅
   - [x] Make Header component fully responsive with mobile menu ✅
+  - [x] Update Header navigation links to point to existing pages ✅
   - [x] Make Footer component responsive ✅
+  - [x] Update Footer links to point to existing pages ✅
   - [x] Update dashboard page with responsive layout and tabs ✅
   - [x] Create landing page with marketing components ✅
   - [x] Fix centering issues in marketing components ✅
+  - [x] Implement DashboardMetric component for KPI display ✅
+  - [x] Implement SettingsForm component for user profile management ✅
+  - [x] Implement UsageStats component with visual progress bars ✅
+  - [x] Enhance profile page with responsive layout and real data ✅
+  - [x] Improve dashboard with project and integration tabs ✅
+  - [x] **Profile Page Functionality**:
+    - [x] Implement real profile data saving functionality
+    - [x] Connect usage metrics to actual database values
+    - [x] Add API endpoint for updating user profile via RPC function
+    - [x] Implement account deletion UI (backend implementation pending)
+    - [x] Add email preferences management with proper JSONB storage
+    - [x] Create password change functionality
+
+## Phase 6: Pricing Page Fix & A/B Testing Framework
+
+- [x] **Pricing Page Fix**
+  - [x] Update the `usePricingTiers` hook to properly handle Stripe product data
+  - [x] Fix the Edge Function to correctly parse product metadata
+  - [x] Enhance error handling in the pricing component to show fallback plans
+  - [x] Add better logging for debugging pricing issues
+  - [x] Create a troubleshooting guide for common pricing page issues
+  - [x] Update the Stripe configuration documentation with clearer metadata requirements
+  - [x] Implement a more robust fallback mechanism for when Stripe data is unavailable
+  - [x] Fix infinite refresh issue on pricing page by adding fetch attempt tracking
+  - [x] Resolve Supabase client initialization issues in usePricingTiers hook
+  - [x] Add hydration mismatch prevention with isMounted state
+  - [x] Update PricingSection component to use the same data source as pricing page ✅
+  - [x] Simplify pricing page to use the updated PricingSection component ✅
+  - [x] Remove static pricing tiers from landing page ✅
+
+- [ ] **Checkout Session Implementation**
+  - [ ] Update the checkout session creation to use real Stripe product IDs
+  - [ ] Implement proper error handling for checkout session creation
+  - [ ] Add success and cancel URL configuration
+  - [ ] Create checkout success and cancel pages
+  - [ ] Implement webhook handling for checkout session completion
+  - [ ] Add subscription status checking after checkout
+  - [ ] Test checkout flow with real Stripe products
+
+- [ ] **A/B Testing Service Layer**
+  - [ ] Create core types and service interface for A/B testing
+  - [ ] Implement Supabase provider for self-hosted A/B testing
+  - [ ] Create React hook and component for easy integration
+  - [ ] Add Supabase database migrations for A/B testing tables
+  - [ ] Integrate with service provider architecture
+  - [ ] Create admin dashboard for managing tests
+  - [ ] Add documentation and examples
+
+## Phase 7: AI Dashboard Integration
+
+- [x] **AI Usage Tracking Database Schema**
+  - [x] Created migration file `supabase/migrations/30_ai_usage_metrics.sql` with:
+    - Table for tracking AI interactions with user_id, prompt_length, response_length, model_used
+    - RLS policies for secure access
+    - Added AI metrics columns to profiles table (ai_interactions_count, ai_tokens_used)
+    - Created trigger function to update metrics on new interactions
+    - Implemented proper security with RLS policies for data isolation
+
+- [x] **AI Metrics Hook**
+  - [x] Created `hooks/useAIMetrics.ts` to fetch AI usage data:
+    - Retrieves interaction count and tokens used from profiles
+    - Fetches recent interactions with timestamps
+    - Handles loading and error states
+    - Returns formatted metrics for display
+    - Uses the same Supabase client initialization pattern as in auth-service.ts
+    - Implements refreshMetrics function for manual data refresh
+
+- [x] **AI Components Integration**
+  - [x] Created `components/composed/AIAssistant.tsx` with:
+    - Simple text input for user prompts
+    - Submit button to send requests to AI service
+    - Display area for AI responses
+    - Integration with existing useAI hook for AI service access
+    - Database logging of interactions using Supabase client
+    - Error handling with toast notifications
+    - Loading state management
+    - Responsive design for all screen sizes
+    - Provider and model selection dropdowns
+    - Support for different AI models and providers
+
+  - [x] Created `components/composed/AIMetrics.tsx` to display usage statistics:
+    - Uses DashboardMetric component for key metrics
+    - Shows interaction count, tokens used, and average response length
+    - Displays recent interactions with timestamps in a scrollable container
+    - Handles loading and error states with appropriate UI feedback
+    - Implements empty state for new users
+    - Responsive layout for all screen sizes
+    - Real-time updates using Supabase subscriptions
+    - Manual refresh button for immediate updates
+
+- [x] **Dashboard Integration**
+  - [x] Updated `app/dashboard/page.tsx` to:
+    - Add "AI Assistant" tab to the existing tab structure
+    - Include AIAssistant component in the AI tab
+    - Add AIMetrics component to both AI tab and Analytics tab
+    - Add AI usage button to Quick Actions card
+    - Implement responsive layout for all screen sizes
+    - Handle loading and error states appropriately
+
+- [x] **API Key Debugging**
+  - [x] Created `components/composed/APIKeyDebugger.tsx` to:
+    - Check for presence of API keys in environment variables
+    - Display API key status and configuration information
+    - Provide helpful troubleshooting information
+    - Guide users through proper API key setup
+    - Integrated into the AI Assistant tab for easy access
+
+- [x] **Testing & Validation**
+  - [x] Applied database migration with `npx supabase migration up`
+  - [x] Tested AI interaction flow:
+    - Submit prompts and verify responses
+    - Checked database for logged interactions
+    - Verified metrics update correctly
+    - Tested with different AI providers and models
+  - [x] Tested with different user accounts to ensure proper data isolation
+  - [x] Verified responsive layout on different screen sizes
+  - [x] Tested error handling when AI service is unavailable
+  - [x] Verified that RLS policies are working correctly by attempting to access another user's data
+  - [x] Tested real-time updates with Supabase subscriptions
+
+- [x] **AI Provider Implementation**
+  - [x] Enhanced OpenAI provider with:
+    - Support for both Responses API and Chat Completions API
+    - Proper error handling and fallback mechanisms
+    - Streaming support for real-time responses
+    - Embedding functionality for vector operations
+    - Support for NEXT_PUBLIC_ environment variables for browser usage
+  - [x] Implemented Anthropic provider with:
+    - Claude model support
+    - Streaming capabilities
+    - Proper error handling
+    - Message format conversion
+    - Support for NEXT_PUBLIC_ environment variables for browser usage
+
+- [x] **AI Service Hooks**
+  - [x] Enhanced useAI hook with:
+    - Support for both streaming and non-streaming completions
+    - Template-based prompt generation
+    - Error handling and loading state management
+    - Configuration options for different AI models
+    - Provider selection capabilities
 
 ## Known Issues & Solutions
 
 - **React Version Conflict**: The project uses React 18.3.1, but @react-email/components requires React 18.2.0 specifically. When installing AI SDKs (OpenAI, Anthropic), this causes dependency conflicts.
   - **Solution**: Use `--legacy-peer-deps` flag when installing AI SDKs or downgrade React to 18.2.0 if email components are critical.
-  - **Status**: Resolved by using `--legacy-peer-deps` flag when installing AI SDKs.
+  - **Status**: ✅ Resolved by using `--legacy-peer-deps` flag when installing AI SDKs.
+
+- **Pricing Page Not Showing Plans**: The pricing page was not displaying subscription plans from Stripe.
+  - **Solution**:
+    - Fix the `usePricingTiers` hook to properly handle API responses
+    - Update the Edge Function to correctly parse Stripe product metadata
+    - Enhance error handling to show fallback plans when API fails
+    - Add more detailed logging for troubleshooting
+    - Ensure Stripe products have the required metadata fields:
+      - `plan_type`: Must be exactly "free", "premium", or "enterprise"
+      - `features`: Comma-separated list of features or individual feature_1, feature_2, etc.
+      - `limit_xxx`: Resource limits for the plan (optional)
+    - Fix infinite refresh issue by adding fetch attempt tracking
+    - Resolve Supabase client initialization issues
+    - Add hydration mismatch prevention with isMounted state
+  - **Status**: ✅ Resolved - Fixed by updating the hook and Edge Function with proper Promise handling
+
+- **Stripe Product Retrieval**: The Edge Function was returning empty plan objects despite correctly processing Stripe products.
+  - **Solution**:
+    - Fix Promise handling in the Edge Function to properly await all promises
+    - Add more detailed logging to diagnose issues
+    - Implement robust fallback plan mechanism
+    - Ensure proper filtering of null values
+    - Fix Supabase API key configuration
+  - **Status**: ✅ Resolved - Fixed by improving Promise handling in the Edge Function
+
+- **Supabase RPC Function Connection**: The profile update functionality using Supabase RPC functions is not working correctly.
+  - **Solution**: Debug the connection to the Supabase RPC function, ensure proper permissions are set, and verify the function is correctly deployed.
+  - **Status**: ✅ Resolved - Using direct database updates instead of RPC functions
 
 - **Next.js Server Component Error**: The application was showing "Unsupported Server Component type: undefined" errors.
   - **Solution**: 
@@ -338,7 +534,7 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure Stripe products are created with proper metadata including `plan_type`
     - Add comprehensive logging in Edge Functions to debug issues
     - Enhance the price-to-plan mapping in the webhook handler
-  - **Status**: ⚠️ Partially Resolved - Edge Function returns empty plans array despite products being created in Stripe
+  - **Status**: ✅ Resolved - Fixed by ensuring proper metadata on Stripe products
 
 - **Subscription Plans Test Script Issue**: The test-subscription-plans script shows "No subscription plans found" despite plans being created in Stripe.
   - **Solution**:
@@ -346,7 +542,22 @@ This document outlines the step-by-step implementation plan for transforming the
     - Verify that product metadata is being properly set during plan creation
     - Add additional logging to trace the flow from Stripe API to response
     - Ensure proper authorization headers are sent with the request
-  - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
+  - **Status**: ✅ Resolved - Fixed by updating the Edge Function to properly parse product metadata
+
+- **Email Preferences Data Corruption**: The email preferences data in the database is being stored as a corrupted JSON string.
+  - **Solution**:
+    - Create a migration to fix the data type and repair corrupted data
+    - Ensure the column is properly defined as JSONB
+    - Fix the frontend code to properly handle JSON objects
+  - **Status**: ✅ Resolved - Added migration 20_fix_email_preferences.sql to repair corrupted data
+
+- **A/B Testing Implementation**: The A/B testing framework requires database schema changes and new service abstractions.
+  - **Solution**:
+    - Create Supabase migration for A/B testing tables
+    - Implement provider-agnostic A/B testing service
+    - Create React components for easy A/B test integration
+    - Add admin dashboard for test management
+  - **Status**: 🔄 Planned - To be implemented in Phase 6
 
 ## Component Implementation Strategy
 
@@ -390,6 +601,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Responsive Testing: Test all components at standard breakpoints (320px, 768px, 1024px, 1440px, 1920px)
   - [ ] Device Testing: Verify functionality on actual mobile devices, tablets, and desktops
   - [ ] Cross-browser Testing: Ensure components work in Chrome, Firefox, Safari, and Edge
+  - [ ] Pricing Page Testing: Verify pricing plans display correctly with both real and fallback data
 
 This approach would give you practical confidence in your applications without the time sink of comprehensive test suites.
 
@@ -398,3 +610,9 @@ This approach would give you practical confidence in your applications without t
   - [x] Test Edge Function authorization and error handling ✅
   - [x] Fix subscription plans test script ✅
   - [x] Create Stripe product configuration guide ✅
+  - [x] Test pricing page with various Stripe configurations ✅
+  - [x] Verify fallback plans display correctly when API fails ✅
+  - [x] Create troubleshooting guide for pricing page issues ✅
+  - [x] Test Stripe product retrieval with debug-stripe-products script ✅
+  - [x] Verify Edge Function logs for proper plan processing ✅
+  - [x] Test pricing page with real Stripe products ✅

@@ -5,18 +5,24 @@ export class OpenAIProvider implements AIProvider {
   private client: OpenAI;
   
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
+    // Get API key from environment
+    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    
     if (!apiKey) {
       console.warn('OpenAI API key not found. Some features may not work.');
+    } else {
+      console.log('OpenAI API key found, initializing client');
     }
     
     this.client = new OpenAI({
       apiKey: apiKey || 'dummy-key',
+      dangerouslyAllowBrowser: true, // Enable browser usage - ensure your API key is properly secured
     });
   }
   
   async complete(options: AICompletionOptions): Promise<string> {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
       throw new Error('OpenAI API key not configured');
     }
     
@@ -58,7 +64,8 @@ export class OpenAIProvider implements AIProvider {
     options: AICompletionOptions, 
     callback: (chunk: string) => void
   ): Promise<void> {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
       throw new Error('OpenAI API key not configured');
     }
     
@@ -108,7 +115,8 @@ export class OpenAIProvider implements AIProvider {
   }
   
   async embedText(text: string): Promise<number[]> {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
       throw new Error('OpenAI API key not configured');
     }
     
