@@ -330,16 +330,16 @@ export default function Profile() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
         <DashboardMetric 
           title="Account Status" 
-          value={currentPlan?.planType === 'premium' ? 'Premium' : 'Free'} 
+          value={currentPlan?.name || user.subscription_plan || 'Free'} 
           description={currentPlan?.planType === 'premium' ? 'Full access to all features' : 'Limited features'}
         />
-        
+    
         <DashboardMetric 
           title="Tasks Created" 
           value={user.tasks_created || 0} 
           description={`of ${user.tasks_limit || 10} available`}
         />
-        
+    
         <DashboardMetric 
           title="Storage Used" 
           value={`${(usageMetrics.storage_used || 0).toFixed(1)} MB`}
@@ -347,14 +347,14 @@ export default function Profile() {
           trend={
             usageMetrics.storage_used > 0 
               ? {
-                  value: 5,
-                  label: "from last month",
-                  isPositive: false
+                  value: Math.min(Math.round((usageMetrics.storage_used / (currentPlan?.planType === 'premium' ? 50 : 10)) * 100), 100),
+                  label: "of total capacity",
+                  isPositive: (usageMetrics.storage_used / (currentPlan?.planType === 'premium' ? 50 : 10)) < 0.8
                 }
               : undefined
           }
         />
-        
+    
         <DashboardMetric 
           title="Account Age" 
           value={user.created_at ? getAccountAge(user.created_at) : "New"}
