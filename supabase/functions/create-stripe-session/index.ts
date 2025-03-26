@@ -156,7 +156,45 @@ Deno.serve(async (req) => {
     }
 
     // Create a checkout session
-    if (!priceId && !STRIPE_PRICE_ID) {
+    // Try to find a default price ID if none is provided
+    let finalPriceId = priceId || STRIPE_PRICE_ID;
+    
+    if (!finalPriceId) {
+      console.log("No price ID provided, attempting to find a default premium plan");
+      
+      try {
+        // Try to fetch a premium plan from Stripe
+        const products = await stripe.products.list({
+          active: true,
+          expand: ['data.default_price'],
+          limit: 10
+        });
+        
+        // Look for a product with plan_type = premium
+        const premiumProduct = products.data.find(
+          product => product.metadata && product.metadata.plan_type === 'premium'
+        );
+        
+        if (premiumProduct && typeof premiumProduct.default_price === 'object') {
+          finalPriceId = premiumProduct.default_price.id;
+          console.log(`Found premium plan price ID: ${finalPriceId}`);
+        } else {
+          // If no premium plan, try to find any plan
+          const anyProduct = products.data.find(
+            product => product.default_price && typeof product.default_price === 'object'
+          );
+          
+          if (anyProduct && typeof anyProduct.default_price === 'object') {
+            finalPriceId = anyProduct.default_price.id;
+            console.log(`Found fallback plan price ID: ${finalPriceId}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching Stripe products:", error);
+      }
+    }
+    
+    if (!finalPriceId) {
       throw new Error("You must provide a price ID for the checkout session");
     }
     
@@ -164,7 +202,7 @@ Deno.serve(async (req) => {
       customer: customerId,
       line_items: [
         {
-          price: priceId || STRIPE_PRICE_ID,
+          price: finalPriceId,
           quantity: 1,
         },
       ],
