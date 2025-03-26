@@ -69,7 +69,7 @@ export default function CheckoutSuccessPage() {
           {status === 'success' && subscriptionDetails && (
             <div className="space-y-4">
               <p className="text-center">
-                Welcome to {productConfig.name} {subscriptionDetails.planName}!
+                Welcome to {productConfig?.name || 'Premium'} {subscriptionDetails.planName || 'Plan'}!
               </p>
               
               {subscriptionDetails.trialEnd && (

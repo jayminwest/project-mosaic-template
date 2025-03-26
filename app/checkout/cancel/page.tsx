@@ -24,7 +24,7 @@ export default function CheckoutCancelPage() {
         </CardHeader>
         <CardContent>
           <p className="text-center">
-            You can try again whenever you're ready to upgrade to {productConfig.name} premium features.
+            You can try again whenever you're ready to upgrade to {productConfig?.name || 'our'} premium features.
           </p>
         </CardContent>
         <CardFooter className="flex justify-center gap-4">
