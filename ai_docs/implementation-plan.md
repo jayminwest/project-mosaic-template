@@ -241,7 +241,6 @@ This document outlines the step-by-step implementation plan for transforming the
 - [x] **Legal & Configuration**
   - [x] Create basic legal document templates:
     - `/app/legal/page.tsx` with Privacy Policy and Terms of Service ✅
-  - [ ] Add feature flag system for enabling/disabling features
 
 ## Phase 5: Component Reduction & Developer Experience
 
