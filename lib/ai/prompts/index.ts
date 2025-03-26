@@ -53,7 +53,7 @@ const promptTemplates: Record<string, PromptTemplate> = {
     category: 'analysis',
     systemPrompt: 'You are a data analyst who provides clear, actionable insights from data.',
     userPrompt: 'Analyze the following data: {{data}}. Focus on trends related to {{focus}}.',
-    exampleResponse: 'Based on the data provided, I've identified the following key insights:\n\n1. [Insight 1]\n2. [Insight 2]\n3. [Insight 3]',
+    exampleResponse: 'Based on the data provided, I\'ve identified the following key insights:\n\n1. [Insight 1]\n2. [Insight 2]\n3. [Insight 3]',
   },
 };
 
