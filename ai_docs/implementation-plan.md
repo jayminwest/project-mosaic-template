@@ -376,6 +376,13 @@ This document outlines the step-by-step implementation plan for transforming the
     - Ensure proper authorization headers are sent with the request
   - **Status**: ✅ Resolved - Enhanced logging and authorization handling in Edge Functions
 
+- **Email Preferences Data Corruption**: The email preferences data in the database is being stored as a corrupted JSON string.
+  - **Solution**:
+    - Create a migration to fix the data type and repair corrupted data
+    - Ensure the column is properly defined as JSONB
+    - Fix the frontend code to properly handle JSON objects
+  - **Status**: ✅ Resolved - Added migration 20_fix_email_preferences.sql to repair corrupted data
+
 - **A/B Testing Implementation**: The A/B testing framework requires database schema changes and new service abstractions.
   - **Solution**:
     - Create Supabase migration for A/B testing tables
