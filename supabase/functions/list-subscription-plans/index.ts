@@ -322,7 +322,7 @@ serve(async (req) => {
       }
     );
   }
-}
+});
 
 // Function to provide fallback plans when Stripe API fails
 function getFallbackPlans() {

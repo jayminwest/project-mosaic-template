@@ -51,12 +51,23 @@ export function usePricingTiers() {
           return;
         }
         
-        // Transform subscription plans to pricing tiers
-        const allFeatures = Array.from(
-          new Set(data.plans.flatMap((p: any) => p.features || []))
+        // Check if plans have valid data
+        const validPlans = data.plans.filter((plan: any) => 
+          plan && plan.name && plan.planType && typeof plan.price !== 'undefined'
         );
         
-        const tiers = data.plans.map((plan: any) => {
+        if (validPlans.length === 0) {
+          console.warn('No valid pricing plans found, using fallback plans');
+          setPricingTiers(createFallbackPlans());
+          return;
+        }
+        
+        // Transform subscription plans to pricing tiers
+        const allFeatures = Array.from(
+          new Set(validPlans.flatMap((p: any) => p.features || []))
+        );
+        
+        const tiers = validPlans.map((plan: any) => {
           // Create features array with included status
           const features: PricingFeature[] = allFeatures.map(featureText => ({
             text: featureText as string,
@@ -64,11 +75,11 @@ export function usePricingTiers() {
           }));
           
           return {
-            name: plan.name,
+            name: plan.name || 'Plan',
             description: plan.description || '',
             price: plan.price === 0 ? 'Free' : `$${plan.price}`,
             interval: plan.interval || 'month',
-            features,
+            features: features.length > 0 ? features : [{ text: 'Basic features', included: true }],
             buttonText: plan.price === 0 ? 'Sign Up' : 'Subscribe',
             buttonLink: plan.price === 0 ? '/auth/signup' : `/profile?subscribe=${plan.priceId}`,
             buttonVariant: plan.planType === 'premium' ? 'default' : 'outline',
