@@ -11,6 +11,7 @@ import { UsageStats } from "@/components/composed/UsageStats";
 import { DashboardMetric } from "@/components/composed/DashboardMetric";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from '@supabase/ssr';
+import { toast } from "@/components/hooks/use-toast";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -23,6 +24,22 @@ export default function Profile() {
     clearError
   } = useSubscription();
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Initialize Supabase client
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+  
+  // State for usage metrics
+  const [usageMetrics, setUsageMetrics] = useState({
+    storage_used: 0,
+    api_calls: 0,
+    resources_used: 0,
+    projects_created: 0
+  });
   
   // Helper function to calculate account age
   const getAccountAge = (createdAt: string): string => {
@@ -42,18 +59,6 @@ export default function Profile() {
     const years = Math.floor(diffDays / 365);
     return `${years} ${years === 1 ? 'year' : 'years'}`;
   };
-
-  if (isLoading || !user) {
-    return <LoadingSkeleton type="form" count={3} />;
-  }
-
-  // State for usage metrics
-  const [usageMetrics, setUsageMetrics] = useState({
-    storage_used: 0,
-    api_calls: 0,
-    resources_used: 0,
-    projects_created: 0
-  });
   
   // Fetch usage metrics
   useEffect(() => {
@@ -90,6 +95,10 @@ export default function Profile() {
     
     fetchUsageMetrics();
   }, [user, supabase]);
+
+  if (isLoading || !user) {
+    return <LoadingSkeleton type="form" count={3} />;
+  }
   
   // Prepare usage data based on user metrics
   const usageData = [
@@ -118,14 +127,6 @@ export default function Profile() {
       unit: ""
     }
   ];
-
-  // Initialize Supabase client
-  const [supabase] = useState(() => 
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
 
   // Function to save profile data
   const handleSaveProfile = async (data: { name: string; emailPreferences?: Record<string, boolean> }) => {
