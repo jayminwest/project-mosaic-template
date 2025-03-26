@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from '../lib/config/plan-access.js';
+import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from '../lib/config/plan-access';
 
 async function testPlanFeatures() {
   console.log(chalk.blue('Project Mosaic - Test Plan Features'));
