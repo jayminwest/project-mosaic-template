@@ -51,14 +51,11 @@ export function Header() {
         
         {/* Desktop navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/features" className="text-sm font-medium hover:underline">
-            Features
-          </Link>
           <Link href="/pricing" className="text-sm font-medium hover:underline">
             Pricing
           </Link>
-          <Link href="/about" className="text-sm font-medium hover:underline">
-            About
+          <Link href="/help" className="text-sm font-medium hover:underline">
+            Help
           </Link>
           
           {!isLoading && (
@@ -77,7 +74,7 @@ export function Header() {
                 </>
               ) : (
                 <>
-                  <Link href="/">
+                  <Link href="/login">
                     <Button variant="outline" size="sm">Log In</Button>
                   </Link>
                   <Link href="/signup">
@@ -92,14 +89,11 @@ export function Header() {
         {/* Mobile navigation */}
         {isMenuOpen && (
           <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden p-4 flex flex-col space-y-4">
-            <Link href="/features" className="text-sm font-medium hover:underline">
-              Features
-            </Link>
             <Link href="/pricing" className="text-sm font-medium hover:underline">
               Pricing
             </Link>
-            <Link href="/about" className="text-sm font-medium hover:underline">
-              About
+            <Link href="/help" className="text-sm font-medium hover:underline">
+              Help
             </Link>
             
             {!isLoading && (
@@ -118,7 +112,7 @@ export function Header() {
                   </>
                 ) : (
                   <>
-                    <Link href="/">
+                    <Link href="/login">
                       <Button variant="outline" size="sm" className="w-full">Log In</Button>
                     </Link>
                     <Link href="/signup">
