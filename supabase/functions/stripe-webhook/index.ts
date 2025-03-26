@@ -91,15 +91,23 @@ Deno.serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object;
         
+        console.log(`Processing checkout.session.completed for session: ${session.id}`);
+        
         // Get the line items to find the price ID
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        console.log(`Found ${lineItems.data.length} line items for session ${session.id}`);
+        
         if (lineItems.data.length > 0) {
           const priceId = lineItems.data[0].price?.id;
+          console.log(`Price ID from line item: ${priceId}`);
           
           // Get the plan type from the price ID, default to "premium" if not found
           const planType = priceId && priceToPlanMap.has(priceId) 
             ? priceToPlanMap.get(priceId) 
             : "premium";
+          
+          console.log(`Mapped plan type: ${planType} for price ID: ${priceId}`);
+          console.log(`Price to plan map has ${priceToPlanMap.size} entries`);
           
           // Get subscription details to check for trial period
           const subscriptions = await stripe.subscriptions.list({
@@ -107,10 +115,25 @@ Deno.serve(async (req) => {
             limit: 1,
           });
           
+          console.log(`Found ${subscriptions.data.length} subscriptions for customer: ${session.customer}`);
+          
           const subscription = subscriptions.data[0];
           const isTrialing = subscription?.status === 'trialing';
           
-          await supabase
+          // First, check if the customer ID exists in profiles
+          const { data: existingProfiles, error: fetchError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("stripe_customer_id", session.customer);
+            
+          if (fetchError) {
+            console.error(`Error fetching profiles for customer ${session.customer}:`, fetchError);
+          } else {
+            console.log(`Found ${existingProfiles?.length || 0} profiles with stripe_customer_id: ${session.customer}`);
+          }
+          
+          // Update the profile
+          const { error: updateError } = await supabase
             .from("profiles")
             .update({
               subscription_plan: planType,
@@ -120,7 +143,24 @@ Deno.serve(async (req) => {
             })
             .eq("stripe_customer_id", session.customer);
           
-          console.log(`Updated user to plan: ${planType} for customer: ${session.customer}, trial: ${isTrialing}`);
+          if (updateError) {
+            console.error(`Error updating profile for customer ${session.customer}:`, updateError);
+          } else {
+            console.log(`Updated user to plan: ${planType} for customer: ${session.customer}, trial: ${isTrialing}`);
+            
+            // Verify the update was successful
+            const { data: updatedProfile, error: verifyError } = await supabase
+              .from("profiles")
+              .select("subscription_plan, subscription_status")
+              .eq("stripe_customer_id", session.customer)
+              .single();
+              
+            if (verifyError) {
+              console.error(`Error verifying profile update for customer ${session.customer}:`, verifyError);
+            } else {
+              console.log(`Verified profile update: subscription_plan=${updatedProfile.subscription_plan}, subscription_status=${updatedProfile.subscription_status}`);
+            }
+          }
         }
         break;
       }

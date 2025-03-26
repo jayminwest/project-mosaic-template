@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the user's profile to find their Stripe customer ID
+    console.log(`Fetching profile for user ID: ${userId}`);
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('stripe_customer_id, subscription_plan')
@@ -78,14 +79,18 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError) {
+      console.error(`Error fetching profile for user ${userId}:`, profileError);
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`Profile data for user ${userId}:`, profiles);
+
     // If no Stripe customer ID, user is on free plan
     if (!profiles?.stripe_customer_id) {
+      console.log(`No Stripe customer ID found for user ${userId}, using plan: ${profiles?.subscription_plan || 'free'}`);
       return new Response(
         JSON.stringify({ 
           subscription: null,
@@ -96,6 +101,7 @@ Deno.serve(async (req) => {
     }
 
     const customerId = profiles.stripe_customer_id;
+    console.log(`Fetching subscriptions for Stripe customer ID: ${customerId}`);
 
     // Get the customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -104,7 +110,10 @@ Deno.serve(async (req) => {
       limit: 1,
     });
 
+    console.log(`Found ${subscriptions.data.length} subscriptions for customer ${customerId}`);
+
     if (subscriptions.data.length === 0) {
+      console.log(`No subscriptions found for customer ${customerId}, using plan: ${profiles?.subscription_plan || 'free'}`);
       return new Response(
         JSON.stringify({ 
           subscription: null,
@@ -115,6 +124,50 @@ Deno.serve(async (req) => {
     }
 
     const subscription = subscriptions.data[0];
+    console.log(`Subscription details for customer ${customerId}:`, {
+      id: subscription.id,
+      status: subscription.status,
+      plan_type: profiles?.subscription_plan
+    });
+
+    // Get the price ID from the subscription
+    const priceId = subscription.items.data[0]?.price?.id;
+    console.log(`Price ID from subscription: ${priceId}`);
+    
+    // Check if we need to update the profile's subscription_plan
+    if (priceId) {
+      try {
+        // Get the product for this price
+        const price = await stripe.prices.retrieve(priceId, {
+          expand: ['product']
+        });
+        
+        if (price.product && typeof price.product === 'object' && price.product.metadata?.plan_type) {
+          const planType = price.product.metadata.plan_type;
+          console.log(`Plan type from product metadata: ${planType}`);
+          
+          // If the profile's subscription_plan doesn't match the product's plan_type, update it
+          if (profiles.subscription_plan !== planType) {
+            console.log(`Updating profile subscription_plan from ${profiles.subscription_plan} to ${planType}`);
+            
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ subscription_plan: planType })
+              .eq('user_id', userId);
+              
+            if (updateError) {
+              console.error(`Error updating subscription_plan for user ${userId}:`, updateError);
+            } else {
+              console.log(`Successfully updated subscription_plan to ${planType} for user ${userId}`);
+              // Update the plan_type in our response
+              profiles.subscription_plan = planType;
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error retrieving price details for ${priceId}:`, error);
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
