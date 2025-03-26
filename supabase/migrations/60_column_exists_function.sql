@@ -16,6 +16,10 @@ BEGIN
   ) INTO column_exists;
   
   RETURN column_exists;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- If any error occurs (like table doesn't exist), return false
+    RETURN false;
 END;
 $$;
 

@@ -187,21 +187,23 @@ async function resetEnvironment() {
     if (selectedTables.includes('profiles') && !selectedTables.includes('auth.users')) {
       console.log(chalk.blue('\n3. Resetting subscription data in profiles...'));
       
-      // Try direct update instead of RPC function
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          subscription_plan: 'free',
-          // Only include these fields if they exist in the schema
-          ...(await checkColumnExists(supabase, 'profiles', 'subscription_status') ? { subscription_status: null } : {}),
-          ...(await checkColumnExists(supabase, 'profiles', 'subscription_trial_end') ? { subscription_trial_end: null } : {})
-        })
-        .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all real users
-      
-      if (updateError) {
-        console.error(chalk.red('Error resetting subscription data:'), updateError);
-      } else {
-        console.log(chalk.green('✓ Subscription data reset'));
+      try {
+        // Skip the column check and just do a direct update with basic fields
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            subscription_plan: 'free',
+            updated_at: new Date().toISOString()
+          })
+          .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all real users
+        
+        if (updateError) {
+          console.error(chalk.red('Error resetting subscription data:'), updateError);
+        } else {
+          console.log(chalk.green('✓ Subscription data reset'));
+        }
+      } catch (error) {
+        console.error(chalk.red('Error resetting subscription data:'), error);
       }
     }
     
