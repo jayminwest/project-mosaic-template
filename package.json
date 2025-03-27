@@ -23,6 +23,7 @@
     "test-webhook": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-webhook.ts",
     "test-cancellation-flow": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-cancellation-flow.ts",
     "test-cancellation-flow-simple": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-cancellation-flow-simple.ts",
+    "check-cancellation-reasons": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/check-cancellation-reasons.ts",
     "supabase:migration:local": "supabase migration up"
   },
   "dependencies": {

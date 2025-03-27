@@ -199,8 +199,18 @@ async function testCancellationFlow() {
     console.log(chalk.green('✓ Successfully inserted cancellation reason'));
     console.log(chalk.gray(`Inserted record: ${JSON.stringify(insertResult)}`));
     
-    // Skip direct query using RPC since it's not working
-    console.log(chalk.gray('Skipping direct database query via RPC (not available)'));
+    // Try using the get_cancellation_reasons function
+    console.log(chalk.gray('Querying using get_cancellation_reasons function...'));
+    const { data: directData, error: directError } = await supabase.rpc(
+      'get_cancellation_reasons',
+      { user_id_param: testUserId }
+    );
+    
+    if (directError) {
+      console.log(chalk.red(`Error using get_cancellation_reasons: ${directError.message}`));
+    } else {
+      console.log(chalk.gray(`Direct query result: ${JSON.stringify(directData)}`));
+    }
     
     // Verify the record was inserted by querying it back
     const { data: verifyData, error: verifyError } = await supabase

@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS public.cancellation_reasons;
 
 CREATE TABLE public.cancellation_reasons (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   subscription_id TEXT,
   reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -19,6 +19,8 @@ DROP POLICY IF EXISTS "Users can insert their own cancellation reasons" ON publi
 DROP POLICY IF EXISTS "Users can update their own cancellation reasons" ON public.cancellation_reasons;
 DROP POLICY IF EXISTS "Users can delete their own cancellation reasons" ON public.cancellation_reasons;
 DROP POLICY IF EXISTS "Service role can manage all cancellation reasons" ON public.cancellation_reasons;
+DROP POLICY IF EXISTS "Users can view their own cancellation reasons" ON public.cancellation_reasons;
+DROP POLICY IF EXISTS "Authenticated users can insert cancellation reasons" ON public.cancellation_reasons;
 
 -- Users can read their own cancellation reasons
 CREATE POLICY "Users can read their own cancellation reasons"
@@ -26,11 +28,12 @@ CREATE POLICY "Users can read their own cancellation reasons"
   FOR SELECT
   USING (auth.uid() = user_id);
 
--- Users can insert their own cancellation reasons
-CREATE POLICY "Users can insert their own cancellation reasons"
+-- Authenticated users can insert cancellation reasons
+CREATE POLICY "Authenticated users can insert cancellation reasons"
   ON public.cancellation_reasons
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  TO authenticated
+  WITH CHECK (true);
 
 -- Users can update their own cancellation reasons
 CREATE POLICY "Users can update their own cancellation reasons"
@@ -51,6 +54,20 @@ CREATE POLICY "Service role can manage all cancellation reasons"
   TO service_role
   USING (true)
   WITH CHECK (true);
+
+-- Create a function to get cancellation reasons for a user
+CREATE OR REPLACE FUNCTION public.get_cancellation_reasons(user_id_param UUID)
+RETURNS SETOF public.cancellation_reasons
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT * FROM public.cancellation_reasons 
+  WHERE user_id = user_id_param;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.get_cancellation_reasons(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_cancellation_reasons(UUID) TO service_role;
 
 -- Add column to profiles table to track cancellation date if it doesn't exist
 DO $$
