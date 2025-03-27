@@ -1,4 +1,4 @@
-import { ProductConfig } from './types';
+import { ProductConfig } from './types.ts';
 
 export const productConfig: ProductConfig = {
   name: "Project Mosaic",
