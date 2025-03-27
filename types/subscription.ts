@@ -1,4 +1,4 @@
-import { SubscriptionStatus, Invoice, PaymentResponse } from "@/lib/payment/payment-service";
+import { SubscriptionStatus, Invoice, PaymentResponse } from "../lib/payment/payment-service";
 
 export interface SubscriptionPlan {
   id: string;

@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
 import Stripe from 'stripe';
+import open from 'open';
 
 // Load environment variables
 config({ path: '.env.local' });
@@ -30,6 +31,57 @@ interface SubscriptionPlan {
   interval: 'month' | 'year';
   features: PlanFeature[];
   limits: ResourceLimit[];
+}
+
+async function findOrCreateTestCustomer(stripe: Stripe): Promise<Stripe.Customer> {
+  try {
+    // Try to find an existing test customer
+    const customers = await stripe.customers.list({
+      email: 'test@example.com',
+      limit: 1,
+    });
+    
+    if (customers.data.length > 0) {
+      return customers.data[0];
+    }
+    
+    // Create a new test customer if none exists
+    return await stripe.customers.create({
+      email: 'test@example.com',
+      name: 'Test Customer',
+      metadata: {
+        test: 'true',
+        purpose: 'portal_configuration_check'
+      }
+    });
+  } catch (error) {
+    console.error('Error finding or creating test customer:', error.message);
+    throw error;
+  }
+}
+
+async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
+  try {
+    // Create a test customer to check portal configuration
+    const customer = await findOrCreateTestCustomer(stripe);
+    
+    // Attempt to create a portal session
+    await stripe.billingPortal.sessions.create({
+      customer: customer.id,
+      return_url: 'https://example.com',
+    });
+    
+    return true;
+  } catch (error: any) {
+    if (error.message.includes('No configuration provided') || 
+        error.message.includes('default configuration has not been created')) {
+      return false;
+    }
+    // If it's another type of error, we'll assume the portal might be configured
+    // but there's another issue
+    console.error('Error checking portal configuration:', error.message);
+    return false;
+  }
 }
 
 async function setupSubscriptionPlans() {
@@ -94,6 +146,57 @@ async function setupSubscriptionPlans() {
   });
   
   console.log(chalk.green('✓ Stripe API key is configured'));
+  
+  // Check if Stripe Customer Portal is configured
+  console.log(chalk.gray('Checking Stripe Customer Portal configuration...'));
+  const isPortalConfigured = await checkPortalConfiguration(stripe);
+
+  if (!isPortalConfigured) {
+    console.log(chalk.yellow('\nYour Stripe Customer Portal is not configured.'));
+    console.log(chalk.white('To configure the Customer Portal:'));
+    console.log(chalk.white('1. Go to https://dashboard.stripe.com/test/settings/billing/portal'));
+    console.log(chalk.white('2. Configure the basic settings and click "Save"'));
+    
+    // Ask if user wants to open the configuration page
+    const { configureNow } = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'configureNow',
+      message: 'Would you like to open the configuration page now?',
+      default: true
+    }]);
+    
+    if (configureNow) {
+      // Open the configuration page in the default browser
+      await open('https://dashboard.stripe.com/test/settings/billing/portal');
+      
+      // Wait for the user to complete the configuration
+      const { configured } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'configured',
+        message: 'Have you completed the portal configuration?',
+        default: false
+      }]);
+      
+      if (configured) {
+        // Verify the configuration
+        const isNowConfigured = await checkPortalConfiguration(stripe);
+        if (isNowConfigured) {
+          console.log(chalk.green('✓ Stripe Customer Portal is now configured!'));
+        } else {
+          console.log(chalk.yellow('Stripe Customer Portal still appears to be unconfigured.'));
+          console.log(chalk.gray('You can continue with subscription plan setup, but the Customer Portal may not work correctly.'));
+        }
+      } else {
+        console.log(chalk.yellow('You can continue with subscription plan setup, but the Customer Portal may not work correctly.'));
+      }
+    } else {
+      console.log(chalk.yellow('You can continue with subscription plan setup, but the Customer Portal may not work correctly.'));
+      console.log(chalk.gray('You can configure the Customer Portal later at:'));
+      console.log(chalk.blue('https://dashboard.stripe.com/test/settings/billing/portal'));
+    }
+  } else {
+    console.log(chalk.green('✓ Stripe Customer Portal is configured!'));
+  }
   
   // Check if plans already exist
   console.log(chalk.gray('Checking for existing subscription plans...'));

@@ -259,6 +259,15 @@ inspector_port = 8083
 [functions]
 # Remove the CORS configuration from here as it should be handled in each function
 
+# Disable JWT verification for webhook functions
+[functions.stripe-webhook]
+enabled = true
+verify_jwt = false
+
+[functions.stripe-webhook-test]
+enabled = true
+verify_jwt = false
+
 # Use these configurations to customize your Edge Function.
 # [functions.MY_FUNCTION_NAME]
 # enabled = true

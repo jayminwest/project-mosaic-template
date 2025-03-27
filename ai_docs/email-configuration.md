@@ -100,11 +100,72 @@ Email templates for your transactional emails are built with React Email and loc
 - `PasswordResetEmail.tsx` - Alternative to Supabase's reset email
 - `VerificationEmail.tsx` - Alternative to Supabase's confirmation email
 - `InvitationEmail.tsx` - Alternative to Supabase's invitation email
+- `CancellationEmail.tsx` - Sent when a user cancels their subscription
+
+Each template accepts specific props:
+
+```typescript
+// WelcomeEmail.tsx
+{
+  username?: string;        // Default: 'there'
+  productName?: string;     // Default: 'Our Product'
+  actionUrl?: string;       // Default: 'https://example.com/dashboard'
+}
+
+// PasswordResetEmail.tsx
+{
+  resetLink: string;
+  productName?: string;     // Default: 'Our Product'
+}
+
+// VerificationEmail.tsx
+{
+  verificationLink: string;
+  productName?: string;     // Default: 'Our Product'
+}
+
+// InvitationEmail.tsx
+{
+  inviterName?: string;     // Default: 'Someone'
+  productName?: string;     // Default: 'Our Product'
+  inviteLink: string;
+}
+
+// CancellationEmail.tsx
+{
+  username?: string;        // Default: 'there'
+  productName?: string;     // Default: 'Our Product'
+  endDate?: string;         // Default: 'the end of your current billing period'
+  reactivateUrl?: string;   // Default: 'https://example.com/reactivate'
+}
+```
 
 To create a new email template:
 1. Create a new React component in the templates directory
 2. Add it to the `emailTemplates` object in `lib/email/templates/index.ts`
 3. Use it with the email service
+
+Example of adding a new template to `lib/email/templates/index.ts`:
+
+```typescript
+import { default as WelcomeEmail } from './components/WelcomeEmail';
+import { default as PasswordResetEmail } from './components/PasswordResetEmail';
+import { default as VerificationEmail } from './components/VerificationEmail';
+import { default as InvitationEmail } from './components/InvitationEmail';
+import { default as CancellationEmail } from './components/CancellationEmail';
+import { default as YourNewEmail } from './components/YourNewEmail';
+
+export const emailTemplates = {
+  welcome: WelcomeEmail,
+  passwordReset: PasswordResetEmail,
+  verification: VerificationEmail,
+  invitation: InvitationEmail,
+  cancellation: CancellationEmail,
+  yourNewTemplate: YourNewEmail
+};
+
+export type EmailTemplateType = keyof typeof emailTemplates;
+```
 
 ### Supabase Email Templates
 

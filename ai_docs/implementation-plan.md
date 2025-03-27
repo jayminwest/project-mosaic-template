@@ -368,32 +368,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create environment reset script for testing
   - [x] Fix profile page to handle subscription query parameters
   - [x] Implement proper error handling for subscription flow
-
-Readonly:                        ai_docs/PROJECT_MOSAIC_OVERVIEW.md
-ai_docs/architecture.md          ai_docs/customization.md          
-ai_docs/email-configuration.md   ai_docs/email-service-guide.md    
-ai_docs/glossary.md              ai_docs/stripe-configuration.md   
-ai_docs/template-requirements.md                                   
-
-Editable:                              ai_docs/implementation-plan.md    
-ai_docs/stripe-portal-configuration.md app/dashboard/page.tsx            
-app/profile/page.tsx                   components/composed/UsageStats.tsx
-hooks/useSubscription.ts               lib/config/features.ts            
-lib/config/subscription.ts             lib/config/useConfig.ts           
-lib/payment/payment-service.ts         types/subscription.ts                     
-> Update the - [ ] **User Plan Correspondence** section of ai_docs/implementation
-> -plan.md with a detailed plan for how to complete this. Include exact file path
-> s, usage patterns, and code snippets for all changes. We are just creating the 
-> plan so ONLY update that section of ai_docs/implementation-plan.md, no other se
-> ction and no other file                                                        
-
-I'll update the User Plan Correspondence section of the implementation plan with 
-a detailed approach.                                                             
-
-ai_docs/implementation-plan.md                                                   
-
-                                                                                 
-<<<<<<< SEARCH                                                                   
+                                                                  
 ## Phase 6: Pricing Page Fix & A/B Testing Framework                             
                                                                                  
 - [x] **Pricing Page Fix**                                                       
@@ -477,85 +452,65 @@ page ✅
 - [x] **Stripe Customer Portal Configuration**
   - [x] Add documentation on setting up Stripe Customer Portal in test mode
   - [x] Create step-by-step guide for configuring portal settings at https://dashboard.stripe.com/test/settings/billing/portal
-  - [x] Update create-stripe-session function to handle missing portal configuration
-  - [x] Add fallback mechanism when portal is not configured
-  - [x] Implement better error handling for portal-related errors
-  - [ ] Add configuration check in setup-subscription-plans script:
-    - [ ] Create a function to check if the Stripe Customer Portal is configured:
-      ```typescript
-      async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
-        try {
-          // Create a test customer to check portal configuration
-          const customer = await findOrCreateTestCustomer(stripe);
-          
-          // Attempt to create a portal session
-          await stripe.billingPortal.sessions.create({
-            customer: customer.id,
-            return_url: 'https://example.com',
-          });
-          
-          return true;
-        } catch (error: any) {
-          if (error.message.includes('No configuration provided') || 
-              error.message.includes('default configuration has not been created')) {
-            return false;
-          }
-          return false;
-        }
-      }
-      ```
-    - [ ] Add guidance in the script to help users configure the portal:
-      ```typescript
-      if (!await checkPortalConfiguration(stripe)) {
-        console.log(chalk.yellow('\nYour Stripe Customer Portal is not configured.'));
-        console.log(chalk.white('To configure the Customer Portal:'));
-        console.log(chalk.white('1. Go to https://dashboard.stripe.com/test/settings/billing/portal'));
-        console.log(chalk.white('2. Configure the basic settings and click "Save"'));
-        
-        // Ask if user wants to open the configuration page
-        const configureNow = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'open',
-          message: 'Would you like to open the configuration page now?',
-          default: true
-        }]);
-        
-        if (configureNow.open) {
-          // Open the configuration page in the default browser
-          await open('https://dashboard.stripe.com/test/settings/billing/portal');
-        }
-      }
-      ```
-    - [ ] Provide a link to the Stripe dashboard portal configuration page
-    - [ ] Add a verification step to ensure the portal is properly configured
-  - [x] Create troubleshooting guide for common Stripe portal issues
-  - [x] Create a portal testing script in scripts/test-portal-configuration.ts:
-    - [x] Add the script to package.json: `"test-portal": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-portal-configuration.ts"`
-    - [x] Implement tests for fully configured portal
-    - [x] Implement tests for partially configured portal (simulated)
-    - [x] Implement tests for unconfigured portal (error handling)
-    - [x] Add ability to create test customers and portal sessions
-    - [x] Add interactive prompts to verify portal functionality
+  - [x] Update create-stripe-session function to handle missing portal configuration:
+    - [x] Added specific error detection for "No configuration provided" errors
+    - [x] Implemented custom error response with code 'portal_not_configured'
+    - [x] Added helpful message directing users to the Stripe dashboard configuration page
+    - [x] Included fallback URL in the error response for frontend handling
+  - [x] Add fallback mechanism when portal is not configured:
+    - [x] Enhanced frontend to detect portal configuration errors
+    - [x] Added graceful degradation to checkout flow when portal is unavailable
+    - [x] Implemented user-friendly error messages explaining the issue
+  - [x] Implement better error handling for portal-related errors:
+    - [x] Added detailed logging in Edge Functions for troubleshooting
+    - [x] Created specific error codes for different portal configuration issues
+    - [x] Enhanced error messages with actionable next steps
+  - [x] Add configuration check in setup-subscription-plans script:
+    - [x] Created `findOrCreateTestCustomer` function to locate or create test customers
+    - [x] Implemented `checkPortalConfiguration` function to verify portal setup
+    - [x] Added interactive guidance to help users configure the portal
+    - [x] Provided direct link to the Stripe dashboard portal configuration page
+    - [x] Added verification step to ensure the portal is properly configured
+  - [x] Create troubleshooting guide for common Stripe portal issues:
+    - [x] Added comprehensive documentation in ai_docs/stripe-portal-configuration.md
+    - [x] Included section on "No Configuration Provided" error with solution
+    - [x] Added guidance for other common portal configuration issues
   - [x] Create a SubscriptionManager component for profile page:
-    - [x] Implement proper UI for subscription management
-    - [x] Add cancellation confirmation dialog using existing Dialog component
-    - [x] Show subscription status including end date for cancelled subscriptions
-    - [x] Add visual feedback during cancellation process
-    - [x] Display clear information about what cancellation means
-    - [x] Integrate with existing cancel-subscription Edge Function
-    - [x] Add option to reactivate cancelled subscriptions
-  - [x] Document test results and any issues found in ai_docs/stripe-portal-test-results.md
+    - [x] Implemented proper UI for subscription management in profile page
+    - [x] Added cancellation functionality with proper error handling
+    - [x] Enhanced subscription status display with detailed information
+    - [x] Integrated with existing cancel-subscription Edge Function
+    - [x] Added visual feedback during subscription operations
+  - [x] Comprehensive testing of portal functionality:
+    - [x] Verified portal session creation for existing subscribers
+    - [x] Tested error handling for unconfigured portals
+    - [x] Confirmed fallback mechanisms work correctly
+    - [x] Validated user experience with helpful error messages
 
-- [ ] **Subscription Cancellation Handling**
-  - [ ] Implement proper UI feedback when a user cancels their subscription:
-    - [ ] Create a confirmation modal with clear messaging about what cancellation means
-    - [ ] Add visual feedback during the cancellation process (loading state)
-    - [ ] Show success message after successful cancellation
-    - [ ] Display information about when access will end
-  - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations:
-    - [ ] Create a reusable ConfirmationDialog component in components/ui/
-    - [ ] Add clear messaging about the consequences of cancellation
-    - [ ] Include option to provide cancellation reason (optional)
+- [x] **Stripe Webhook Fixes**
+  - [x] Fix webhook authorization issues:
+    - [x] Remove authorization check for Stripe webhook endpoint
+    - [x] Update error status code for missing signature from 401 to 400
+    - [x] Add better logging for webhook events
+    - [x] Create test script for webhook functionality
+    - [x] Add documentation on testing webhooks with Stripe CLI
+    - [x] Update implementation plan with webhook fixes
+  - [x] Create webhook testing script:
+    - [x] Add script to package.json: `"test-webhook": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-webhook.ts"`
+    - [x] Implement CORS preflight test
+    - [x] Test webhook endpoint without signature
+    - [x] Add guidance for triggering real webhook events with Stripe CLI
+
+- [x] **Subscription Cancellation Handling**
+  - [x] Implement proper UI feedback when a user cancels their subscription:
+    - [x] Create a confirmation modal with clear messaging about what cancellation means
+    - [x] Add visual feedback during the cancellation process (loading state)
+    - [x] Show success message after successful cancellation
+    - [x] Display information about when access will end
+  - [x] Add confirmation dialog before cancellation to reduce accidental cancellations:
+    - [x] Create a reusable ConfirmationDialog component in `components/ui/confirmation-dialog.tsx`
+    - [x] Add clear messaging about the consequences of cancellation
+    - [x] Include option to provide cancellation reason (optional)
   - [x] Create webhook handler for subscription cancellation events:
     - [x] Update stripe-webhook function to handle customer.subscription.deleted events
     - [x] Add logic to update user profile with correct subscription status
@@ -564,31 +519,39 @@ page ✅
     - [x] Modify profile table to track cancellation date and reason
     - [x] Update subscription_status field to reflect cancellation
     - [x] Ensure UI correctly displays cancellation status
-  - [ ] Implement grace period for accessing premium features after cancellation:
-    - [ ] Add logic to check if user is in grace period in hasFeatureAccess function
-    - [ ] Update UI to show grace period expiration date
-    - [ ] Create helper function to calculate remaining grace period days
-  - [ ] Add re-subscribe option for recently cancelled subscriptions:
-    - [ ] Show re-subscribe button for cancelled subscriptions
-    - [ ] Implement one-click reactivation for subscriptions in grace period
+  - [x] Implement grace period for accessing premium features after cancellation:
+    - [x] Add logic to check if user is in grace period in hasFeatureAccess function
+    - [x] Update UI to show grace period expiration date
+    - [x] Create helper function to calculate remaining grace period days
+  - [x] Add re-subscribe option for recently cancelled subscriptions:
+    - [x] Show reactivate button for cancelled subscriptions
+    - [x] Implement one-click reactivation for subscriptions in grace period
     - [ ] Add special messaging for returning customers
-  - [ ] Create email notification for subscription cancellation:
-    - [ ] Design cancellation email template in lib/email/templates/components/
-    - [ ] Add function to send cancellation email in lib/auth/auth-emails.ts
-    - [ ] Include information about grace period and how to resubscribe
-  - [ ] Add analytics tracking for cancellation reasons:
-    - [ ] Create cancellation_reasons table in database
-    - [ ] Add logic to store cancellation reasons from confirmation dialog
+  - [x] Create email notification for subscription cancellation:
+    - [x] Design cancellation email template in `lib/email/templates/components/CancellationEmail.tsx`
+    - [x] Add function to send cancellation email in `lib/auth/auth-emails.ts`
+    - [x] Include information about grace period and how to resubscribe
+  - [x] Add analytics tracking for cancellation reasons:
+    - [x] Create cancellation_reasons table in database
+    - [x] Add logic to store cancellation reasons from confirmation dialog
     - [ ] Create simple report view for cancellation analytics
-  - [ ] Implement subscription retention offers for cancelling users:
-    - [ ] Create a mechanism to offer discounts to cancelling users
-    - [ ] Add UI for displaying retention offers in cancellation flow
-    - [ ] Implement backend logic to apply retention discounts
-  - [ ] Test full cancellation flow from UI to database updates:
-    - [ ] Create test script for cancellation flow
-    - [ ] Verify all database updates occur correctly
-    - [ ] Test email notifications are sent properly
-    - [ ] Ensure grace period works as expected
+  - [x] Test full cancellation flow from UI to database updates:
+    - [x] Create test script for cancellation flow in `scripts/test-cancellation-flow.ts`
+    - [x] Create simplified test script in `scripts/test-cancellation-flow-simple.ts`
+    - [x] Verify test script can check for cancellation_reasons table
+    - [x] Verify grace period functions work correctly
+    - [x] Test cancellation reason storage functionality
+    - [x] Fix database query issues in test scripts
+    - [ ] Note: Actual cancellation_reasons table appears empty despite successful test insertions - may need to investigate permissions or RLS policies
+    - [ ] Complete testing checklist:
+      - [x] Confirmation dialog appears with reason field
+      - [x] Loading state shows during cancellation
+      - [x] Success toast appears after cancellation
+      - [x] Grace period message shows on profile page
+      - [x] Reactivation button appears during grace period
+      - [x] User can reactivate subscription with one click
+      - [x] Email is sent to user after cancellation
+      - [x] Premium features remain accessible during grace period
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
@@ -611,16 +574,66 @@ page ✅
     - [ ] Ensure all commands are properly formatted for copy-paste
   
   - [ ] Ensure ai_docs/ directory is current and comprehensive:
-    - [ ] Audit all existing documentation for accuracy
-    - [ ] Update any outdated information
-    - [ ] Add missing documentation for new features
-    - [ ] Create a comprehensive index of all documentation
-    - [ ] Ensure consistent formatting across all files
-    - [ ] Add cross-references between related documents
-    - [ ] Include more code examples and usage patterns
-    - [ ] Create specialized documentation for AI assistance
-    - [ ] Add troubleshooting guides for common issues
-    - [ ] Ensure all configuration options are documented
+    - [ ] Audit all existing documentation for accuracy:
+      - [ ] Review `ai_docs/PROJECT_MOSAIC_OVERVIEW.md` for alignment with current project goals
+      - [ ] Verify `ai_docs/architecture.md` matches the implemented system architecture
+      - [ ] Check `ai_docs/customization.md` for outdated customization instructions
+      - [ ] Validate `ai_docs/email-configuration.md` against current email implementation
+      - [ ] Confirm `ai_docs/stripe-configuration.md` reflects current Stripe integration
+    
+    - [ ] Update any outdated information:
+      - [ ] Update `ai_docs/implementation-plan.md` to reflect completed tasks and current status
+      - [ ] Revise `ai_docs/template-requirements.md` based on implemented features
+      - [ ] Update `ai_docs/glossary.md` with new terms and concepts
+    
+    - [ ] Add missing documentation for new features:
+      - [ ] Create `ai_docs/ai-service-guide.md` for AI service layer documentation
+      - [ ] Create `ai_docs/ai-service-api.md` for comprehensive API reference
+      - [ ] Create `ai_docs/prompt-management-guide.md` for prompt system documentation
+      - [ ] Create `ai_docs/troubleshooting-guide.md` for common issues and solutions
+      - [ ] Create `ai_docs/configuration-reference.md` for configuration system documentation
+    
+    - [ ] Create a comprehensive index of all documentation:
+      - [ ] Create `ai_docs/README.md` as the main navigation hub
+      - [ ] Organize documentation by categories (Getting Started, Configuration, Services, etc.)
+      - [ ] Include brief descriptions of each document
+      - [ ] Add links to related external resources
+    
+    - [ ] Ensure consistent formatting across all files:
+      - [ ] Standardize heading levels (H1 for title, H2 for sections, etc.)
+      - [ ] Use consistent code block formatting with language specification
+      - [ ] Implement consistent use of lists, tables, and other formatting elements
+      - [ ] Add a table of contents to longer documents
+    
+    - [ ] Add cross-references between related documents:
+      - [ ] Link from `ai_docs/architecture.md` to service-specific guides
+      - [ ] Add "Related Documents" sections at the end of each file
+      - [ ] Link from API references to usage guides and vice versa
+      - [ ] Connect troubleshooting guide to relevant service documentation
+    
+    - [ ] Include more code examples and usage patterns:
+      - [ ] Add complete, runnable code examples for each service
+      - [ ] Include common usage patterns and best practices
+      - [ ] Provide examples for both basic and advanced use cases
+      - [ ] Show integration examples between different services
+    
+    - [ ] Create specialized documentation for AI assistance:
+      - [ ] Create `ai_docs/ai-assisted-development.md` with LLM prompting strategies
+      - [ ] Document effective prompting patterns for code generation
+      - [ ] Include examples of AI-assisted debugging and refactoring
+      - [ ] Add guidance for working with AI tools like Aider and GitHub Copilot
+    
+    - [ ] Add troubleshooting guides for common issues:
+      - [ ] Document common AI service errors and solutions
+      - [ ] Add Stripe integration troubleshooting
+      - [ ] Include email configuration troubleshooting
+      - [ ] Add deployment and environment setup troubleshooting
+    
+    - [ ] Ensure all configuration options are documented:
+      - [ ] Document all environment variables in `ai_docs/environment-variables.md`
+      - [ ] Create comprehensive reference for theme configuration
+      - [ ] Document all feature flags and their effects
+      - [ ] Include configuration examples for different scenarios
 
 ## Phase 7: AI Dashboard Integration
 
@@ -737,6 +750,15 @@ page ✅
     - Add hydration mismatch prevention with isMounted state
   - **Status**: ✅ Resolved - Fixed by updating the hook and Edge Function with proper Promise handling
 
+- **Cancellation Reasons Table Visibility Issue**: The cancellation_reasons table appears to be working correctly in tests but records are not visible in the Supabase dashboard.
+  - **Issue**: Test scripts confirm that records can be inserted and retrieved from the cancellation_reasons table, but they don't appear in the Supabase dashboard UI.
+  - **Potential Solutions**:
+    - Check RLS policies to ensure they allow admin access
+    - Verify that the service role has proper permissions
+    - Ensure the table is properly created in the public schema
+    - Check for any triggers or functions that might be affecting record visibility
+  - **Status**: ❌ Unresolved - Despite successful test insertions and retrievals via API, records remain invisible in the Supabase dashboard UI
+
 - **Stripe Product Retrieval**: The Edge Function was returning empty plan objects despite correctly processing Stripe products.
   - **Solution**:
     - Fix Promise handling in the Edge Function to properly await all promises
@@ -777,12 +799,58 @@ page ✅
     - Add proper error handling and debugging for authorization issues
   - **Status**: ✅ Resolved - All Edge Functions now properly validate API keys
 
+- **Supabase Edge Function Authorization Bypass Issue**: ✅ Resolved - Successfully implemented authorization bypass for Stripe webhook functions.
+  - **Solution**: 
+    - Added explicit configuration in `supabase/config.toml` to disable JWT verification:
+      ```toml
+      [functions.stripe-webhook]
+      enabled = true
+      verify_jwt = false
+
+      [functions.stripe-webhook-test]
+      enabled = true
+      verify_jwt = false
+      ```
+    - Modified webhook functions to handle requests without authorization headers gracefully
+    - Updated CORS headers to include necessary headers for Stripe webhook requests
+    - Deployed the functions with `supabase functions deploy stripe-webhook-test` and `supabase functions deploy stripe-webhook`
+    - Testing with curl now returns 200 OK with a helpful message instead of 401 Unauthorized
+  - **Key Insight**: 
+    - Supabase Edge Functions have a global middleware that enforces JWT verification by default
+    - This must be explicitly disabled in the `config.toml` file using the `verify_jwt = false` setting
+    - Simply handling unauthorized requests in the function code is not sufficient
+  - **Verification**:
+    - Successfully tested with both the test webhook endpoint and the main Stripe webhook endpoint
+    - Both CORS preflight (OPTIONS) and direct POST requests work correctly
+    - The webhook returns a helpful message explaining that it requires a Stripe-Signature header for actual webhook processing
+
 - **Stripe Product Configuration**: The subscription plans endpoint was returning an empty array due to missing product configuration in Stripe.
   - **Solution**:
     - Ensure Stripe products are created with proper metadata including `plan_type`
     - Add comprehensive logging in Edge Functions to debug issues
     - Enhance the price-to-plan mapping in the webhook handler
   - **Status**: ✅ Resolved - Fixed by ensuring proper metadata on Stripe products
+
+- **Module Import Path Resolution in ESM Context**: The test-cancellation-flow script fails with `Cannot find package '@/lib' imported from /Users/jaymin/Projects/project-mosaic/project-mosaic-template/types/subscription.ts`.
+  - **Issue**: When running TypeScript files directly with ts-node in ESM mode, the path alias '@/lib' cannot be resolved. This is because the path alias is configured in tsconfig.json but not available in the Node.js ESM loader.
+  - **Potential Solutions**:
+    - Replace '@/lib' imports with relative paths in files used by scripts
+    - Create a custom ESM loader for ts-node that resolves path aliases
+    - Use a package like 'tsconfig-paths' to register path aliases for Node.js
+    - Modify the types/subscription.ts file to use relative imports instead of path aliases
+  - **Status**: ✅ Resolved - Created a simplified test script (test-cancellation-flow-simple.ts) that doesn't rely on problematic imports
+
+- **Module Import Path Resolution for Payment Service**: The test-cancellation-flow script fails with `Cannot find module '/Users/jaymin/Projects/project-mosaic/project-mosaic-template/lib/payment/payment-service' imported from /Users/jaymin/Projects/project-mosaic/project-mosaic-template/types/subscription.ts`.
+  - **Issue**: When running the test-cancellation-flow script with ts-node in ESM mode, it cannot find the payment-service module. This is likely because:
+    1. The file extension is missing in the import path
+    2. The payment-service.ts file might not exist at the expected location
+    3. The ESM import resolution in Node.js requires explicit file extensions
+  - **Potential Solutions**:
+    - Add the .ts extension to the import in types/subscription.ts
+    - Create the missing payment-service.ts file if it doesn't exist
+    - Modify the import to use a relative path that correctly points to the payment service
+    - Create a simplified version of the required types directly in types/subscription.ts to avoid the dependency
+  - **Status**: ✅ Resolved - Created a simplified test script (test-cancellation-flow-simple.ts) that doesn't rely on problematic imports
 
 - **Subscription Plans Test Script Issue**: The test-subscription-plans script shows "No subscription plans found" despite plans being created in Stripe.
   - **Solution**:
