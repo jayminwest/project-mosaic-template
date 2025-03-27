@@ -700,6 +700,15 @@ page ✅
     - Add hydration mismatch prevention with isMounted state
   - **Status**: ✅ Resolved - Fixed by updating the hook and Edge Function with proper Promise handling
 
+- **Cancellation Reasons Table Visibility Issue**: The cancellation_reasons table appears to be working correctly in tests but records are not visible in the Supabase dashboard.
+  - **Issue**: Test scripts confirm that records can be inserted and retrieved from the cancellation_reasons table, but they don't appear in the Supabase dashboard UI.
+  - **Potential Solutions**:
+    - Check RLS policies to ensure they allow admin access
+    - Verify that the service role has proper permissions
+    - Ensure the table is properly created in the public schema
+    - Check for any triggers or functions that might be affecting record visibility
+  - **Status**: ❌ Unresolved - Despite successful test insertions and retrievals via API, records remain invisible in the Supabase dashboard UI
+
 - **Stripe Product Retrieval**: The Edge Function was returning empty plan objects despite correctly processing Stripe products.
   - **Solution**:
     - Fix Promise handling in the Edge Function to properly await all promises
