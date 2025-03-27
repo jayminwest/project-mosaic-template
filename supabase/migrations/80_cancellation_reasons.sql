@@ -21,13 +21,11 @@ CREATE POLICY "Users can view their own cancellation reasons"
   TO authenticated 
   USING (auth.uid() = user_id);
 
--- Only admins can delete cancellation reasons
-CREATE POLICY "Only admins can delete cancellation reasons" 
+-- Only the user who created the reason can delete it
+CREATE POLICY "Users can delete their own cancellation reasons" 
   ON public.cancellation_reasons FOR DELETE 
   TO authenticated 
-  USING (auth.uid() IN (
-    SELECT user_id FROM public.profiles WHERE is_admin = true
-  ));
+  USING (auth.uid() = user_id);
 
 -- Add index for faster queries
 CREATE INDEX IF NOT EXISTS idx_cancellation_reasons_user_id ON public.cancellation_reasons(user_id);
