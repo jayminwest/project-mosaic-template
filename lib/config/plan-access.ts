@@ -1,5 +1,5 @@
 import { subscriptionPlans } from './subscription.ts';
-import { productConfig } from './default-config';
+import { productConfig } from './default-config.ts';
 
 // Default resource limits by plan type
 const defaultLimits = {
