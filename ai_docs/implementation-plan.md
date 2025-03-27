@@ -438,14 +438,14 @@ page ✅
     - [x] Added visual indicators when approaching resource limits
     - [x] Implemented upgrade prompts throughout the application
       
-  - [ ] Test all features with both free and premium accounts:
-    - [ ] Verify feature access control works correctly with Stripe plans
-    - [ ] Test upgrade flows from free to premium features
-    - [ ] Verify resource limits are enforced correctly
-    - [ ] Test visual indicators for premium features
-    - [ ] Ensure graceful degradation works as expected
-    - [ ] Verify upgrade prompts appear at appropriate times
-    - [ ] Test fallback to default values when Stripe is unavailable
+  - [x] Test all features with both free and premium accounts:
+    - [x] Verify feature access control works correctly with Stripe plans
+    - [x] Test upgrade flows from free to premium features
+    - [x] Verify resource limits are enforced correctly
+    - [x] Test visual indicators for premium features
+    - [x] Ensure graceful degradation works as expected
+    - [x] Verify upgrade prompts appear at appropriate times
+    - [x] Test fallback to default values when Stripe is unavailable
     - [x] Fix test-plan-features script to properly import from lib/config
                                                                     
 
@@ -573,13 +573,13 @@ page ✅
     - [x] Add screenshots or diagrams where helpful
     - [x] Ensure all commands are properly formatted for copy-paste
   
-  - [ ] Ensure ai_docs/ directory is current and comprehensive:
-    - [ ] Audit all existing documentation for accuracy:
-      - [ ] Review `ai_docs/PROJECT_MOSAIC_OVERVIEW.md` for alignment with current project goals
-      - [ ] Verify `ai_docs/architecture.md` matches the implemented system architecture
-      - [ ] Check `ai_docs/customization.md` for outdated customization instructions
-      - [ ] Validate `ai_docs/email-configuration.md` against current email implementation
-      - [ ] Confirm `ai_docs/stripe-configuration.md` reflects current Stripe integration
+  - [x] Ensure ai_docs/ directory is current and comprehensive:
+    - [x] Audit all existing documentation for accuracy:
+      - [x] Review `ai_docs/PROJECT_MOSAIC_OVERVIEW.md` for alignment with current project goals
+      - [x] Verify `ai_docs/architecture.md` matches the implemented system architecture
+      - [x] Check `ai_docs/customization.md` for outdated customization instructions
+      - [x] Validate `ai_docs/email-configuration.md` against current email implementation
+      - [x] Confirm `ai_docs/stripe-configuration.md` reflects current Stripe integration
     
     - [x] Update any outdated information:
       - [x] Update `ai_docs/implementation-plan.md` to reflect completed tasks and current status
