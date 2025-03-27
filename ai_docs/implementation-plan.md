@@ -503,6 +503,20 @@ page ✅
     - [x] Add option to reactivate cancelled subscriptions
   - [x] Document test results and any issues found in ai_docs/stripe-portal-test-results.md
 
+- [x] **Stripe Webhook Fixes**
+  - [x] Fix webhook authorization issues:
+    - [x] Remove authorization check for Stripe webhook endpoint
+    - [x] Update error status code for missing signature from 401 to 400
+    - [x] Add better logging for webhook events
+    - [x] Create test script for webhook functionality
+    - [x] Add documentation on testing webhooks with Stripe CLI
+    - [x] Update implementation plan with webhook fixes
+  - [x] Create webhook testing script:
+    - [x] Add script to package.json: `"test-webhook": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-webhook.ts"`
+    - [x] Implement CORS preflight test
+    - [x] Test webhook endpoint without signature
+    - [x] Add guidance for triggering real webhook events with Stripe CLI
+
 - [ ] **Subscription Cancellation Handling**
   - [ ] Implement proper UI feedback when a user cancels their subscription:
     - [ ] Create a confirmation modal with clear messaging about what cancellation means

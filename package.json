@@ -20,6 +20,7 @@
     "test-checkout": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-checkout-flow.ts",
     "reset-environment": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/reset-environment.ts",
     "test-plan-features": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-plan-features.ts",
+    "test-webhook": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-webhook.ts",
     "supabase:migration:local": "supabase migration up"
   },
   "dependencies": {
