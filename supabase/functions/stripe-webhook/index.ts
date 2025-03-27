@@ -9,6 +9,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// Enhanced CORS headers specifically for webhook
+const webhookCorsHeaders = {
+  ...corsHeaders,
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+};
+
 console.log("🌍 Stripe Webhook is running...");
 console.log(`Webhook secret configured: ${WEBHOOK_SECRET ? 'Yes' : 'No'}`);
 
@@ -67,54 +73,61 @@ async function initializePriceToPlanMap() {
 // Initialize the price map when the function starts
 initializePriceToPlanMap();
 
+// Create a completely standalone handler that doesn't rely on any middleware
 Deno.serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: webhookCorsHeaders });
   }
 
-  // Stripe webhooks don't require standard authorization headers
-  // They use their own signature verification mechanism
-  const signature = req.headers.get("Stripe-Signature");
-  const body = await req.text();
-
-  // Log request details for debugging
-  console.log(`Webhook received - Signature: ${signature ? 'Present' : 'Missing'}`);
-  console.log(`Request method: ${req.method}`);
+  // Log all request details for debugging
+  console.log(`Webhook request received: ${req.method}`);
+  console.log(`URL: ${req.url}`);
   console.log(`Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
-
-  // Skip authorization check completely for this endpoint
-  // This is safe because we validate the Stripe signature instead
-
-  if (!WEBHOOK_SECRET) {
-    console.error('STRIPE_WEBHOOK_SECRET environment variable is not set');
-    return new Response(
-      JSON.stringify({ error: 'Webhook secret not configured' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
+  
   try {
-    console.log('Attempting to construct event with signature and secret');
-    const event = await stripe.webhooks.constructEventAsync(
-      body,
-      signature,
-      WEBHOOK_SECRET,
-      undefined,
-      cryptoProvider
-    );
+    // For POST requests without a Stripe signature, return a friendly message
+    // This helps with testing and doesn't expose any sensitive information
+    const signature = req.headers.get("Stripe-Signature");
+    if (!signature && req.method === 'POST') {
+      console.log('Received POST without Stripe signature - returning friendly message');
+      return new Response(
+        JSON.stringify({ 
+          message: 'This is the Stripe webhook endpoint. For security, it requires a valid Stripe-Signature header.',
+          status: 'ok',
+          note: 'Use the Stripe CLI to send properly signed webhook events.'
+        }),
+        { 
+          status: 200, 
+          headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const body = await req.text();
+    console.log(`Request body length: ${body.length} characters`);
 
-    console.log(`Received event: ${event.type}`);
+    // Only verify signature if we have a webhook secret and signature
+    if (WEBHOOK_SECRET && signature) {
+      console.log('Attempting to construct event with signature and secret');
+      try {
+        const event = await stripe.webhooks.constructEventAsync(
+          body,
+          signature,
+          WEBHOOK_SECRET,
+          undefined,
+          cryptoProvider
+        );
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+        console.log(`Received event: ${event.type}`);
+
+        // Initialize Supabase client
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        });
 
     // Handle different event types
     if (event.type === "checkout.session.completed") {
@@ -278,29 +291,60 @@ Deno.serve(async (req) => {
     }
     }
 
-    console.log("✅ Webhook processed successfully");
-    return new Response(
-      JSON.stringify({ received: true }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        console.log("✅ Webhook processed successfully");
+        return new Response(
+          JSON.stringify({ received: true }),
+          { 
+            status: 200, 
+            headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (error) {
+        console.error("Error processing webhook event:", error.message);
+        console.error("Error details:", error);
+        
+        // Return a more detailed error response
+        return new Response(
+          JSON.stringify({ 
+            error: error.message,
+            type: error.type || 'unknown',
+            code: error.code || 'unknown',
+            detail: error.detail || 'No additional details'
+          }),
+          { 
+            status: 400, 
+            headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
-    );
+    } else {
+      // If we don't have a webhook secret or signature, return a helpful message
+      console.log('Missing webhook secret or signature');
+      return new Response(
+        JSON.stringify({ 
+          message: 'Stripe webhook is configured but missing required components',
+          missingWebhookSecret: !WEBHOOK_SECRET,
+          missingSignature: !signature,
+          status: 'error'
+        }),
+        { 
+          status: 200, // Use 200 to avoid triggering Stripe's retry mechanism
+          headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
   } catch (error) {
-    console.error("Error in stripe-webhook:", error.message);
-    console.error("Error details:", error);
+    console.error("Unexpected error in webhook handler:", error.message);
     
-    // Return a more detailed error response
+    // Return a generic error response
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        type: error.type || 'unknown',
-        code: error.code || 'unknown',
-        detail: error.detail || 'No additional details'
+        error: "An unexpected error occurred processing the webhook",
+        message: error.message
       }),
       { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        status: 500, 
+        headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
