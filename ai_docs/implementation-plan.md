@@ -748,25 +748,30 @@ page ✅
     - Add proper error handling and debugging for authorization issues
   - **Status**: ✅ Resolved - All Edge Functions now properly validate API keys
 
-- **Supabase Edge Function Authorization Bypass Issue**: Despite implementing authorization bypass for the Stripe webhook and test webhook functions, they still return 401 Unauthorized errors.
-  - **Context**: 
-    - Created a test webhook function (`stripe-webhook-test`) that should accept requests without authorization
-    - Modified the webhook functions to explicitly handle requests without authorization headers
+- **Supabase Edge Function Authorization Bypass Issue**: ✅ Resolved - Successfully implemented authorization bypass for Stripe webhook functions.
+  - **Solution**: 
+    - Added explicit configuration in `supabase/config.toml` to disable JWT verification:
+      ```toml
+      [functions.stripe-webhook]
+      enabled = true
+      verify_jwt = false
+
+      [functions.stripe-webhook-test]
+      enabled = true
+      verify_jwt = false
+      ```
+    - Modified webhook functions to handle requests without authorization headers gracefully
     - Updated CORS headers to include necessary headers for Stripe webhook requests
-    - Deployed the functions with `supabase functions deploy stripe-webhook-test`
-    - Testing with curl still returns 401 Unauthorized: `{"code":401,"message":"Missing authorization header"}`
-    - The same issue persists with the main Stripe webhook function
-  - **Potential Causes**:
-    - Supabase might have a global middleware that enforces authorization for all Edge Functions
-    - There could be a caching issue with function deployments
-    - The project settings might have a global authorization requirement
-    - The CORS headers might not be properly applied
-  - **Attempted Solutions**:
-    - Created a completely new test function to bypass any caching issues
-    - Modified the function to explicitly return 200 for all requests
-    - Updated CORS headers to be more permissive
-    - Deployed the function multiple times to ensure changes were applied
-  - **Status**: ⚠️ Unresolved - Still investigating why Edge Functions require authorization despite explicit bypass code
+    - Deployed the functions with `supabase functions deploy stripe-webhook-test` and `supabase functions deploy stripe-webhook`
+    - Testing with curl now returns 200 OK with a helpful message instead of 401 Unauthorized
+  - **Key Insight**: 
+    - Supabase Edge Functions have a global middleware that enforces JWT verification by default
+    - This must be explicitly disabled in the `config.toml` file using the `verify_jwt = false` setting
+    - Simply handling unauthorized requests in the function code is not sufficient
+  - **Verification**:
+    - Successfully tested with both the test webhook endpoint and the main Stripe webhook endpoint
+    - Both CORS preflight (OPTIONS) and direct POST requests work correctly
+    - The webhook returns a helpful message explaining that it requires a Stripe-Signature header for actual webhook processing
 
 - **Stripe Product Configuration**: The subscription plans endpoint was returning an empty array due to missing product configuration in Stripe.
   - **Solution**:
