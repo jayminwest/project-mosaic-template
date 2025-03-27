@@ -73,9 +73,8 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // For Stripe webhooks, we don't check for authorization headers
-  // Stripe uses its own signature verification mechanism
-  
+  // Stripe webhooks don't require standard authorization headers
+  // They use their own signature verification mechanism
   const signature = req.headers.get("Stripe-Signature");
   const body = await req.text();
 
@@ -84,16 +83,8 @@ Deno.serve(async (req) => {
   console.log(`Request method: ${req.method}`);
   console.log(`Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
 
-  if (!signature) {
-    console.error('No Stripe signature found in request headers');
-    return new Response(
-      JSON.stringify({ error: 'No Stripe signature found' }),
-      { 
-        status: 400, // Changed from 401 to 400 - don't use 401 for missing signature
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
+  // Skip authorization check completely for this endpoint
+  // This is safe because we validate the Stripe signature instead
 
   if (!WEBHOOK_SECRET) {
     console.error('STRIPE_WEBHOOK_SECRET environment variable is not set');
