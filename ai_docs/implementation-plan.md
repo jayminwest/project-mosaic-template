@@ -368,32 +368,7 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Create environment reset script for testing
   - [x] Fix profile page to handle subscription query parameters
   - [x] Implement proper error handling for subscription flow
-
-Readonly:                        ai_docs/PROJECT_MOSAIC_OVERVIEW.md
-ai_docs/architecture.md          ai_docs/customization.md          
-ai_docs/email-configuration.md   ai_docs/email-service-guide.md    
-ai_docs/glossary.md              ai_docs/stripe-configuration.md   
-ai_docs/template-requirements.md                                   
-
-Editable:                              ai_docs/implementation-plan.md    
-ai_docs/stripe-portal-configuration.md app/dashboard/page.tsx            
-app/profile/page.tsx                   components/composed/UsageStats.tsx
-hooks/useSubscription.ts               lib/config/features.ts            
-lib/config/subscription.ts             lib/config/useConfig.ts           
-lib/payment/payment-service.ts         types/subscription.ts                     
-> Update the - [ ] **User Plan Correspondence** section of ai_docs/implementation
-> -plan.md with a detailed plan for how to complete this. Include exact file path
-> s, usage patterns, and code snippets for all changes. We are just creating the 
-> plan so ONLY update that section of ai_docs/implementation-plan.md, no other se
-> ction and no other file                                                        
-
-I'll update the User Plan Correspondence section of the implementation plan with 
-a detailed approach.                                                             
-
-ai_docs/implementation-plan.md                                                   
-
-                                                                                 
-<<<<<<< SEARCH                                                                   
+                                                                  
 ## Phase 6: Pricing Page Fix & A/B Testing Framework                             
                                                                                  
 - [x] **Pricing Page Fix**                                                       
