@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
-import { isInGracePeriod, getRemainingGraceDays, getGracePeriodEndDate } from '../lib/config/plan-access.ts';
+import { isInGracePeriod, getRemainingGraceDays, getGracePeriodEndDate } from '../lib/config/plan-access';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
