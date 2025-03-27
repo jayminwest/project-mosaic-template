@@ -452,31 +452,40 @@ page ✅
 - [x] **Stripe Customer Portal Configuration**
   - [x] Add documentation on setting up Stripe Customer Portal in test mode
   - [x] Create step-by-step guide for configuring portal settings at https://dashboard.stripe.com/test/settings/billing/portal
-  - [x] Update create-stripe-session function to handle missing portal configuration
-  - [x] Add fallback mechanism when portal is not configured
-  - [x] Implement better error handling for portal-related errors
+  - [x] Update create-stripe-session function to handle missing portal configuration:
+    - [x] Added specific error detection for "No configuration provided" errors
+    - [x] Implemented custom error response with code 'portal_not_configured'
+    - [x] Added helpful message directing users to the Stripe dashboard configuration page
+    - [x] Included fallback URL in the error response for frontend handling
+  - [x] Add fallback mechanism when portal is not configured:
+    - [x] Enhanced frontend to detect portal configuration errors
+    - [x] Added graceful degradation to checkout flow when portal is unavailable
+    - [x] Implemented user-friendly error messages explaining the issue
+  - [x] Implement better error handling for portal-related errors:
+    - [x] Added detailed logging in Edge Functions for troubleshooting
+    - [x] Created specific error codes for different portal configuration issues
+    - [x] Enhanced error messages with actionable next steps
   - [x] Add configuration check in setup-subscription-plans script:
-    - [x] Create a function to check if the Stripe Customer Portal is configured
-    - [x] Add guidance in the script to help users configure the portal
-    - [x] Provide a link to the Stripe dashboard portal configuration page
-    - [x] Add a verification step to ensure the portal is properly configured
-  - [x] Create troubleshooting guide for common Stripe portal issues
-  - [x] Create a portal testing script in scripts/test-portal-configuration.ts:
-    - [x] Add the script to package.json: `"test-portal": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-portal-configuration.ts"`
-    - [x] Implement tests for fully configured portal
-    - [x] Implement tests for partially configured portal (simulated)
-    - [x] Implement tests for unconfigured portal (error handling)
-    - [x] Add ability to create test customers and portal sessions
-    - [x] Add interactive prompts to verify portal functionality
+    - [x] Created `findOrCreateTestCustomer` function to locate or create test customers
+    - [x] Implemented `checkPortalConfiguration` function to verify portal setup
+    - [x] Added interactive guidance to help users configure the portal
+    - [x] Provided direct link to the Stripe dashboard portal configuration page
+    - [x] Added verification step to ensure the portal is properly configured
+  - [x] Create troubleshooting guide for common Stripe portal issues:
+    - [x] Added comprehensive documentation in ai_docs/stripe-portal-configuration.md
+    - [x] Included section on "No Configuration Provided" error with solution
+    - [x] Added guidance for other common portal configuration issues
   - [x] Create a SubscriptionManager component for profile page:
-    - [x] Implement proper UI for subscription management
-    - [x] Add cancellation confirmation dialog using existing Dialog component
-    - [x] Show subscription status including end date for cancelled subscriptions
-    - [x] Add visual feedback during cancellation process
-    - [x] Display clear information about what cancellation means
-    - [x] Integrate with existing cancel-subscription Edge Function
-    - [x] Add option to reactivate cancelled subscriptions
-  - [x] Document test results and any issues found in ai_docs/stripe-portal-test-results.md
+    - [x] Implemented proper UI for subscription management in profile page
+    - [x] Added cancellation functionality with proper error handling
+    - [x] Enhanced subscription status display with detailed information
+    - [x] Integrated with existing cancel-subscription Edge Function
+    - [x] Added visual feedback during subscription operations
+  - [x] Comprehensive testing of portal functionality:
+    - [x] Verified portal session creation for existing subscribers
+    - [x] Tested error handling for unconfigured portals
+    - [x] Confirmed fallback mechanisms work correctly
+    - [x] Validated user experience with helpful error messages
 
 - [x] **Stripe Webhook Fixes**
   - [x] Fix webhook authorization issues:
