@@ -70,15 +70,27 @@ async function testCancellationFlow() {
   // Test 1: Check if cancellation_reasons table exists
   console.log(chalk.yellow('\nTest 1: Checking if cancellation_reasons table exists'));
   try {
-    const { data: tables, error } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'cancellation_reasons');
+    // Use a more direct approach to check if the table exists
+    const { data, error } = await supabase.rpc('column_exists', {
+      table_name: 'cancellation_reasons',
+      column_name: 'user_id'
+    });
     
-    if (error) throw error;
-    
-    if (tables && tables.length > 0) {
+    if (error) {
+      // If the RPC function doesn't exist, try a direct query
+      const { count, error: countError } = await supabase
+        .from('cancellation_reasons')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError && countError.code === '42P01') {
+        console.log(chalk.red('✗ cancellation_reasons table does not exist'));
+        console.log(chalk.gray('Please run the migration to create the table'));
+      } else if (countError) {
+        throw countError;
+      } else {
+        console.log(chalk.green('✓ cancellation_reasons table exists'));
+      }
+    } else if (data) {
       console.log(chalk.green('✓ cancellation_reasons table exists'));
     } else {
       console.log(chalk.red('✗ cancellation_reasons table does not exist'));
@@ -122,28 +134,46 @@ async function testCancellationFlow() {
   let testUserId: string | null = null;
   
   try {
-    // Check if test user exists
-    const { data: existingUsers, error: userError } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('email', 'test-cancellation@example.com')
-      .limit(1);
+    // Create a test user directly
+    const { data: authUser, error: createError } = await supabase.auth.admin.createUser({
+      email: 'test-cancellation@example.com',
+      password: 'test-password',
+      email_confirm: true
+    });
     
-    if (userError) throw userError;
-    
-    if (existingUsers && existingUsers.length > 0) {
-      testUserId = existingUsers[0].user_id;
-      console.log(chalk.gray(`Using existing test user: ${testUserId}`));
-    } else {
-      // Create a test user
-      const { data: authUser, error: createError } = await supabase.auth.admin.createUser({
-        email: 'test-cancellation@example.com',
-        password: 'test-password',
-        email_confirm: true
-      });
-      
-      if (createError) throw createError;
-      
+    if (createError) {
+      // If user already exists, try to get the user_id
+      if (createError.message.includes('already exists')) {
+        // Get user by email from auth.users
+        const { data: users, error: getUserError } = await supabase
+          .from('auth.users')
+          .select('id')
+          .eq('email', 'test-cancellation@example.com')
+          .limit(1);
+        
+        if (getUserError) {
+          // If we can't query auth.users directly, get the first available user
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .limit(1);
+          
+          if (profilesError) throw profilesError;
+          
+          if (profiles && profiles.length > 0) {
+            testUserId = profiles[0].user_id;
+            console.log(chalk.gray(`Using existing user: ${testUserId}`));
+          } else {
+            throw new Error('No users found in the database');
+          }
+        } else if (users && users.length > 0) {
+          testUserId = users[0].id;
+          console.log(chalk.gray(`Found existing test user: ${testUserId}`));
+        }
+      } else {
+        throw createError;
+      }
+    } else if (authUser) {
       testUserId = authUser.user.id;
       console.log(chalk.gray(`Created new test user: ${testUserId}`));
     }
