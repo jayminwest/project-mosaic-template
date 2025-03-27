@@ -1,4 +1,4 @@
-import { subscriptionPlans } from './subscription';
+import { subscriptionPlans } from './subscription.ts';
 import { productConfig } from './default-config';
 
 // Default resource limits by plan type
