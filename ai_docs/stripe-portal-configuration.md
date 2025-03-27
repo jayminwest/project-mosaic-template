@@ -115,7 +115,55 @@ Project Mosaic handles the Stripe Customer Portal integration through:
 2. The `useSubscription` hook, which provides the frontend interface for managing subscriptions
 3. Error handling for cases where the portal is not configured
 
-If the Customer Portal is not configured, Project Mosaic will display an error message with instructions on how to configure it.
+### Portal Configuration Detection
+
+The system automatically detects if the Customer Portal is configured:
+
+```typescript
+// In setup-subscription-plans.ts
+async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
+  try {
+    // Create a test customer to check portal configuration
+    const customer = await findOrCreateTestCustomer(stripe);
+    
+    // Attempt to create a portal session
+    await stripe.billingPortal.sessions.create({
+      customer: customer.id,
+      return_url: 'https://example.com',
+    });
+    
+    return true;
+  } catch (error: any) {
+    if (error.message.includes('No configuration provided') || 
+        error.message.includes('default configuration has not been created')) {
+      return false;
+    }
+    // If it's another type of error, we'll assume the portal might be configured
+    // but there's another issue
+    console.error('Error checking portal configuration:', error.message);
+    return false;
+  }
+}
+```
+
+### Error Handling
+
+If the Customer Portal is not configured, the system provides a helpful error message:
+
+```typescript
+// In payment-service.ts
+if (response.code === 'portal_not_configured') {
+  setError("Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard.");
+  
+  // Redirect to the fallback URL if provided
+  if (response.fallbackUrl && typeof window !== 'undefined') {
+    window.location.href = response.fallbackUrl;
+    return;
+  }
+}
+```
+
+This approach ensures users receive clear guidance when the portal isn't properly configured.
 
 ## Going Live
 

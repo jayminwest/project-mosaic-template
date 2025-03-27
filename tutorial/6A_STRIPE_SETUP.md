@@ -166,6 +166,34 @@ Configure webhooks to notify your application about subscription events:
 5. Click **Add Endpoint**
 6. Save the **Signing Secret** (`whsec_...`)
 
+### Disable JWT Verification for Webhook Functions
+
+Supabase Edge Functions require JWT verification by default, but webhook endpoints need to accept unauthenticated requests from Stripe. To disable JWT verification:
+
+1. Update your `supabase/config.toml` file to include:
+   ```toml
+   [functions.stripe-webhook]
+   enabled = true
+   verify_jwt = false
+   
+   [functions.stripe-webhook-test]
+   enabled = true
+   verify_jwt = false
+   ```
+
+2. Deploy your functions with the updated configuration:
+   ```bash
+   supabase functions deploy stripe-webhook
+   supabase functions deploy stripe-webhook-test
+   ```
+
+3. Test your webhook configuration:
+   ```bash
+   npm run test-webhook
+   ```
+
+This configuration allows Stripe to send webhook events without authentication while still maintaining security through the Stripe signature verification.
+
 ## Create Subscription Plans in Supabase
 
 Create a new edge function to list your subscription plans:

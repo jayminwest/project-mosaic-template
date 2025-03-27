@@ -144,13 +144,26 @@ serve(async (req) => {
 
 Make sure your Edge Functions are properly configured for authorization:
 
-1. For the webhook function, disable JWT verification:
-   - Go to your Supabase Dashboard → Edge Functions → stripe-webhook → Details
-   - Disable "Enforce JWT Verification"
+1. For the webhook function, disable JWT verification in your `supabase/config.toml`:
+   ```toml
+   [functions.stripe-webhook]
+   enabled = true
+   verify_jwt = false
+   ```
 
 2. For all other functions, ensure they handle both authorization methods:
    - They should accept both `apikey` header and `Authorization: Bearer` token format
    - The payment service should send both headers for compatibility
+
+3. Test your webhook configuration:
+   ```bash
+   npm run test-webhook
+   ```
+   
+   This script will verify that:
+   - CORS preflight requests work correctly
+   - The webhook endpoint is accessible without authorization headers
+   - The endpoint returns a helpful message for requests without a Stripe signature
 
 Review the implementation in `supabase/functions/stripe-webhook/index.ts`:
 
@@ -265,12 +278,44 @@ serve(async (req) => {
 });
 ```
 
-## Disable JWT Verification for Webhook
+## Implement Webhook Security
 
-Disable JWT verification for the webhook function since it receives requests directly from Stripe:
+The webhook function needs to be accessible without JWT verification, but still secure. Here's how it's implemented:
 
-1. Go to your Supabase Dashboard → Edge Functions → stripe-webhook → Details
-2. Disable "Enforce JWT Verification"
+1. JWT verification is disabled in `supabase/config.toml`:
+   ```toml
+   [functions.stripe-webhook]
+   enabled = true
+   verify_jwt = false
+   ```
+
+2. Security is maintained through Stripe signature verification:
+   ```typescript
+   const signature = req.headers.get("stripe-signature");
+   
+   if (!signature) {
+     return new Response(JSON.stringify({ 
+       message: 'This is the Stripe webhook endpoint. For security, it requires a valid Stripe-Signature header.',
+       status: 'ok',
+       note: 'Use the Stripe CLI to send properly signed webhook events.'
+     }), {
+       status: 200,
+       headers: { ...webhookCorsHeaders, 'Content-Type': 'application/json' }
+     });
+   }
+   
+   // Verify the webhook signature
+   const event = stripe.webhooks.constructEvent(
+     body,
+     signature,
+     STRIPE_WEBHOOK_SECRET
+   );
+   ```
+
+3. This approach provides a good balance:
+   - Allows Stripe to send webhook events without authentication
+   - Maintains security by requiring a valid Stripe signature
+   - Provides helpful responses for testing and troubleshooting
 
 ## Set Function Secrets
 

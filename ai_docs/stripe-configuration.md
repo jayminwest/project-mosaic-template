@@ -161,7 +161,19 @@ If your subscription plans aren't appearing correctly:
 5. **Authorization Issues**
    - Ensure your Edge Functions accept both `apikey` header and `Authorization: Bearer` token format
    - Check that your payment service is sending the correct authorization headers
-   - Verify that JWT verification is properly configured for your Edge Functions
+   - For webhook functions, disable JWT verification in `supabase/config.toml`:
+     ```toml
+     [functions.stripe-webhook]
+     enabled = true
+     verify_jwt = false
+     ```
+   - Test your webhook configuration with `npm run test-webhook`
+
+6. **Webhook Authorization Bypass**
+   - If your webhook functions return 401 Unauthorized errors despite disabling JWT verification in the dashboard:
+     - Update `supabase/config.toml` with explicit JWT verification bypass
+     - Deploy the functions again with `supabase functions deploy stripe-webhook`
+     - Test with curl: `curl -X POST https://YOUR-PROJECT-ID.supabase.co/functions/v1/stripe-webhook -H "Content-Type: application/json" -d '{"test": true}'`
 
 ## Updating Plans
 
