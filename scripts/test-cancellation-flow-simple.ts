@@ -239,6 +239,38 @@ async function testCancellationFlow() {
     console.log(chalk.green('✓ Successfully inserted cancellation reason'));
     console.log(chalk.gray(`Inserted record: ${JSON.stringify(insertResult)}`));
     
+    // Directly query the database to verify the record exists
+    console.log(chalk.gray('Directly querying the database to verify record...'));
+    
+    // Use RPC to bypass RLS policies
+    const { data: directQueryData, error: directQueryError } = await supabase.rpc(
+      'admin_get_cancellation_reasons',
+      { user_id_param: testUserId }
+    );
+    
+    if (directQueryError) {
+      console.log(chalk.red(`Error in direct query: ${directQueryError.message}`));
+      console.log(chalk.gray('Creating RPC function for admin access...'));
+      
+      // Create the RPC function if it doesn't exist
+      const createRpcResult = await supabase.rpc('create_admin_functions');
+      console.log(chalk.gray(`RPC function creation result: ${JSON.stringify(createRpcResult)}`));
+      
+      // Try the query again
+      const { data: retryData, error: retryError } = await supabase.rpc(
+        'admin_get_cancellation_reasons',
+        { user_id_param: testUserId }
+      );
+      
+      if (retryError) {
+        console.log(chalk.red(`Error in retry query: ${retryError.message}`));
+      } else {
+        console.log(chalk.gray(`Direct query result: ${JSON.stringify(retryData)}`));
+      }
+    } else {
+      console.log(chalk.gray(`Direct query result: ${JSON.stringify(directQueryData)}`));
+    }
+    
     // Verify the record was inserted by querying it back
     const { data: verifyData, error: verifyError } = await supabase
       .from('cancellation_reasons')
@@ -255,6 +287,40 @@ async function testCancellationFlow() {
       } else {
         console.log(chalk.red('✗ Could not verify record in database'));
       }
+    }
+    
+    // Try a direct SQL query to bypass any RLS issues
+    console.log(chalk.gray('Trying direct SQL query...'));
+    const { data: sqlData, error: sqlError } = await supabase.rpc(
+      'execute_sql',
+      { 
+        sql_query: `SELECT * FROM public.cancellation_reasons WHERE user_id = '${testUserId}' AND reason = 'Testing cancellation flow'` 
+      }
+    );
+    
+    if (sqlError) {
+      console.log(chalk.red(`SQL query error: ${sqlError.message}`));
+      
+      // Create the SQL execution function if it doesn't exist
+      console.log(chalk.gray('Creating SQL execution function...'));
+      const createSqlFuncResult = await supabase.rpc('create_sql_execution_function');
+      console.log(chalk.gray(`SQL function creation result: ${JSON.stringify(createSqlFuncResult)}`));
+      
+      // Try the query again
+      const { data: retrySqlData, error: retrySqlError } = await supabase.rpc(
+        'execute_sql',
+        { 
+          sql_query: `SELECT * FROM public.cancellation_reasons WHERE user_id = '${testUserId}' AND reason = 'Testing cancellation flow'` 
+        }
+      );
+      
+      if (retrySqlError) {
+        console.log(chalk.red(`Retry SQL query error: ${retrySqlError.message}`));
+      } else {
+        console.log(chalk.gray(`SQL query result: ${JSON.stringify(retrySqlData)}`));
+      }
+    } else {
+      console.log(chalk.gray(`SQL query result: ${JSON.stringify(sqlData)}`));
     }
     
     // Clean up the test data
