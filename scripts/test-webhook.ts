@@ -73,6 +73,32 @@ async function testWebhook() {
       console.log(chalk.red(`✗ Webhook still requires authorization headers: ${postResponse.status} - ${JSON.stringify(postData)}`));
     }
     
+    // Also test the main webhook endpoint
+    const mainWebhookUrl = `${SUPABASE_URL}/functions/v1/stripe-webhook`;
+    console.log(chalk.gray(`\nTesting main webhook endpoint: ${mainWebhookUrl}`));
+    
+    // Test a POST request to the main webhook
+    console.log(chalk.gray('Testing POST request to main webhook without signature...'));
+    const mainPostResponse = await fetch(mainWebhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ test: true })
+    });
+    
+    const mainPostData = await mainPostResponse.json();
+    console.log(chalk.yellow(`Main webhook response: ${mainPostResponse.status}`));
+    console.log(chalk.gray(`Response body: ${JSON.stringify(mainPostData)}`));
+    
+    // Check if the main webhook is accessible
+    if (mainPostResponse.status !== 401) {
+      console.log(chalk.green('✓ Main webhook endpoint is accessible without authorization headers'));
+      console.log(chalk.gray(`Response: ${mainPostResponse.status} - ${JSON.stringify(mainPostData)}`));
+    } else {
+      console.log(chalk.red(`✗ Main webhook still requires authorization headers: ${mainPostResponse.status} - ${JSON.stringify(mainPostData)}`));
+    }
+    
     // Ask if user wants to trigger a real webhook event
     const { triggerEvent } = await inquirer.prompt([
       {
