@@ -546,6 +546,29 @@ page ✅
   - [ ] Create admin dashboard for managing tests
   - [ ] Add documentation and examples
 
+- [ ] **Documentation & AI Assistance**
+  - [ ] Update tutorial/ directory for use with Aider as standalone tool:
+    - [ ] Reorganize tutorial files to be more modular and standalone
+    - [ ] Add specific instructions for using with Aider
+    - [ ] Create numbered sequence for step-by-step guidance
+    - [ ] Add code examples that can be directly copied
+    - [ ] Include troubleshooting sections for common issues
+    - [ ] Create a tutorial index file for easy navigation
+    - [ ] Add screenshots or diagrams where helpful
+    - [ ] Ensure all commands are properly formatted for copy-paste
+  
+  - [ ] Ensure ai_docs/ directory is current and comprehensive:
+    - [ ] Audit all existing documentation for accuracy
+    - [ ] Update any outdated information
+    - [ ] Add missing documentation for new features
+    - [ ] Create a comprehensive index of all documentation
+    - [ ] Ensure consistent formatting across all files
+    - [ ] Add cross-references between related documents
+    - [ ] Include more code examples and usage patterns
+    - [ ] Create specialized documentation for AI assistance
+    - [ ] Add troubleshooting guides for common issues
+    - [ ] Ensure all configuration options are documented
+
 ## Phase 7: AI Dashboard Integration
 
 - [x] **AI Usage Tracking Database Schema**
