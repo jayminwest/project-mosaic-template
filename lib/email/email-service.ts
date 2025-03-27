@@ -15,20 +15,29 @@ export interface EmailOptions {
 }
 
 export class EmailService {
-  private resend: Resend;
+  private resend: Resend | null;
   private defaultFrom: string;
   private isConfigured: boolean;
 
   constructor() {
-    const apiKey = process.env.RESEND_API_KEY;
+    // Only initialize Resend on the server side
+    const isServer = typeof window === 'undefined';
+    const apiKey = isServer ? process.env.RESEND_API_KEY : null;
     this.defaultFrom = process.env.EMAIL_FROM || 'noreply@example.com';
     this.isConfigured = !!apiKey;
     
-    this.resend = new Resend(apiKey);
+    // Initialize Resend only if we have an API key and we're on the server
+    this.resend = isServer && apiKey ? new Resend(apiKey) : null;
   }
 
   async sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    if (!this.isConfigured) {
+    // Check if we're on the client side
+    if (typeof window !== 'undefined') {
+      console.warn('Email sending is not supported on the client side');
+      return { success: false, error: 'Email sending is not supported in browser' };
+    }
+    
+    if (!this.isConfigured || !this.resend) {
       console.warn('Email service not configured. Set RESEND_API_KEY in your environment variables.');
       return { success: false, error: 'Email service not configured' };
     }
@@ -69,7 +78,12 @@ export class EmailService {
   }
 
   async verifyConfiguration(): Promise<boolean> {
-    if (!this.isConfigured) {
+    // Check if we're on the client side
+    if (typeof window !== 'undefined') {
+      return false;
+    }
+    
+    if (!this.isConfigured || !this.resend) {
       return false;
     }
 
@@ -91,7 +105,12 @@ export class EmailService {
 
   // Helper method to programmatically add a domain
   async addDomain(domain: string): Promise<{ success: boolean; error?: string }> {
-    if (!this.isConfigured) {
+    // Check if we're on the client side
+    if (typeof window !== 'undefined') {
+      return { success: false, error: 'Domain management is not supported in browser' };
+    }
+    
+    if (!this.isConfigured || !this.resend) {
       return { success: false, error: 'Email service not configured' };
     }
 
