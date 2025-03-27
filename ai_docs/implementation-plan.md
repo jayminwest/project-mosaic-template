@@ -544,6 +544,18 @@ page ✅
     - [ ] Verify all database updates occur correctly
     - [ ] Test email notifications are sent properly
     - [ ] Ensure grace period works as expected
+    - [ ] Complete testing checklist:
+      - [ ] User can cancel subscription from profile page
+      - [ ] Confirmation dialog appears with reason field
+      - [ ] Loading state shows during cancellation
+      - [ ] Success toast appears after cancellation
+      - [ ] Grace period message shows on profile page
+      - [ ] Cancellation reason is stored in database
+      - [ ] Reactivation button appears during grace period
+      - [ ] User can reactivate subscription with one click
+      - [ ] Email is sent to user after cancellation
+      - [ ] Premium features remain accessible during grace period
+      - [ ] Subscription status updates correctly in Stripe
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
