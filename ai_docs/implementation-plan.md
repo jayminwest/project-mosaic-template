@@ -480,21 +480,62 @@ page ✅
   - [x] Update create-stripe-session function to handle missing portal configuration
   - [x] Add fallback mechanism when portal is not configured
   - [x] Implement better error handling for portal-related errors
-  - [ ] Add configuration check in setup-subscription-plans script
+  - [ ] Add configuration check in setup-subscription-plans script:
+    - [ ] Create a function to check if the Stripe Customer Portal is configured
+    - [ ] Add guidance in the script to help users configure the portal
+    - [ ] Provide a link to the Stripe dashboard portal configuration page
+    - [ ] Add a verification step to ensure the portal is properly configured
   - [x] Create troubleshooting guide for common Stripe portal issues
-  - [ ] Test portal functionality with various configuration settings
+  - [ ] Test portal functionality with various configuration settings:
+    - [ ] Test with portal fully configured
+    - [ ] Test with portal partially configured
+    - [ ] Test with portal not configured at all
+    - [ ] Verify error handling and fallback mechanisms work correctly
+    - [ ] Document test results and any issues found
 
 - [ ] **Subscription Cancellation Handling**
-  - [ ] Implement proper UI feedback when a user cancels their subscription
-  - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations
-  - [ ] Create webhook handler for subscription cancellation events
-  - [ ] Update user profile with correct subscription status after cancellation
-  - [ ] Implement grace period for accessing premium features after cancellation
-  - [ ] Add re-subscribe option for recently cancelled subscriptions
-  - [ ] Create email notification for subscription cancellation
-  - [ ] Add analytics tracking for cancellation reasons
-  - [ ] Implement subscription retention offers for cancelling users
-  - [ ] Test full cancellation flow from UI to database updates
+  - [ ] Implement proper UI feedback when a user cancels their subscription:
+    - [ ] Create a confirmation modal with clear messaging about what cancellation means
+    - [ ] Add visual feedback during the cancellation process (loading state)
+    - [ ] Show success message after successful cancellation
+    - [ ] Display information about when access will end
+  - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations:
+    - [ ] Create a reusable ConfirmationDialog component in components/ui/
+    - [ ] Add clear messaging about the consequences of cancellation
+    - [ ] Include option to provide cancellation reason (optional)
+  - [x] Create webhook handler for subscription cancellation events:
+    - [x] Update stripe-webhook function to handle customer.subscription.deleted events
+    - [x] Add logic to update user profile with correct subscription status
+    - [x] Implement proper error handling for webhook processing
+  - [x] Update user profile with correct subscription status after cancellation:
+    - [x] Modify profile table to track cancellation date and reason
+    - [x] Update subscription_status field to reflect cancellation
+    - [x] Ensure UI correctly displays cancellation status
+  - [ ] Implement grace period for accessing premium features after cancellation:
+    - [ ] Add logic to check if user is in grace period in hasFeatureAccess function
+    - [ ] Update UI to show grace period expiration date
+    - [ ] Create helper function to calculate remaining grace period days
+  - [ ] Add re-subscribe option for recently cancelled subscriptions:
+    - [ ] Show re-subscribe button for cancelled subscriptions
+    - [ ] Implement one-click reactivation for subscriptions in grace period
+    - [ ] Add special messaging for returning customers
+  - [ ] Create email notification for subscription cancellation:
+    - [ ] Design cancellation email template in lib/email/templates/components/
+    - [ ] Add function to send cancellation email in lib/auth/auth-emails.ts
+    - [ ] Include information about grace period and how to resubscribe
+  - [ ] Add analytics tracking for cancellation reasons:
+    - [ ] Create cancellation_reasons table in database
+    - [ ] Add logic to store cancellation reasons from confirmation dialog
+    - [ ] Create simple report view for cancellation analytics
+  - [ ] Implement subscription retention offers for cancelling users:
+    - [ ] Create a mechanism to offer discounts to cancelling users
+    - [ ] Add UI for displaying retention offers in cancellation flow
+    - [ ] Implement backend logic to apply retention discounts
+  - [ ] Test full cancellation flow from UI to database updates:
+    - [ ] Create test script for cancellation flow
+    - [ ] Verify all database updates occur correctly
+    - [ ] Test email notifications are sent properly
+    - [ ] Ensure grace period works as expected
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
