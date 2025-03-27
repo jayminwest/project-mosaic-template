@@ -235,10 +235,148 @@ Follow this step-by-step process to customize the template:
 
 ### Implementing AI Features
 
-1. Define prompts in `lib/ai/prompts/index.ts`
-2. Create AI-enhanced functions in your product service
-3. Implement UI components that use these functions
-4. Add fallback mechanisms for when AI is unavailable
+1. Define prompts in `lib/ai/prompts/index.ts`:
+   ```typescript
+   // Create a prompt manager instance
+   const promptManager = new PromptManager();
+   
+   // Add a new prompt template
+   promptManager.addTemplate({
+     id: 'product-description',
+     version: '1.0.0',
+     description: 'Generates product descriptions',
+     category: 'marketing',
+     systemPrompt: 'You are a marketing copywriter who creates compelling product descriptions.',
+     userPrompt: 'Create a product description for {{productName}} that highlights {{features}}.',
+   });
+   ```
+
+2. Create AI-enhanced functions using the useAI hook:
+   ```typescript
+   import { useAI } from '@/lib/ai/hooks/useAI';
+   
+   // In your component or custom hook
+   function useProductAI() {
+     const { 
+       generateFromTemplate, 
+       generateCompletion,
+       isLoading, 
+       error 
+     } = useAI();
+     
+     const generateProductDescription = async (productName: string, features: string[]) => {
+       try {
+         // Using a template
+         return await generateFromTemplate('product-description', {
+           productName,
+           features: features.join(', ')
+         });
+         
+         // Or using direct messages
+         /*
+         return await generateCompletion([
+           { role: 'system', content: 'You are a marketing copywriter who creates compelling product descriptions.' },
+           { role: 'user', content: `Create a product description for ${productName} that highlights ${features.join(', ')}.` }
+         ]);
+         */
+       } catch (error) {
+         console.error('AI generation failed:', error);
+         return 'Failed to generate product description. Please try again later.';
+       }
+     };
+     
+     return {
+       generateProductDescription,
+       isLoading,
+       error
+     };
+   }
+   ```
+
+3. Implement UI components that use these functions:
+   ```tsx
+   import { useState } from 'react';
+   import { Button } from '@/components/ui/button';
+   
+   // In your React component
+   function ProductDescriptionGenerator() {
+     const [productName, setProductName] = useState('');
+     const [features, setFeatures] = useState<string[]>([]);
+     const [description, setDescription] = useState('');
+     const { generateProductDescription, isLoading } = useProductAI();
+     
+     const handleGenerate = async () => {
+       const result = await generateProductDescription(productName, features);
+       setDescription(result);
+     };
+     
+     return (
+       <div>
+         {/* Form inputs */}
+         <Button onClick={handleGenerate} disabled={isLoading}>
+           {isLoading ? 'Generating...' : 'Generate Description'}
+         </Button>
+         {description && <div className="mt-4">{description}</div>}
+       </div>
+     );
+   }
+   ```
+
+4. Track AI usage for analytics and limits:
+   ```typescript
+   // After generating content, track the usage
+   const trackAIUsage = async (prompt: string, response: string, model: string) => {
+     try {
+       await supabase.from('ai_interactions').insert({
+         user_id: userId,
+         prompt_length: prompt.length,
+         response_length: response.length,
+         model_used: model,
+         created_at: new Date().toISOString()
+       });
+     } catch (error) {
+       console.error('Failed to track AI usage:', error);
+     }
+   };
+   
+   // Use it after generating content
+   const response = await generateProductDescription(productName, features);
+   await trackAIUsage(
+     `Create a product description for ${productName}`, 
+     response, 
+     'gpt-4o'
+   );
+   ```
+
+5. Implement usage limits based on subscription plan:
+   ```typescript
+   import { getResourceLimit } from '@/lib/config/plan-access';
+   import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+   
+   function AIFeature() {
+     const { hasAccess } = useFeatureAccess('advancedAI');
+     const aiLimit = getResourceLimit(user.subscription_plan || 'free', 'AIInteractions');
+     const currentUsage = user.usage_metrics?.ai_interactions_count || 0;
+     
+     if (!hasAccess) {
+       return <UpgradePrompt feature="Advanced AI" />;
+     }
+     
+     if (currentUsage >= aiLimit) {
+       return (
+         <FeatureLimit
+           title="AI Usage Limit Reached"
+           description="You've reached your monthly AI usage limit."
+           current={currentUsage}
+           limit={aiLimit}
+           showUpgradeLink
+         />
+       );
+     }
+     
+     return <AIComponent />;
+   }
+   ```
 
 ### Customizing Email Templates
 
@@ -249,10 +387,150 @@ Follow this step-by-step process to customize the template:
 
 ### Customizing Subscription Tiers
 
-1. Update subscription plans in `lib/config/subscription.ts`
-2. Create Stripe products and prices (automatically handled by setup scripts)
-3. Update the subscription management UI
-4. Implement tier-specific feature flags in `lib/config/features.ts`
+1. Update subscription plans in `lib/config/subscription.ts`:
+   ```typescript
+   export const subscriptionPlans: SubscriptionPlan[] = [
+     {
+       id: "free",
+       name: "Free",
+       description: "Basic features for personal use",
+       priceId: "", // No price ID for free plan
+       price: 0,
+       currency: "USD",
+       interval: "month",
+       planType: "free",
+       features: [
+         "Up to 10 resources",
+         "5MB storage",
+         "Basic features"
+       ]
+     },
+     {
+       id: "premium",
+       name: "Premium",
+       description: "Advanced features for professionals",
+       priceId: "price_1234567890", // Will be updated by setup script
+       price: 9.99,
+       currency: "USD",
+       interval: "month",
+       planType: "premium",
+       features: [
+         "Up to 100 resources",
+         "50MB storage",
+         "Advanced features",
+         "Priority support"
+       ]
+     }
+   ];
+   ```
+
+2. Create Stripe products and prices using the setup script:
+   ```bash
+   npm run setup-subscription-plans
+   ```
+   
+   This script will:
+   - Create products in Stripe with proper metadata
+   - Set up pricing tiers
+   - Configure features and resource limits
+   - Update your local configuration with Stripe price IDs
+
+3. Update the subscription management UI:
+   - Use the `FeatureLimit` component to show resource usage:
+     ```tsx
+     <FeatureLimit
+       title="AI Usage"
+       description="Monthly AI interactions"
+       current={metrics?.ai_interactions_count || 0}
+       limit={getResourceLimit(user?.subscription_plan || 'free', 'AIInteractions')}
+       showUpgradeLink={user?.subscription_plan === 'free'}
+     />
+     ```
+   
+   - Add `PremiumBadge` to premium features:
+     ```tsx
+     <div className="flex items-center">
+       Advanced Analytics
+       <PremiumBadge type="premium" className="ml-2" />
+     </div>
+     ```
+   
+   - Implement `UpgradePrompt` for free users:
+     ```tsx
+     {!hasAccess && (
+       <UpgradePrompt
+         feature="Advanced AI"
+         description="Upgrade to Premium to access advanced AI features"
+       />
+     )}
+     ```
+
+4. Use the plan-access helpers for feature access control:
+   ```typescript
+   import { hasFeatureAccess, getResourceLimit } from '@/lib/config/plan-access';
+   
+   // Check if user has access to a feature
+   const canAccessAdvancedAI = hasFeatureAccess(
+     user?.subscription_plan || 'free',
+     'advanced_ai',
+     user?.cancellation_date
+   );
+   
+   // Get resource limit based on plan
+   const aiLimit = getResourceLimit(user?.subscription_plan || 'free', 'AIInteractions');
+   
+   // Check if user is in grace period after cancellation
+   const inGracePeriod = isInGracePeriod(user?.cancellation_date);
+   
+   // Get remaining days in grace period
+   const remainingDays = getRemainingGraceDays(user?.cancellation_date);
+   ```
+
+5. Use the `useFeatureAccess` hook in your components:
+   ```tsx
+   import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+   
+   function PremiumFeature() {
+     const { hasAccess, isLoading } = useFeatureAccess('advancedAI');
+     
+     if (isLoading) return <LoadingSkeleton />;
+     
+     return (
+       <div>
+         {hasAccess ? (
+           <AdvancedFeature />
+         ) : (
+           <UpgradePrompt feature="Advanced AI" />
+         )}
+       </div>
+     );
+   }
+   ```
+
+6. Handle subscription cancellation and grace period:
+   ```tsx
+   import { isInGracePeriod, getGracePeriodEndDate } from '@/lib/config/plan-access';
+   
+   function SubscriptionStatus() {
+     const inGracePeriod = isInGracePeriod(user?.cancellation_date);
+     const endDate = getGracePeriodEndDate(user?.cancellation_date);
+     
+     return (
+       <div>
+         {inGracePeriod && (
+           <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+             <h3 className="font-medium">Subscription Cancelled</h3>
+             <p>
+               Your premium access will end on {endDate}. 
+               You can reactivate your subscription before this date to avoid any interruption.
+             </p>
+             <Button onClick={handleReactivate}>Reactivate Subscription</Button>
+           </div>
+         )}
+       </div>
+     );
+   }
+   ```
 
 ## Best Practices
 
