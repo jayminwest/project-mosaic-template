@@ -480,8 +480,8 @@ page ✅
   - [x] Update create-stripe-session function to handle missing portal configuration
   - [x] Add fallback mechanism when portal is not configured
   - [x] Implement better error handling for portal-related errors
-  - [ ] Add configuration check in setup-subscription-plans script:
-    - [ ] Create a function to check if the Stripe Customer Portal is configured:
+  - [x] Add configuration check in setup-subscription-plans script:
+    - [x] Create a function to check if the Stripe Customer Portal is configured:
       ```typescript
       async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
         try {
@@ -504,7 +504,7 @@ page ✅
         }
       }
       ```
-    - [ ] Add guidance in the script to help users configure the portal:
+    - [x] Add guidance in the script to help users configure the portal:
       ```typescript
       if (!await checkPortalConfiguration(stripe)) {
         console.log(chalk.yellow('\nYour Stripe Customer Portal is not configured.'));
@@ -526,8 +526,8 @@ page ✅
         }
       }
       ```
-    - [ ] Provide a link to the Stripe dashboard portal configuration page
-    - [ ] Add a verification step to ensure the portal is properly configured
+    - [x] Provide a link to the Stripe dashboard portal configuration page
+    - [x] Add a verification step to ensure the portal is properly configured
   - [x] Create troubleshooting guide for common Stripe portal issues
   - [x] Create a portal testing script in scripts/test-portal-configuration.ts:
     - [x] Add the script to package.json: `"test-portal": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-portal-configuration.ts"`
