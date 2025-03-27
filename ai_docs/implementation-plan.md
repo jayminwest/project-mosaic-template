@@ -504,13 +504,74 @@ page ✅
 - [ ] **Subscription Cancellation Handling**
   - [ ] Implement proper UI feedback when a user cancels their subscription:
     - [ ] Create a confirmation modal with clear messaging about what cancellation means
+      ```tsx
+      // In components/ui/confirmation-dialog.tsx
+      export function ConfirmationDialog({
+        title,
+        description,
+        open,
+        onOpenChange,
+        onConfirm,
+        onCancel,
+        confirmText = "Confirm",
+        cancelText = "Cancel",
+        destructive = false,
+        showReasonField = false,
+        reasonLabel = "Reason (optional)",
+        reasonPlaceholder = "Please tell us why...",
+        isLoading = false,
+      }: ConfirmationDialogProps) {
+        // Implementation details
+      }
+      ```
     - [ ] Add visual feedback during the cancellation process (loading state)
+      ```tsx
+      // In app/profile/page.tsx
+      <Button 
+        variant="outline" 
+        onClick={() => setShowCancelDialog(true)}
+        disabled={subscriptionLoading}
+      >
+        Cancel Subscription
+      </Button>
+      ```
     - [ ] Show success message after successful cancellation
+      ```tsx
+      // Success toast notification
+      toast({
+        title: "Subscription Canceled",
+        description: "Your subscription has been canceled. You'll have access until the end of your current billing period.",
+      });
+      ```
     - [ ] Display information about when access will end
+      ```tsx
+      // Grace period message in app/profile/page.tsx
+      {subscriptionStatus?.canceledAt && isInGracePeriod(subscriptionStatus.canceledAt) && (
+        <div className="mt-2 text-sm text-amber-600 p-2 bg-amber-50 rounded-md">
+          Your subscription has been canceled. You still have access to premium features for {getRemainingGraceDays(subscriptionStatus.canceledAt)} more days (until {getGracePeriodEndDate(subscriptionStatus.canceledAt)}).
+        </div>
+      )}
+      ```
   - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations:
-    - [ ] Create a reusable ConfirmationDialog component in components/ui/
+    - [ ] Create a reusable ConfirmationDialog component in `components/ui/confirmation-dialog.tsx`
     - [ ] Add clear messaging about the consequences of cancellation
+      ```tsx
+      <ConfirmationDialog
+        title="Cancel Subscription"
+        description="Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period."
+        // Other props
+      />
+      ```
     - [ ] Include option to provide cancellation reason (optional)
+      ```tsx
+      <ConfirmationDialog
+        // Other props
+        showReasonField={true}
+        reasonLabel="Why are you canceling? (optional)"
+        reasonPlaceholder="Your feedback helps us improve our service..."
+        // Other props
+      />
+      ```
   - [x] Create webhook handler for subscription cancellation events:
     - [x] Update stripe-webhook function to handle customer.subscription.deleted events
     - [x] Add logic to update user profile with correct subscription status
@@ -521,26 +582,179 @@ page ✅
     - [x] Ensure UI correctly displays cancellation status
   - [ ] Implement grace period for accessing premium features after cancellation:
     - [ ] Add logic to check if user is in grace period in hasFeatureAccess function
+      ```typescript
+      // In lib/config/plan-access.ts
+      export function isInGracePeriod(cancellationDate?: string | null, gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS): boolean {
+        if (!cancellationDate) return false;
+        
+        const cancelDate = new Date(cancellationDate);
+        const now = new Date();
+        
+        // Calculate the end of grace period
+        const graceEndDate = new Date(cancelDate);
+        graceEndDate.setDate(graceEndDate.getDate() + gracePeriodDays);
+        
+        // User is in grace period if current date is before grace period end
+        return now <= graceEndDate;
+      }
+      
+      // Update hasFeatureAccess to consider grace periods
+      export function hasFeatureAccess(
+        planType: string, 
+        featureName: string, 
+        cancellationDate?: string | null, 
+        gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS
+      ): boolean {
+        // Implementation details
+      }
+      ```
     - [ ] Update UI to show grace period expiration date
+      ```tsx
+      // In app/profile/page.tsx
+      {subscriptionStatus?.canceledAt && isInGracePeriod(subscriptionStatus.canceledAt) && (
+        <div className="mt-2 text-sm text-amber-600 p-2 bg-amber-50 rounded-md">
+          Your subscription has been canceled. You still have access to premium features for {getRemainingGraceDays(subscriptionStatus.canceledAt)} more days (until {getGracePeriodEndDate(subscriptionStatus.canceledAt)}).
+        </div>
+      )}
+      ```
     - [ ] Create helper function to calculate remaining grace period days
+      ```typescript
+      // In lib/config/plan-access.ts
+      export function getRemainingGraceDays(cancellationDate?: string | null, gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS): number {
+        if (!cancellationDate) return 0;
+        
+        const cancelDate = new Date(cancellationDate);
+        const now = new Date();
+        
+        // Calculate the end of grace period
+        const graceEndDate = new Date(cancelDate);
+        graceEndDate.setDate(graceEndDate.getDate() + gracePeriodDays);
+        
+        // Calculate remaining days
+        const remainingTime = graceEndDate.getTime() - now.getTime();
+        const remainingDays = Math.ceil(remainingTime / (1000 * 60 * 60 * 24));
+        
+        return Math.max(0, remainingDays);
+      }
+      ```
   - [ ] Add re-subscribe option for recently cancelled subscriptions:
-    - [ ] Show re-subscribe button for cancelled subscriptions
+    - [ ] Show reactivate button for cancelled subscriptions
+      ```tsx
+      // In app/profile/page.tsx
+      {subscriptionStatus?.canceledAt && isInGracePeriod(subscriptionStatus.canceledAt) && (
+        <Button 
+          variant="default" 
+          onClick={() => setShowReactivateDialog(true)}
+          disabled={subscriptionLoading}
+        >
+          Reactivate Subscription
+        </Button>
+      )}
+      ```
     - [ ] Implement one-click reactivation for subscriptions in grace period
+      ```tsx
+      // In app/profile/page.tsx - Reactivation dialog
+      <ConfirmationDialog
+        title="Reactivate Subscription"
+        description="Would you like to reactivate your subscription? You'll continue to have access to all premium features."
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        confirmText="Yes, Reactivate"
+        cancelText="No, Thanks"
+        destructive={false}
+        isLoading={subscriptionLoading}
+        onConfirm={async () => {
+          // Implementation for reactivation
+        }}
+        onCancel={() => {
+          setShowReactivateDialog(false);
+        }}
+      />
+      ```
     - [ ] Add special messaging for returning customers
   - [ ] Create email notification for subscription cancellation:
-    - [ ] Design cancellation email template in lib/email/templates/components/
-    - [ ] Add function to send cancellation email in lib/auth/auth-emails.ts
+    - [ ] Design cancellation email template in `lib/email/templates/components/CancellationEmail.tsx`
+      ```tsx
+      export default function CancellationEmail({ 
+        username = 'there',
+        productName = 'Our Product',
+        endDate = 'the end of your current billing period',
+        reactivateUrl = 'https://example.com/reactivate'
+      }: CancellationEmailProps) {
+        // Email template implementation
+      }
+      ```
+    - [ ] Add function to send cancellation email in `lib/auth/auth-emails.ts`
+      ```typescript
+      export async function sendCancellationEmail(
+        email: string, 
+        username: string, 
+        productName: string, 
+        endDate: string,
+        reactivateUrl: string
+      ): Promise<boolean> {
+        const result = await emailService.sendEmail({
+          to: email,
+          subject: `Your ${productName} subscription has been cancelled`,
+          template: 'cancellation',
+          props: {
+            username,
+            productName,
+            endDate,
+            reactivateUrl
+          }
+        });
+        
+        return result.success;
+      }
+      ```
     - [ ] Include information about grace period and how to resubscribe
   - [ ] Add analytics tracking for cancellation reasons:
     - [ ] Create cancellation_reasons table in database
+      ```sql
+      -- In supabase/migrations/80_cancellation_reasons.sql
+      CREATE TABLE IF NOT EXISTS public.cancellation_reasons (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+        reason TEXT,
+        subscription_id TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+      );
+      
+      -- Add RLS policies
+      ALTER TABLE public.cancellation_reasons ENABLE ROW LEVEL SECURITY;
+      ```
     - [ ] Add logic to store cancellation reasons from confirmation dialog
+      ```tsx
+      // In app/profile/page.tsx
+      if (reason && user?.user_id) {
+        try {
+          await supabase
+            .from('cancellation_reasons')
+            .insert({
+              user_id: user.user_id,
+              reason: reason,
+              subscription_id: subscriptionStatus?.subscriptionId || null,
+              created_at: new Date().toISOString()
+            });
+        } catch (error) {
+          console.error("Failed to store cancellation reason:", error);
+        }
+      }
+      ```
     - [ ] Create simple report view for cancellation analytics
   - [ ] Implement subscription retention offers for cancelling users:
     - [ ] Create a mechanism to offer discounts to cancelling users
     - [ ] Add UI for displaying retention offers in cancellation flow
     - [ ] Implement backend logic to apply retention discounts
   - [ ] Test full cancellation flow from UI to database updates:
-    - [ ] Create test script for cancellation flow
+    - [ ] Create test script for cancellation flow in `scripts/test-cancellation-flow.ts`
+      ```typescript
+      // Test script implementation to verify:
+      // - Database tables and columns exist
+      // - Grace period functions work correctly
+      // - Cancellation reason storage works
+      ```
     - [ ] Verify all database updates occur correctly
     - [ ] Test email notifications are sent properly
     - [ ] Ensure grace period works as expected
