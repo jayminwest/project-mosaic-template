@@ -8,7 +8,15 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// Define CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 console.log("🌍 Stripe Webhook is running...");
+console.log(`Webhook secret configured: ${WEBHOOK_SECRET ? 'Yes' : 'No'}`);
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: "2023-10-16",
@@ -66,13 +74,46 @@ async function initializePriceToPlanMap() {
 initializePriceToPlanMap();
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   const signature = req.headers.get("Stripe-Signature");
   const body = await req.text();
 
+  // Log request details for debugging
+  console.log(`Webhook received - Signature: ${signature ? 'Present' : 'Missing'}`);
+  console.log(`Request method: ${req.method}`);
+  console.log(`Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
+
+  if (!signature) {
+    console.error('No Stripe signature found in request headers');
+    return new Response(
+      JSON.stringify({ error: 'No Stripe signature found' }),
+      { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+
+  if (!WEBHOOK_SECRET) {
+    console.error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+    return new Response(
+      JSON.stringify({ error: 'Webhook secret not configured' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+
   try {
+    console.log('Attempting to construct event with signature and secret');
     const event = await stripe.webhooks.constructEventAsync(
       body,
-      signature!,
+      signature,
       WEBHOOK_SECRET,
       undefined,
       cryptoProvider
@@ -256,9 +297,29 @@ Deno.serve(async (req) => {
     }
 
     console.log("✅ Webhook processed successfully");
-    return new Response(JSON.stringify({ received: true }));
+    return new Response(
+      JSON.stringify({ received: true }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   } catch (error) {
     console.error("Error in stripe-webhook:", error.message);
-    return new Response(JSON.stringify({ error: error.message }));
+    console.error("Error details:", error);
+    
+    // Return a more detailed error response
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        type: error.type || 'unknown',
+        code: error.code || 'unknown',
+        detail: error.detail || 'No additional details'
+      }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
