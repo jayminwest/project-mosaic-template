@@ -57,3 +57,25 @@ export async function sendInvitationEmail(email: string, inviterName: string, in
   
   return result.success;
 }
+
+export async function sendCancellationEmail(
+  email: string, 
+  username: string, 
+  productName: string, 
+  endDate: string,
+  reactivateUrl: string
+): Promise<boolean> {
+  const result = await emailService.sendEmail({
+    to: email,
+    subject: `Your ${productName} subscription has been cancelled`,
+    template: 'cancellation',
+    props: {
+      username,
+      productName,
+      endDate,
+      reactivateUrl
+    }
+  });
+  
+  return result.success;
+}

@@ -15,6 +15,9 @@ import { toast } from "@/components/hooks/use-toast";
 import { useSearchParams } from 'next/navigation';
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useConfig } from "@/lib/config/useConfig";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { isInGracePeriod, getRemainingGraceDays, getGracePeriodEndDate } from "@/lib/config/plan-access";
+import { sendCancellationEmail } from "@/lib/auth/auth-emails";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -24,11 +27,18 @@ export default function Profile() {
     error, 
     isLoading: subscriptionLoading,
     cancelSubscription,
-    clearError
+    clearError,
+    subscriptionStatus
   } = useSubscription();
   const [isSaving, setIsSaving] = useState(false);
   const searchParams = useSearchParams();
   const subscribeParam = searchParams.get('subscribe');
+  const { productConfig } = useConfig();
+  
+  // State for cancellation dialog
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [cancelProcessing, setCancelProcessing] = useState(false);
   
   // Initialize Supabase client
   const [supabase] = useState(() => 
@@ -252,6 +262,104 @@ export default function Profile() {
     }
   };
 
+  // Handle subscription cancellation
+  const handleCancelSubscription = async (reason?: string) => {
+    if (!user) return;
+    
+    setCancelProcessing(true);
+    
+    try {
+      // Call the cancelSubscription function from useSubscription hook
+      const response = await cancelSubscription();
+      
+      if (!response?.success) {
+        throw new Error(response?.error || "Failed to cancel subscription");
+      }
+      
+      // Store cancellation reason if provided
+      if (reason && user.user_id) {
+        try {
+          await supabase
+            .from('cancellation_reasons')
+            .insert({
+              user_id: user.user_id,
+              reason: reason,
+              subscription_id: subscriptionStatus?.subscriptionId || null,
+              created_at: new Date().toISOString()
+            });
+        } catch (error) {
+          console.error("Failed to store cancellation reason:", error);
+        }
+      }
+      
+      // Send cancellation email
+      if (user.email) {
+        const endDate = subscriptionStatus?.currentPeriodEnd 
+          ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString()
+          : 'the end of your current billing period';
+          
+        const reactivateUrl = `${window.location.origin}/profile?reactivate=true`;
+        
+        await sendCancellationEmail(
+          user.email,
+          user.name || 'there',
+          productConfig?.name || 'Our Product',
+          endDate,
+          reactivateUrl
+        );
+      }
+      
+      // Show success message
+      toast({
+        title: "Subscription Canceled",
+        description: "Your subscription has been canceled. You'll have access until the end of your current billing period.",
+      });
+      
+      // Refresh user profile to get updated subscription status
+      await refreshUserProfile();
+      
+    } catch (error: any) {
+      console.error("Error canceling subscription:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelProcessing(false);
+      setShowCancelDialog(false);
+    }
+  };
+  
+  // Handle subscription reactivation
+  const handleReactivateSubscription = async () => {
+    if (!user || !session?.access_token || !currentPlan?.priceId) return;
+    
+    try {
+      // Use the same price ID as the current/previous plan
+      await manageSubscription(session.access_token, currentPlan.priceId);
+      
+      toast({
+        title: "Reactivation Initiated",
+        description: "We're processing your subscription reactivation.",
+      });
+      
+    } catch (error: any) {
+      console.error("Error reactivating subscription:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reactivate subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowReactivateDialog(false);
+    }
+  };
+
+  // Check if user is in grace period after cancellation
+  const isInGracePeriodAfterCancellation = subscriptionStatus?.canceledAt && 
+    isInGracePeriod(subscriptionStatus.canceledAt);
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
       <h1 className="text-3xl font-bold mb-2">Account Settings</h1>
@@ -281,6 +389,13 @@ export default function Profile() {
                   <p className="text-sm mt-1">
                     ${currentPlan.price}/{currentPlan.interval}
                   </p>
+                )}
+                
+                {/* Grace period message */}
+                {isInGracePeriodAfterCancellation && (
+                  <div className="mt-2 text-sm text-amber-600 p-2 bg-amber-50 rounded-md">
+                    Your subscription has been canceled. You still have access to premium features for {getRemainingGraceDays(subscriptionStatus.canceledAt)} more days (until {getGracePeriodEndDate(subscriptionStatus.canceledAt)}).
+                  </div>
                 )}
               </div>
               
@@ -314,13 +429,25 @@ export default function Profile() {
                   {subscriptionLoading ? "Loading..." : "Manage Subscription"}
                 </Button>
                 
-                {currentPlan && currentPlan.planType !== 'free' && (
+                {/* Show different buttons based on subscription state */}
+                {currentPlan && currentPlan.planType !== 'free' && !isInGracePeriodAfterCancellation && (
                   <Button 
                     variant="outline" 
-                    onClick={cancelSubscription}
+                    onClick={() => setShowCancelDialog(true)}
                     disabled={subscriptionLoading}
                   >
                     Cancel Subscription
+                  </Button>
+                )}
+                
+                {/* Reactivate button for cancelled subscriptions in grace period */}
+                {isInGracePeriodAfterCancellation && (
+                  <Button 
+                    variant="default" 
+                    onClick={() => setShowReactivateDialog(true)}
+                    disabled={subscriptionLoading}
+                  >
+                    Reactivate Subscription
                   </Button>
                 )}
               </div>
@@ -376,6 +503,35 @@ export default function Profile() {
           Sign Out
         </Button>
       </div>
+      
+      {/* Cancellation Confirmation Dialog */}
+      <ConfirmationDialog
+        title="Cancel Subscription"
+        description="Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period."
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirm={handleCancelSubscription}
+        confirmText="Yes, Cancel Subscription"
+        cancelText="No, Keep Subscription"
+        destructive={true}
+        showReasonField={true}
+        reasonLabel="Why are you canceling? (optional)"
+        reasonPlaceholder="Your feedback helps us improve our service..."
+        isLoading={cancelProcessing}
+      />
+      
+      {/* Reactivation Confirmation Dialog */}
+      <ConfirmationDialog
+        title="Reactivate Subscription"
+        description="Would you like to reactivate your subscription? You'll continue to have access to all premium features."
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        onConfirm={handleReactivateSubscription}
+        confirmText="Yes, Reactivate"
+        cancelText="No, Thanks"
+        destructive={false}
+        isLoading={subscriptionLoading}
+      />
     </div>
   );
 }

@@ -30,6 +30,53 @@ const defaultFeatures = {
   enterprise: ['basic_ai', 'advanced_ai', 'premium_ai', 'basic_storage', 'advanced_storage', 'unlimited_storage', 'basic_analytics', 'advanced_analytics', 'priority_support', 'team_collaboration']
 };
 
+// Default grace period in days after cancellation
+export const DEFAULT_GRACE_PERIOD_DAYS = 30;
+
+// Check if a user is in the grace period after cancellation
+export function isInGracePeriod(cancellationDate?: string | null, gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS): boolean {
+  if (!cancellationDate) return false;
+  
+  const cancelDate = new Date(cancellationDate);
+  const now = new Date();
+  
+  // Calculate the end of grace period
+  const graceEndDate = new Date(cancelDate);
+  graceEndDate.setDate(graceEndDate.getDate() + gracePeriodDays);
+  
+  // User is in grace period if current date is before grace period end
+  return now <= graceEndDate;
+}
+
+// Calculate remaining days in grace period
+export function getRemainingGraceDays(cancellationDate?: string | null, gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS): number {
+  if (!cancellationDate) return 0;
+  
+  const cancelDate = new Date(cancellationDate);
+  const now = new Date();
+  
+  // Calculate the end of grace period
+  const graceEndDate = new Date(cancelDate);
+  graceEndDate.setDate(graceEndDate.getDate() + gracePeriodDays);
+  
+  // Calculate remaining days
+  const remainingTime = graceEndDate.getTime() - now.getTime();
+  const remainingDays = Math.ceil(remainingTime / (1000 * 60 * 60 * 24));
+  
+  return Math.max(0, remainingDays);
+}
+
+// Get formatted grace period end date
+export function getGracePeriodEndDate(cancellationDate?: string | null, gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS): string {
+  if (!cancellationDate) return '';
+  
+  const cancelDate = new Date(cancellationDate);
+  const graceEndDate = new Date(cancelDate);
+  graceEndDate.setDate(graceEndDate.getDate() + gracePeriodDays);
+  
+  return graceEndDate.toLocaleDateString();
+}
+
 // Get resource limit for a specific plan type
 export function getResourceLimit(planType: string, resourceName: string): number {
   // Default to free plan if the plan type is invalid
@@ -53,7 +100,22 @@ export function getResourceLimit(planType: string, resourceName: string): number
 }
 
 // Check if a feature is available in a plan
-export function hasFeatureAccess(planType: string, featureName: string): boolean {
+export function hasFeatureAccess(
+  planType: string, 
+  featureName: string, 
+  cancellationDate?: string | null, 
+  gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS
+): boolean {
+  // If user is in grace period and was previously on premium/enterprise plan,
+  // they should still have access to premium features
+  if (
+    cancellationDate && 
+    isInGracePeriod(cancellationDate, gracePeriodDays) && 
+    (planType === 'premium' || planType === 'enterprise')
+  ) {
+    return true;
+  }
+  
   // Default to free plan if the plan type is invalid
   const plan = planType && ['free', 'premium', 'enterprise'].includes(planType) ? planType : 'free';
   
