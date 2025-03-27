@@ -3,6 +3,7 @@ import { themeConfig } from './theme';
 import { subscriptionPlans } from './subscription';
 import { featureFlags } from './features';
 import { validateEnvironment } from './environment';
+import { getResourceLimit, hasFeatureAccess, getPlanFeatures } from './plan-access';
 
 // Validate environment variables on startup
 validateEnvironment();
@@ -13,6 +14,9 @@ export {
   subscriptionPlans,
   featureFlags,
   validateEnvironment,
+  getResourceLimit,
+  hasFeatureAccess,
+  getPlanFeatures
 };
 
 export { useConfig } from './useConfig';

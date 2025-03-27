@@ -6,4 +6,5 @@ export const featureFlags: FeatureFlags = {
   enableSharing: false,
   enableAnalytics: true,
   enableMarketing: true,
+  enableDirectSubscription: true, // Enable direct subscription via URL parameters
 };

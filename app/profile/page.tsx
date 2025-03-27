@@ -12,6 +12,9 @@ import { DashboardMetric } from "@/components/composed/DashboardMetric";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 import { toast } from "@/components/hooks/use-toast";
+import { useSearchParams } from 'next/navigation';
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { useConfig } from "@/lib/config/useConfig";
 
 export default function Profile() {
   const { user, isLoading, signOut, session } = useAuth();
@@ -24,6 +27,8 @@ export default function Profile() {
     clearError
   } = useSubscription();
   const [isSaving, setIsSaving] = useState(false);
+  const searchParams = useSearchParams();
+  const subscribeParam = searchParams.get('subscribe');
   
   // Initialize Supabase client
   const [supabase] = useState(() => 
@@ -40,6 +45,28 @@ export default function Profile() {
     resources_used: 0,
     projects_created: 0
   });
+  
+  // Handle subscription parameter
+  useEffect(() => {
+    const handleSubscription = async () => {
+      if (subscribeParam && session?.access_token) {
+        try {
+          await manageSubscription(session.access_token, subscribeParam);
+        } catch (error) {
+          console.error("Error initiating subscription:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initiate subscription. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    if (subscribeParam && !isLoading && user) {
+      handleSubscription();
+    }
+  }, [subscribeParam, session, isLoading, user, manageSubscription]);
   
   // Helper function to calculate account age
   const getAccountAge = (createdAt: string): string => {
@@ -94,25 +121,39 @@ export default function Profile() {
       try {
         const currentYearMonth = new Date().toISOString().slice(0, 7);
         
+        // First check if the record exists
         const { data, error } = await supabase
           .from('usage_tracking')
           .select('*')
           .eq('user_id', user.user_id)
-          .eq('year_month', currentYearMonth)
-          .single();
+          .eq('year_month', currentYearMonth);
         
         if (error) {
           console.error("Error fetching usage metrics:", error);
           return;
         }
         
-        if (data) {
+        // If data exists, use it
+        if (data && data.length > 0) {
           setUsageMetrics({
-            storage_used: data.storage_used || 0,
-            api_calls: data.api_calls || 0,
-            resources_used: data.resources_used || 0,
-            projects_created: data.projects_created || 0
+            storage_used: data[0].storage_used || 0,
+            api_calls: data[0].api_calls || 0,
+            resources_used: data[0].resources_used || 0,
+            projects_created: data[0].projects_created || 0
           });
+        } else {
+          // Instead of trying to insert directly (which might fail due to RLS),
+          // just use default values for display
+          setUsageMetrics({
+            storage_used: 0,
+            api_calls: 0,
+            resources_used: 0,
+            projects_created: 0
+          });
+          
+          // Note: In a production app, you would use a server-side function
+          // with proper permissions to create the initial usage record
+          console.log("No usage metrics found for current month, using defaults");
         }
       } catch (error) {
         console.error("Error fetching usage metrics:", error);
@@ -126,30 +167,33 @@ export default function Profile() {
     return <LoadingSkeleton type="form" count={3} />;
   }
   
-  // Prepare usage data based on user metrics
+  // Get resource limits from config
+  const { getResourceLimit } = useConfig();
+  
+  // Helper function to get limits based on plan
+  const getLimitForResource = (resourceName: string): number => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return getResourceLimit(planType, resourceName);
+  };
+
+  // Prepare usage data based on the user's plan
   const usageData = [
-    {
-      name: "Tasks",
-      current: user.tasks_created || 0,
-      limit: user.tasks_limit || 10,
-      unit: ""
-    },
     {
       name: "Storage",
       current: usageMetrics.storage_used || 0,
-      limit: currentPlan?.planType === 'premium' ? 50 : 10,
+      limit: getLimitForResource('Storage'),
       unit: "MB"
     },
     {
       name: "API Calls",
       current: usageMetrics.api_calls || 0,
-      limit: currentPlan?.planType === 'premium' ? 1000 : 100,
+      limit: getLimitForResource('APICalls'),
       unit: ""
     },
     {
-      name: "Projects",
-      current: usageMetrics.projects_created || 0,
-      limit: currentPlan?.planType === 'premium' ? 10 : 3,
+      name: "AI Interactions",
+      current: user.ai_interactions_count || 0,
+      limit: getLimitForResource('AIInteractions'),
       unit: ""
     }
   ];
@@ -257,7 +301,9 @@ export default function Profile() {
                 <Button 
                   onClick={() => {
                     if (session?.access_token) {
-                      manageSubscription(session.access_token);
+                      // Use the premium plan price ID from the test output
+                      const premiumPriceId = "price_1R6zeKRHoXfpO9Gc4PTq6Y09";
+                      manageSubscription(session.access_token, premiumPriceId);
                     } else {
                       console.error("No access token available");
                     }
@@ -286,19 +332,13 @@ export default function Profile() {
       </div>
       
       {/* Metrics row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 mt-8">
         <DashboardMetric 
           title="Account Status" 
-          value={currentPlan?.planType === 'premium' ? 'Premium' : 'Free'} 
+          value={currentPlan?.name || user.subscription_plan || 'Free'} 
           description={currentPlan?.planType === 'premium' ? 'Full access to all features' : 'Limited features'}
         />
-        
-        <DashboardMetric 
-          title="Tasks Created" 
-          value={user.tasks_created || 0} 
-          description={`of ${user.tasks_limit || 10} available`}
-        />
-        
+
         <DashboardMetric 
           title="Storage Used" 
           value={`${(usageMetrics.storage_used || 0).toFixed(1)} MB`}
@@ -306,14 +346,14 @@ export default function Profile() {
           trend={
             usageMetrics.storage_used > 0 
               ? {
-                  value: 5,
-                  label: "from last month",
-                  isPositive: false
+                  value: Math.min(Math.round((usageMetrics.storage_used / (currentPlan?.planType === 'premium' ? 50 : 10)) * 100), 100),
+                  label: "of total capacity",
+                  isPositive: (usageMetrics.storage_used / (currentPlan?.planType === 'premium' ? 50 : 10)) < 0.8
                 }
               : undefined
           }
         />
-        
+
         <DashboardMetric 
           title="Account Age" 
           value={user.created_at ? getAccountAge(user.created_at) : "New"}

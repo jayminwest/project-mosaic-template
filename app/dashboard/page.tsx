@@ -1,22 +1,86 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useConfig } from "@/lib/config/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { createBrowserClient } from '@supabase/ssr';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { Footer } from "@/components/Footer";
 import { AIAssistant } from "@/components/composed/AIAssistant";
 import { AIMetrics } from "@/components/composed/AIMetrics";
-import { APIKeyDebugger } from "@/components/composed/APIKeyDebugger";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { UpgradePrompt } from "@/components/composed/UpgradePrompt";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 export default function DashboardPage() {
   const { productConfig = { name: "Project Mosaic" }, theme } = useConfig();
   const { user, isLoading } = useAuth();
   const { currentPlan, isPremiumTier } = useSubscription();
+  const { hasFeatureAccess, getResourceLimit } = useConfig();
+  
+  // Helper functions to check feature access and get limits
+  const canAccessFeature = (featureName: string): boolean => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return hasFeatureAccess(planType, featureName);
+  };
+  
+  const getLimit = (resourceName: string): number => {
+    const planType = currentPlan?.planType || user?.subscription_plan || 'free';
+    return getResourceLimit(planType, resourceName);
+  };
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [usageMetrics, setUsageMetrics] = useState({
+    storage_used: 0,
+    api_calls: 0,
+    resources_used: 0
+  });
+  
+  // Initialize Supabase client
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+  
+  // Fetch usage metrics
+  useEffect(() => {
+    const fetchUsageMetrics = async () => {
+      if (!user?.user_id) return;
+      
+      try {
+        const currentYearMonth = new Date().toISOString().slice(0, 7);
+        
+        // First check if the record exists
+        const { data, error } = await supabase
+          .from('usage_tracking')
+          .select('*')
+          .eq('user_id', user.user_id)
+          .eq('year_month', currentYearMonth);
+        
+        if (error) {
+          console.error("Error fetching usage metrics:", error);
+          return;
+        }
+        
+        // If data exists, use it
+        if (data && data.length > 0) {
+          setUsageMetrics({
+            storage_used: data[0].storage_used || 0,
+            api_calls: data[0].api_calls || 0,
+            resources_used: data[0].resources_used || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching usage metrics:", error);
+      }
+    };
+    
+    fetchUsageMetrics();
+  }, [user, supabase]);
   
   if (isLoading) {
     return (
@@ -134,12 +198,12 @@ export default function DashboardPage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Active Projects</span>
-                        <span className="font-medium text-lg">3</span>
+                        <span className="text-muted-foreground">Storage Used</span>
+                        <span className="font-medium text-lg">{usageMetrics?.storage_used?.toFixed(1) || "0.0"} MB</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Team Members</span>
-                        <span className="font-medium text-lg">2</span>
+                        <span className="text-muted-foreground">API Calls</span>
+                        <span className="font-medium text-lg">{usageMetrics?.api_calls || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Plan</span>
@@ -199,132 +263,90 @@ export default function DashboardPage() {
                 <Button>Create New Project</Button>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Project Card 1 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Marketing Website</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
-                    </div>
-                    <CardDescription>Last updated 2 days ago</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Company website with blog and contact form.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>2 team members</span>
-                      <span>4 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Project Card 2 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>E-commerce Store</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">In Progress</span>
-                    </div>
-                    <CardDescription>Last updated yesterday</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Online store with product catalog and checkout.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>3 team members</span>
-                      <span>6 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Project Card 3 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Mobile App</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Planning</span>
-                    </div>
-                    <CardDescription>Created 1 week ago</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      iOS and Android app for customer engagement.
-                    </p>
-                    <div className="flex justify-between text-sm">
-                      <span>1 team member</span>
-                      <span>2 integrations</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">View</Button>
-                    <Button variant="ghost" size="sm">Settings</Button>
-                  </CardFooter>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Projects</CardTitle>
+                  <CardDescription>
+                    You don't have any projects yet. Create your first project to get started.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center py-6">
+                  <Button>Create New Project</Button>
+                </CardContent>
+              </Card>
             </div>
           )}
           
           {/* Analytics Tab */}
           {activeTab === "analytics" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics</CardTitle>
-                <CardDescription>Your usage statistics and metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">Total Resources</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.resources_used || 0}
-                    </p>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Analytics</CardTitle>
+                  <CardDescription>Your usage statistics and metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 mb-6">
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h3 className="font-medium mb-1">Storage Used</h3>
+                      <p className="text-2xl font-bold">
+                        {user?.storage_used?.toFixed(2) || "0.00"} MB
+                      </p>
+                    </div>
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h3 className="font-medium mb-1">API Calls</h3>
+                      <p className="text-2xl font-bold">
+                        {user?.api_calls || 0}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">Storage Used</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.storage_used?.toFixed(2) || "0.00"} MB
-                    </p>
+                  
+                  {/* Add AI Metrics to Analytics Tab */}
+                  <div className="mt-8">
+                    <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
+                    <AIMetrics />
                   </div>
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium mb-1">API Calls</h3>
-                    <p className="text-2xl font-bold">
-                      {user?.usage_metrics?.api_calls || 0}
-                    </p>
+                  
+                  {/* Add Advanced Analytics section with premium badge */}
+                  <div className="mt-8">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Advanced Analytics</CardTitle>
+                          <CardDescription>Detailed insights into your data</CardDescription>
+                        </div>
+                        {!isPremiumTier() && <PremiumBadge type="locked" />}
+                      </CardHeader>
+                      <CardContent>
+                        {isPremiumTier() ? (
+                          <div className="p-4 bg-muted/30 rounded-lg">
+                            <h3 className="font-medium mb-2">Advanced metrics coming soon</h3>
+                            <p className="text-muted-foreground">
+                              As a premium user, you'll have access to advanced analytics features as they're released.
+                            </p>
+                          </div>
+                        ) : (
+                          <UpgradePrompt 
+                            feature="Advanced Analytics" 
+                            description="Unlock detailed insights, custom reports, and data visualization with a premium subscription."
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
-                
-                {/* Add AI Metrics to Analytics Tab */}
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4">AI Usage</h3>
-                  <AIMetrics />
-                </div>
-                
-                <p className="text-center py-4 text-muted-foreground mt-6">
-                  Detailed analytics dashboard will be available soon.
-                </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* AI Assistant Tab */}
           {activeTab === "ai" && (
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                <AIAssistant />
+                {/* Always show AI Assistant for both free and premium users */}
+                <AIAssistant maxInteractions={getLimit('AIInteractions')} />
                 <div className="space-y-6">
                   <AIMetrics />
-                  <APIKeyDebugger />
                 </div>
               </div>
             </div>
@@ -338,66 +360,35 @@ export default function DashboardPage() {
                 <Button>Add New Integration</Button>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Integration Card 1 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Stripe</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Connected</span>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integrations</CardTitle>
+                  <CardDescription>
+                    Connect your account with these services to enhance your experience.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">Stripe</h3>
+                        <p className="text-sm text-muted-foreground">Payment processing</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        {currentPlan?.planType === 'premium' ? 'Connected' : 'Connect'}
+                      </Button>
                     </div>
-                    <CardDescription>Payment processing</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Process payments and manage subscriptions.
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">Configure</Button>
-                    <Button variant="ghost" size="sm">Disconnect</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Integration Card 2 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Google Analytics</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Connected</span>
+                    
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">OpenAI</h3>
+                        <p className="text-sm text-muted-foreground">AI capabilities</p>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
                     </div>
-                    <CardDescription>Analytics and tracking</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Track user behavior and website performance.
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" size="sm">Configure</Button>
-                    <Button variant="ghost" size="sm">Disconnect</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Integration Card 3 */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>Slack</CardTitle>
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">Not Connected</span>
-                    </div>
-                    <CardDescription>Team communication</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Get notifications and updates in your Slack channels.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full" size="sm">Connect</Button>
-                  </CardFooter>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>

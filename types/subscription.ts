@@ -23,6 +23,21 @@ export interface SubscriptionState {
   subscriptionStatus: SubscriptionStatus | null;
 }
 
+export interface SubscriptionStatus {
+  active: boolean;
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
+  planType: string;
+  planName: string;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd: boolean;
+  trialEnd: number | null;
+  isTrialing: boolean;
+  priceId: string;
+  interval: string;
+  currency: string;
+  amount: number;
+}
+
 export interface SubscriptionOperations {
   manageSubscription: (accessToken: string, priceId?: string) => Promise<void>;
   getCurrentPlan: () => Promise<SubscriptionPlan | undefined>;

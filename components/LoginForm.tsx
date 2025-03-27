@@ -5,14 +5,16 @@ import { LogIn, Mail, Lock, Loader2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfig } from "@/lib/config/useConfig";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const LoginForm = () => {
+  const router = useRouter();
   const {
     email,
     password,
-    handleLogin,
-    handleGoogleLogin,
+    handleLogin: authLogin,
+    handleGoogleLogin: authGoogleLogin,
     handleSignup,
     setEmail,
     setPassword,
@@ -24,7 +26,45 @@ const LoginForm = () => {
   } = useAuth();
   
   const [verificationSent, setVerificationSent] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const { productConfig } = useConfig();
+  
+  // Extract returnTo parameter from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const returnToParam = params.get('returnTo');
+      if (returnToParam) {
+        setReturnTo(returnToParam);
+      }
+    }
+  }, []);
+  
+  // Wrap the original login handler to handle returnTo
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await authLogin(e);
+    if (success && returnTo) {
+      router.push(returnTo);
+    }
+  };
+  
+  // Wrap the original Google login handler to store returnTo
+  const handleGoogleLogin = async () => {
+    if (returnTo) {
+      // Store returnTo in localStorage for OAuth callback
+      localStorage.setItem('authReturnTo', returnTo);
+      
+      // If the returnTo contains a subscribe parameter, also store that
+      if (returnTo.includes('subscribe=')) {
+        const subscribeParam = new URLSearchParams(returnTo.split('?')[1]).get('subscribe');
+        if (subscribeParam) {
+          localStorage.setItem('pendingSubscription', subscribeParam);
+        }
+      }
+    }
+    await authGoogleLogin();
+  };
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);

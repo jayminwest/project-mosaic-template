@@ -19,6 +19,7 @@ export interface PricingTier {
   buttonVariant?: "default" | "outline";
   highlighted?: boolean;
   priceId?: string;
+  trialPeriod?: string | null;
 }
 
 // Create a stable Supabase client instance
@@ -92,7 +93,8 @@ export function usePricingTiers() {
             buttonLink: plan.price === 0 ? '/auth/signup' : `/profile?subscribe=${plan.priceId}`,
             buttonVariant: plan.planType === 'premium' ? 'default' : 'outline',
             highlighted: plan.planType === 'premium',
-            priceId: plan.priceId
+            priceId: plan.priceId,
+            trialPeriod: plan.metadata?.trial_period_days
           };
         });
         
@@ -135,7 +137,8 @@ export function usePricingTiers() {
         buttonText: 'Sign Up',
         buttonLink: '/auth/signup',
         buttonVariant: 'outline',
-        highlighted: false
+        highlighted: false,
+        trialPeriod: null
       },
       {
         name: 'Premium',
@@ -152,7 +155,8 @@ export function usePricingTiers() {
         buttonText: 'Subscribe',
         buttonLink: '/profile',
         buttonVariant: 'default',
-        highlighted: true
+        highlighted: true,
+        trialPeriod: '7'
       }
     ];
   }

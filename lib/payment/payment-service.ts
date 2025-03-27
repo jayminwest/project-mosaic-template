@@ -52,8 +52,8 @@ class StripePaymentProvider implements PaymentProvider {
   constructor(config: PaymentServiceConfig = {}) {
     this.config = {
       apiUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?success=true` : '',
-      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/profile?canceled=true` : '',
+      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}` : '',
+      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/checkout/cancel` : '',
       ...config
     };
     this.maxRetries = config.maxRetries || 3;
@@ -127,6 +127,18 @@ class StripePaymentProvider implements PaymentProvider {
       );
 
       const data = await response.json();
+      
+      // Check for specific portal configuration error
+      if (data.code === 'portal_not_configured') {
+        return {
+          success: false,
+          error: data.error || "Stripe Customer Portal not configured",
+          code: data.code,
+          message: data.message,
+          fallbackUrl: data.fallbackUrl
+        };
+      }
+      
       if (data.error) return { success: false, error: data.error };
 
       return { success: true, url: data.url };

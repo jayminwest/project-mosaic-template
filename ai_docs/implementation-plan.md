@@ -356,14 +356,239 @@ This document outlines the step-by-step implementation plan for transforming the
   - [x] Simplify pricing page to use the updated PricingSection component ✅
   - [x] Remove static pricing tiers from landing page ✅
 
-- [ ] **Checkout Session Implementation**
-  - [ ] Update the checkout session creation to use real Stripe product IDs
-  - [ ] Implement proper error handling for checkout session creation
-  - [ ] Add success and cancel URL configuration
-  - [ ] Create checkout success and cancel pages
-  - [ ] Implement webhook handling for checkout session completion
-  - [ ] Add subscription status checking after checkout
-  - [ ] Test checkout flow with real Stripe products
+- [x] **Checkout Session Implementation**
+  - [x] Update the checkout session creation to use real Stripe product IDs
+  - [x] Implement proper error handling for checkout session creation
+  - [x] Add success and cancel URL configuration
+  - [x] Create checkout success and cancel pages
+  - [x] Implement webhook handling for checkout session completion
+  - [x] Add subscription status checking after checkout
+  - [x] Test checkout flow with real Stripe products
+  - [x] Add automatic subscription flow from URL parameters
+  - [x] Create environment reset script for testing
+  - [x] Fix profile page to handle subscription query parameters
+  - [x] Implement proper error handling for subscription flow
+
+Readonly:                        ai_docs/PROJECT_MOSAIC_OVERVIEW.md
+ai_docs/architecture.md          ai_docs/customization.md          
+ai_docs/email-configuration.md   ai_docs/email-service-guide.md    
+ai_docs/glossary.md              ai_docs/stripe-configuration.md   
+ai_docs/template-requirements.md                                   
+
+Editable:                              ai_docs/implementation-plan.md    
+ai_docs/stripe-portal-configuration.md app/dashboard/page.tsx            
+app/profile/page.tsx                   components/composed/UsageStats.tsx
+hooks/useSubscription.ts               lib/config/features.ts            
+lib/config/subscription.ts             lib/config/useConfig.ts           
+lib/payment/payment-service.ts         types/subscription.ts                     
+> Update the - [ ] **User Plan Correspondence** section of ai_docs/implementation
+> -plan.md with a detailed plan for how to complete this. Include exact file path
+> s, usage patterns, and code snippets for all changes. We are just creating the 
+> plan so ONLY update that section of ai_docs/implementation-plan.md, no other se
+> ction and no other file                                                        
+
+I'll update the User Plan Correspondence section of the implementation plan with 
+a detailed approach.                                                             
+
+ai_docs/implementation-plan.md                                                   
+
+                                                                                 
+<<<<<<< SEARCH                                                                   
+## Phase 6: Pricing Page Fix & A/B Testing Framework                             
+                                                                                 
+- [x] **Pricing Page Fix**                                                       
+  - [x] Update the `usePricingTiers` hook to properly handle Stripe product data 
+  - [x] Fix the Edge Function to correctly parse product metadata                
+  - [x] Enhance error handling in the pricing component to show fallback plans   
+  - [x] Add better logging for debugging pricing issues                          
+  - [x] Create a troubleshooting guide for common pricing page issues            
+  - [x] Update the Stripe configuration documentation with clearer metadata      
+requirements                                                                     
+  - [x] Implement a more robust fallback mechanism for when Stripe data is       
+unavailable                                                                      
+  - [x] Fix infinite refresh issue on pricing page by adding fetch attempt       
+tracking                                                                         
+  - [x] Resolve Supabase client initialization issues in usePricingTiers hook    
+  - [x] Add hydration mismatch prevention with isMounted state                   
+  - [x] Update PricingSection component to use the same data source as pricing   
+page ✅                                                                          
+  - [x] Simplify pricing page to use the updated PricingSection component ✅     
+  - [x] Remove static pricing tiers from landing page ✅                         
+                                                                                 
+- [x] **Checkout Session Implementation**                                        
+  - [x] Update the checkout session creation to use real Stripe product IDs      
+  - [x] Implement proper error handling for checkout session creation            
+  - [x] Add success and cancel URL configuration                                 
+  - [x] Create checkout success and cancel pages                                 
+  - [x] Implement webhook handling for checkout session completion               
+  - [x] Add subscription status checking after checkout                          
+  - [x] Test checkout flow with real Stripe products                             
+  - [x] Add automatic subscription flow from URL parameters                      
+  - [x] Create environment reset script for testing                              
+  - [x] Fix profile page to handle subscription query parameters                 
+  - [x] Implement proper error handling for subscription flow                    
+         
+- [ ] **User Plan Correspondence**
+  - [x] Create a centralized feature access system:
+    - [x] Created `lib/config/plan-access.ts` with helper functions for resource limits and feature access
+    - [x] Integrated with Stripe subscription plans for dynamic feature access
+    - [x] Added fallback to default values when Stripe data is unavailable
+    - [x] Added product config integration for additional flexibility
+    - [x] Updated `lib/config/useConfig.ts` to expose plan feature helpers
+      
+  - [x] Update dashboard to show features based on user's subscription plan:
+    - [x] Modified `app/dashboard/page.tsx` to use feature access helpers
+    - [x] Created `components/composed/UpgradePrompt.tsx` component for premium feature prompts
+      
+  - [x] Modify profile page to display correct resource limits based on plan:
+    - [x] Updated `app/profile/page.tsx` to use the plan-based resource limits
+    - [x] Added dynamic limit calculation based on Stripe plan data
+      
+  - [x] Implement AI usage limits that correspond to the user's plan:
+    - [x] Updated `components/composed/AIAssistant.tsx` to enforce limits based on subscription tier
+    - [x] Added usage counter and upgrade prompts when approaching limits
+    - [x] Integrated with Stripe plan data for dynamic limits
+      
+  - [x] Add visual indicators for premium features:
+    - [x] Created `components/ui/premium-badge.tsx` component with locked/premium states
+    - [x] Added badges to premium features in the dashboard
+      
+  - [x] Implement graceful degradation for features not available in user's plan:
+    - [x] Created `hooks/useFeatureAccess.ts` hook for centralized feature access control
+    - [x] Implemented conditional rendering based on subscription tier
+    - [x] Added fallback mechanisms when plan data is unavailable
+      
+  - [x] Add upgrade prompts for free users when accessing premium features:
+    - [x] Created `components/composed/FeatureLimit.tsx` component to display usage limits
+    - [x] Added visual indicators when approaching resource limits
+    - [x] Implemented upgrade prompts throughout the application
+      
+  - [ ] Test all features with both free and premium accounts:
+    - [ ] Verify feature access control works correctly with Stripe plans
+    - [ ] Test upgrade flows from free to premium features
+    - [ ] Verify resource limits are enforced correctly
+    - [ ] Test visual indicators for premium features
+    - [ ] Ensure graceful degradation works as expected
+    - [ ] Verify upgrade prompts appear at appropriate times
+    - [ ] Test fallback to default values when Stripe is unavailable
+    - [x] Fix test-plan-features script to properly import from lib/config
+                                                                    
+
+- [x] **Stripe Customer Portal Configuration**
+  - [x] Add documentation on setting up Stripe Customer Portal in test mode
+  - [x] Create step-by-step guide for configuring portal settings at https://dashboard.stripe.com/test/settings/billing/portal
+  - [x] Update create-stripe-session function to handle missing portal configuration
+  - [x] Add fallback mechanism when portal is not configured
+  - [x] Implement better error handling for portal-related errors
+  - [ ] Add configuration check in setup-subscription-plans script:
+    - [ ] Create a function to check if the Stripe Customer Portal is configured:
+      ```typescript
+      async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
+        try {
+          // Create a test customer to check portal configuration
+          const customer = await findOrCreateTestCustomer(stripe);
+          
+          // Attempt to create a portal session
+          await stripe.billingPortal.sessions.create({
+            customer: customer.id,
+            return_url: 'https://example.com',
+          });
+          
+          return true;
+        } catch (error: any) {
+          if (error.message.includes('No configuration provided') || 
+              error.message.includes('default configuration has not been created')) {
+            return false;
+          }
+          return false;
+        }
+      }
+      ```
+    - [ ] Add guidance in the script to help users configure the portal:
+      ```typescript
+      if (!await checkPortalConfiguration(stripe)) {
+        console.log(chalk.yellow('\nYour Stripe Customer Portal is not configured.'));
+        console.log(chalk.white('To configure the Customer Portal:'));
+        console.log(chalk.white('1. Go to https://dashboard.stripe.com/test/settings/billing/portal'));
+        console.log(chalk.white('2. Configure the basic settings and click "Save"'));
+        
+        // Ask if user wants to open the configuration page
+        const configureNow = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'open',
+          message: 'Would you like to open the configuration page now?',
+          default: true
+        }]);
+        
+        if (configureNow.open) {
+          // Open the configuration page in the default browser
+          await open('https://dashboard.stripe.com/test/settings/billing/portal');
+        }
+      }
+      ```
+    - [ ] Provide a link to the Stripe dashboard portal configuration page
+    - [ ] Add a verification step to ensure the portal is properly configured
+  - [x] Create troubleshooting guide for common Stripe portal issues
+  - [x] Create a portal testing script in scripts/test-portal-configuration.ts:
+    - [x] Add the script to package.json: `"test-portal": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-portal-configuration.ts"`
+    - [x] Implement tests for fully configured portal
+    - [x] Implement tests for partially configured portal (simulated)
+    - [x] Implement tests for unconfigured portal (error handling)
+    - [x] Add ability to create test customers and portal sessions
+    - [x] Add interactive prompts to verify portal functionality
+  - [x] Create a SubscriptionManager component for profile page:
+    - [x] Implement proper UI for subscription management
+    - [x] Add cancellation confirmation dialog using existing Dialog component
+    - [x] Show subscription status including end date for cancelled subscriptions
+    - [x] Add visual feedback during cancellation process
+    - [x] Display clear information about what cancellation means
+    - [x] Integrate with existing cancel-subscription Edge Function
+    - [x] Add option to reactivate cancelled subscriptions
+  - [x] Document test results and any issues found in ai_docs/stripe-portal-test-results.md
+
+- [ ] **Subscription Cancellation Handling**
+  - [ ] Implement proper UI feedback when a user cancels their subscription:
+    - [ ] Create a confirmation modal with clear messaging about what cancellation means
+    - [ ] Add visual feedback during the cancellation process (loading state)
+    - [ ] Show success message after successful cancellation
+    - [ ] Display information about when access will end
+  - [ ] Add confirmation dialog before cancellation to reduce accidental cancellations:
+    - [ ] Create a reusable ConfirmationDialog component in components/ui/
+    - [ ] Add clear messaging about the consequences of cancellation
+    - [ ] Include option to provide cancellation reason (optional)
+  - [x] Create webhook handler for subscription cancellation events:
+    - [x] Update stripe-webhook function to handle customer.subscription.deleted events
+    - [x] Add logic to update user profile with correct subscription status
+    - [x] Implement proper error handling for webhook processing
+  - [x] Update user profile with correct subscription status after cancellation:
+    - [x] Modify profile table to track cancellation date and reason
+    - [x] Update subscription_status field to reflect cancellation
+    - [x] Ensure UI correctly displays cancellation status
+  - [ ] Implement grace period for accessing premium features after cancellation:
+    - [ ] Add logic to check if user is in grace period in hasFeatureAccess function
+    - [ ] Update UI to show grace period expiration date
+    - [ ] Create helper function to calculate remaining grace period days
+  - [ ] Add re-subscribe option for recently cancelled subscriptions:
+    - [ ] Show re-subscribe button for cancelled subscriptions
+    - [ ] Implement one-click reactivation for subscriptions in grace period
+    - [ ] Add special messaging for returning customers
+  - [ ] Create email notification for subscription cancellation:
+    - [ ] Design cancellation email template in lib/email/templates/components/
+    - [ ] Add function to send cancellation email in lib/auth/auth-emails.ts
+    - [ ] Include information about grace period and how to resubscribe
+  - [ ] Add analytics tracking for cancellation reasons:
+    - [ ] Create cancellation_reasons table in database
+    - [ ] Add logic to store cancellation reasons from confirmation dialog
+    - [ ] Create simple report view for cancellation analytics
+  - [ ] Implement subscription retention offers for cancelling users:
+    - [ ] Create a mechanism to offer discounts to cancelling users
+    - [ ] Add UI for displaying retention offers in cancellation flow
+    - [ ] Implement backend logic to apply retention discounts
+  - [ ] Test full cancellation flow from UI to database updates:
+    - [ ] Create test script for cancellation flow
+    - [ ] Verify all database updates occur correctly
+    - [ ] Test email notifications are sent properly
+    - [ ] Ensure grace period works as expected
 
 - [ ] **A/B Testing Service Layer**
   - [ ] Create core types and service interface for A/B testing
@@ -373,6 +598,29 @@ This document outlines the step-by-step implementation plan for transforming the
   - [ ] Integrate with service provider architecture
   - [ ] Create admin dashboard for managing tests
   - [ ] Add documentation and examples
+
+- [ ] **Documentation & AI Assistance**
+  - [ ] Update tutorial/ directory for use with Aider as standalone tool:
+    - [ ] Reorganize tutorial files to be more modular and standalone
+    - [ ] Add specific instructions for using with Aider
+    - [ ] Create numbered sequence for step-by-step guidance
+    - [ ] Add code examples that can be directly copied
+    - [ ] Include troubleshooting sections for common issues
+    - [ ] Create a tutorial index file for easy navigation
+    - [ ] Add screenshots or diagrams where helpful
+    - [ ] Ensure all commands are properly formatted for copy-paste
+  
+  - [ ] Ensure ai_docs/ directory is current and comprehensive:
+    - [ ] Audit all existing documentation for accuracy
+    - [ ] Update any outdated information
+    - [ ] Add missing documentation for new features
+    - [ ] Create a comprehensive index of all documentation
+    - [ ] Ensure consistent formatting across all files
+    - [ ] Add cross-references between related documents
+    - [ ] Include more code examples and usage patterns
+    - [ ] Create specialized documentation for AI assistance
+    - [ ] Add troubleshooting guides for common issues
+    - [ ] Ensure all configuration options are documented
 
 ## Phase 7: AI Dashboard Integration
 

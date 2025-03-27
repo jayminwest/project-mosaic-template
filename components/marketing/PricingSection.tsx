@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { usePricingTiers } from "@/hooks/usePricingTiers";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { createClient } from "@supabase/supabase-js";
 
 interface PricingSectionProps {
   title: string;
@@ -20,10 +21,18 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
   // Use either the fetched tiers or static tiers passed as props
   const tiers = staticTiers || pricingTiers;
 
+  const router = useRouter();
+  
   // Set mounted state after component mounts
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  
+  const handleSubscribeClick = async (priceId: string) => {
+    // Skip authentication check and directly proceed to subscription flow
+    // The profile page will handle authentication if needed
+    router.push(`/profile?subscribe=${priceId}`);
+  };
 
   // Show nothing during SSR to prevent hydration mismatch
   if (!isMounted) {
@@ -140,6 +149,11 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
               <div className="mt-4">
                 <span className="text-4xl font-bold">{tier.price}</span>
                 <span className="text-muted-foreground">/{tier.interval}</span>
+                {tier.trialPeriod && (
+                  <div className="mt-1 text-sm text-primary">
+                    {tier.trialPeriod} days free trial
+                  </div>
+                )}
               </div>
               <ul className="mt-6 space-y-2">
                 {tier.features.map((feature, featureIndex) => (
@@ -167,14 +181,13 @@ export function PricingSection({ title, description, tiers: staticTiers }: Prici
                 ))}
               </ul>
               <div className="mt-6">
-                <Link href={tier.buttonLink}>
-                  <Button 
-                    variant={tier.buttonVariant || "default"} 
-                    className="w-full"
-                  >
-                    {tier.buttonText}
-                  </Button>
-                </Link>
+                <Button 
+                  variant={tier.buttonVariant || "default"} 
+                  className="w-full"
+                  onClick={() => handleSubscribeClick(tier.priceId)}
+                >
+                  {tier.buttonText}
+                </Button>
               </div>
             </div>
           ))}

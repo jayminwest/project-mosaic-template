@@ -255,6 +255,10 @@ policy = "oneshot"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 
+# Add CORS configuration for Edge Functions
+[functions]
+# Remove the CORS configuration from here as it should be handled in each function
+
 # Use these configurations to customize your Edge Function.
 # [functions.MY_FUNCTION_NAME]
 # enabled = true

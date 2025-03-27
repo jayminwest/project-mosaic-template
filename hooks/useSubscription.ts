@@ -59,25 +59,35 @@ export function useSubscription(): UseSubscriptionReturn {
       setIsLoading(true);
       setError(null);
       
-      // Check if we're in development mode
-      const isDev = process.env.NODE_ENV === 'development';
-      
-      if (isDev) {
-        // In development, simulate a successful response
-        console.log("Development mode: Simulating Stripe checkout");
-        // Wait a moment to simulate network request
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Open a mock checkout page
-        window.open('https://stripe.com/docs/testing', '_blank');
-        return;
+      // Check if user is authenticated
+      if (!session) {
+        // If not authenticated and we're in a browser environment
+        if (typeof window !== 'undefined') {
+          // Store the price ID to use after login
+          const returnUrl = `/profile?subscribe=${priceId}`;
+          window.location.href = `/login?returnTo=${encodeURIComponent(returnUrl)}`;
+          return;
+        }
+        throw new Error('User not authenticated');
       }
       
-      // Production mode - actual API call
+      // Create checkout session
+      console.log("Creating Stripe checkout session for price:", priceId);
       const response = await paymentService.createCheckoutSession(accessToken, priceId);
       
       if (!response.success) {
-        throw new Error(response.error || 'Failed to create checkout session');
+        // Handle specific portal configuration error
+        if (response.code === 'portal_not_configured') {
+          setError("Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard.");
+          
+          // Redirect to the fallback URL if provided
+          if (response.fallbackUrl && typeof window !== 'undefined') {
+            window.location.href = response.fallbackUrl;
+            return;
+          }
+        } else {
+          throw new Error(response.error || 'Failed to create checkout session');
+        }
       }
       
       if (response.url) {
@@ -194,6 +204,58 @@ export function useSubscription(): UseSubscriptionReturn {
     setError(null);
   };
 
+  // Get subscription status
+  const getSubscriptionStatus = useCallback(async () => {
+    if (!user?.user_id) return { success: false, error: 'User not authenticated' };
+    
+    try {
+      setIsLoading(true);
+      
+      // Use the payment service instead of direct Supabase call
+      const status = await paymentService.getSubscriptionStatus(user.user_id);
+      
+      // Ensure we have a properly formatted status object
+      const formattedStatus = {
+        ...status,
+        // If plan_type exists but no subscription object, this is a free or manually assigned plan
+        isActive: status.isActive !== undefined ? status.isActive : true,
+        willRenew: status.willRenew !== undefined ? status.willRenew : false,
+        status: status.status || 'active',
+        plan_type: status.plan_type || currentPlan?.planType || 'free'
+      };
+      
+      console.log("Subscription status response:", formattedStatus);
+      setSubscriptionStatus(formattedStatus);
+      
+      return { success: true, data: formattedStatus };
+    } catch (error: any) {
+      console.error("Error getting subscription status:", error);
+      
+      // Even on error, ensure we have a valid status object with defaults
+      const fallbackStatus = {
+        isActive: true,
+        willRenew: false,
+        status: 'active',
+        plan_type: currentPlan?.planType || 'free'
+      };
+      
+      setSubscriptionStatus(fallbackStatus);
+      return { success: false, error: error.message, data: fallbackStatus };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, paymentService, currentPlan]);
+  
+  // Helper functions for trial periods
+  const isInTrialPeriod = useCallback(() => {
+    return subscriptionStatus?.status === 'trialing';
+  }, [subscriptionStatus]);
+  
+  const getTrialEndDate = useCallback(() => {
+    if (!subscriptionStatus?.trialEnd) return null;
+    return new Date(subscriptionStatus.trialEnd * 1000);
+  }, [subscriptionStatus]);
+
   // Status helper methods
   const isSubscriptionActive = useCallback((): boolean => {
     return subscriptionStatus?.isActive || false;
@@ -219,6 +281,9 @@ export function useSubscription(): UseSubscriptionReturn {
     getInvoices,
     hasFeatureAccess,
     clearError,
+    getSubscriptionStatus,
+    isInTrialPeriod,
+    getTrialEndDate,
     isSubscriptionActive,
     willSubscriptionRenew,
     getSubscriptionEndDate,

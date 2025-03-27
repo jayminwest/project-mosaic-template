@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BackgroundAnimation } from "./BackgroundAnimation";
 
 interface HeroSectionProps {
   title: string;
@@ -19,8 +22,9 @@ export function HeroSection({
   secondaryButtonLink,
 }: HeroSectionProps) {
   return (
-    <section className="py-12 md:py-24 lg:py-32 xl:py-40 bg-background w-full">
-      <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+    <section className="py-12 md:py-24 lg:py-32 xl:py-40 bg-background w-full relative overflow-hidden">
+      <BackgroundAnimation />
+      <div className="container px-4 md:px-6 mx-auto max-w-7xl relative z-10">
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
