@@ -3,14 +3,14 @@ CREATE OR REPLACE FUNCTION public.create_sql_execution_function()
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+AS $outer$
 BEGIN
   -- Create function to execute SQL queries
   CREATE OR REPLACE FUNCTION public.execute_sql(sql_query text)
   RETURNS json
   LANGUAGE plpgsql
   SECURITY DEFINER
-  AS $func$
+  AS $inner$
   DECLARE
     result json;
   BEGIN
@@ -19,7 +19,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('error', SQLERRM);
   END;
-  $func$;
+  $inner$;
 
   -- Grant execute permission to authenticated users
   GRANT EXECUTE ON FUNCTION public.execute_sql(text) TO authenticated;
@@ -27,7 +27,7 @@ BEGIN
   
   RETURN 'SQL execution function created successfully';
 END;
-$$;
+$outer$;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.create_sql_execution_function() TO authenticated;
