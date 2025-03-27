@@ -481,17 +481,70 @@ page ✅
   - [x] Add fallback mechanism when portal is not configured
   - [x] Implement better error handling for portal-related errors
   - [ ] Add configuration check in setup-subscription-plans script:
-    - [ ] Create a function to check if the Stripe Customer Portal is configured
-    - [ ] Add guidance in the script to help users configure the portal
+    - [ ] Create a function to check if the Stripe Customer Portal is configured:
+      ```typescript
+      async function checkPortalConfiguration(stripe: Stripe): Promise<boolean> {
+        try {
+          // Create a test customer to check portal configuration
+          const customer = await findOrCreateTestCustomer(stripe);
+          
+          // Attempt to create a portal session
+          await stripe.billingPortal.sessions.create({
+            customer: customer.id,
+            return_url: 'https://example.com',
+          });
+          
+          return true;
+        } catch (error: any) {
+          if (error.message.includes('No configuration provided') || 
+              error.message.includes('default configuration has not been created')) {
+            return false;
+          }
+          return false;
+        }
+      }
+      ```
+    - [ ] Add guidance in the script to help users configure the portal:
+      ```typescript
+      if (!await checkPortalConfiguration(stripe)) {
+        console.log(chalk.yellow('\nYour Stripe Customer Portal is not configured.'));
+        console.log(chalk.white('To configure the Customer Portal:'));
+        console.log(chalk.white('1. Go to https://dashboard.stripe.com/test/settings/billing/portal'));
+        console.log(chalk.white('2. Configure the basic settings and click "Save"'));
+        
+        // Ask if user wants to open the configuration page
+        const configureNow = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'open',
+          message: 'Would you like to open the configuration page now?',
+          default: true
+        }]);
+        
+        if (configureNow.open) {
+          // Open the configuration page in the default browser
+          await open('https://dashboard.stripe.com/test/settings/billing/portal');
+        }
+      }
+      ```
     - [ ] Provide a link to the Stripe dashboard portal configuration page
     - [ ] Add a verification step to ensure the portal is properly configured
   - [x] Create troubleshooting guide for common Stripe portal issues
-  - [ ] Test portal functionality with various configuration settings:
-    - [ ] Test with portal fully configured
-    - [ ] Test with portal partially configured
-    - [ ] Test with portal not configured at all
-    - [ ] Verify error handling and fallback mechanisms work correctly
-    - [ ] Document test results and any issues found
+  - [ ] Create a portal testing script in scripts/test-portal-configuration.ts:
+    - [ ] Add the script to package.json: `"test-portal": "NODE_OPTIONS='--experimental-specifier-resolution=node' ts-node --esm --skipProject scripts/test-portal-configuration.ts"`
+    - [ ] Implement tests for fully configured portal
+    - [ ] Implement tests for partially configured portal
+    - [ ] Implement tests for unconfigured portal
+    - [ ] Add ability to create test customers and portal sessions
+    - [ ] Add interactive prompts to verify portal functionality
+  - [ ] Create a SubscriptionManager component for profile page:
+    - [ ] Implement proper UI for subscription management
+    - [ ] Add cancellation confirmation dialog using existing Dialog component
+    - [ ] Show subscription status including end date for cancelled subscriptions
+    - [ ] Add visual feedback during cancellation process
+    - [ ] Display clear information about what cancellation means
+    - [ ] Integrate with existing cancel-subscription Edge Function
+    - [ ] Add option to reactivate cancelled subscriptions
+  - [ ] Document test results and any issues found in ai_docs/stripe-portal-test-results.md
 
 - [ ] **Subscription Cancellation Handling**
   - [ ] Implement proper UI feedback when a user cancels their subscription:
