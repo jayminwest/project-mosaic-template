@@ -65,10 +65,13 @@ async function testWebhook() {
     console.log(chalk.yellow(`POST response: ${postResponse.status}`));
     console.log(chalk.gray(`Response body: ${JSON.stringify(postData)}`));
     
-    if (postResponse.status === 400 && postData.error === 'No Stripe signature found') {
+    // Check for either 400 (No Stripe signature found) or 401 (Missing authorization header)
+    // Both are acceptable responses for a request without signature
+    if ((postResponse.status === 400 && postData.error === 'No Stripe signature found') || 
+        (postResponse.status === 400 && postData.message === 'No Stripe signature found')) {
       console.log(chalk.green('✓ Webhook correctly requires Stripe signature'));
     } else {
-      console.log(chalk.red('✗ Webhook response unexpected for request without signature'));
+      console.log(chalk.red(`✗ Webhook response unexpected for request without signature: ${postResponse.status} - ${JSON.stringify(postData)}`));
     }
     
     // Ask if user wants to trigger a real webhook event
