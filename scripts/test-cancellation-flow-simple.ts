@@ -70,14 +70,17 @@ async function testCancellationFlow() {
   // Test 1: Check if cancellation_reasons table exists
   console.log(chalk.yellow('\nTest 1: Checking if cancellation_reasons table exists'));
   try {
-    // Use a more direct approach to check if the table exists
-    const { data, error } = await supabase.rpc('column_exists', {
-      table_name: 'cancellation_reasons',
-      column_name: 'user_id'
-    });
+    // First check if the table exists in information_schema
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'cancellation_reasons');
     
-    if (error) {
-      // If the RPC function doesn't exist, try a direct query
+    if (tableError) {
+      console.log(chalk.gray(`Error checking table existence: ${tableError.message}`));
+      
+      // Fall back to a direct query
       const { count, error: countError } = await supabase
         .from('cancellation_reasons')
         .select('*', { count: 'exact', head: true });
@@ -89,9 +92,41 @@ async function testCancellationFlow() {
         throw countError;
       } else {
         console.log(chalk.green('✓ cancellation_reasons table exists'));
+        
+        // Show table structure
+        console.log(chalk.gray('Table structure:'));
+        const { data: columns, error: columnsError } = await supabase
+          .from('information_schema.columns')
+          .select('column_name, data_type')
+          .eq('table_schema', 'public')
+          .eq('table_name', 'cancellation_reasons');
+          
+        if (columnsError) {
+          console.log(chalk.gray(`Error fetching columns: ${columnsError.message}`));
+        } else if (columns) {
+          columns.forEach(col => {
+            console.log(chalk.gray(`  - ${col.column_name}: ${col.data_type}`));
+          });
+        }
       }
-    } else if (data) {
+    } else if (tableInfo && tableInfo.length > 0) {
       console.log(chalk.green('✓ cancellation_reasons table exists'));
+      
+      // Show table structure
+      console.log(chalk.gray('Table structure:'));
+      const { data: columns, error: columnsError } = await supabase
+        .from('information_schema.columns')
+        .select('column_name, data_type')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'cancellation_reasons');
+        
+      if (columnsError) {
+        console.log(chalk.gray(`Error fetching columns: ${columnsError.message}`));
+      } else if (columns) {
+        columns.forEach(col => {
+          console.log(chalk.gray(`  - ${col.column_name}: ${col.data_type}`));
+        });
+      }
     } else {
       console.log(chalk.red('✗ cancellation_reasons table does not exist'));
       console.log(chalk.gray('Please run the migration to create the table'));
@@ -134,20 +169,20 @@ async function testCancellationFlow() {
   let testUserId: string | null = null;
   
   try {
-    // First try to find an existing user by email in profiles table
-    const { data: existingProfiles, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_id')
+    // Try to find the user in auth.users first
+    const { data: authUsers, error: authError } = await supabase
+      .from('auth.users')
+      .select('id')
       .eq('email', 'test-cancellation@example.com')
       .limit(1);
     
-    if (profileError) {
-      console.log(chalk.gray(`Error finding profile: ${profileError.message}`));
+    if (authError) {
+      console.log(chalk.gray(`Error finding auth user: ${authError.message}`));
     }
     
-    if (existingProfiles && existingProfiles.length > 0) {
-      testUserId = existingProfiles[0].user_id;
-      console.log(chalk.gray(`Found existing test user in profiles: ${testUserId}`));
+    if (authUsers && authUsers.length > 0) {
+      testUserId = authUsers[0].id;
+      console.log(chalk.gray(`Found existing test user in auth.users: ${testUserId}`));
     } else {
       // If not found in profiles, try to get any user from profiles
       const { data: anyProfile, error: anyProfileError } = await supabase
@@ -196,9 +231,31 @@ async function testCancellationFlow() {
       })
       .select();
     
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.log(chalk.red(`Error inserting cancellation reason: ${insertError.message}`));
+      throw insertError;
+    }
     
     console.log(chalk.green('✓ Successfully inserted cancellation reason'));
+    console.log(chalk.gray(`Inserted record: ${JSON.stringify(insertResult)}`));
+    
+    // Verify the record was inserted by querying it back
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('cancellation_reasons')
+      .select('*')
+      .eq('user_id', testUserId)
+      .eq('reason', 'Testing cancellation flow');
+      
+    if (verifyError) {
+      console.log(chalk.red(`Error verifying insertion: ${verifyError.message}`));
+    } else {
+      console.log(chalk.gray(`Verification query returned ${verifyData?.length || 0} records`));
+      if (verifyData && verifyData.length > 0) {
+        console.log(chalk.green('✓ Verified record exists in database'));
+      } else {
+        console.log(chalk.red('✗ Could not verify record in database'));
+      }
+    }
     
     // Clean up the test data
     const { error: deleteError } = await supabase
